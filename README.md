@@ -69,11 +69,31 @@ Built as an enhanced fork of the original X-UI project, 3X-UI adds broader proto
 
 ## Quick Start
 
+### 1. Pre-built Release Installation (Standard)
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
 ```
 
-During installation a random username, password, and access path are generated. After installation, run `x-ui` to open the management menu, where you can start/stop the service, view or reset your login credentials, manage SSL certificates, and more.
+### 2. Build from Source & Run Locally (Developer Mode)
+Prerequisites: Go 1.21+ and Node.js 18+.
+```bash
+# Clone the repository
+git clone https://github.com/MHSanaei/3x-ui.git
+cd 3x-ui
+
+# Run the local build & execution script
+chmod +x run.sh
+./run.sh
+```
+This script will build the React SPA frontend, compile the Go binary with the embedded assets, and start the local development server.
+
+### 3. Build & Deploy on Linux Server
+To compile the panel locally on the server and register it as a systemd service (with full support for SSL, domains, Fail2ban, and active services):
+```bash
+sudo chmod +x deploy.sh
+sudo ./deploy.sh
+```
+During installation, run `x-ui` to open the management menu, where you can configure SSL, add custom domains, reset credentials, and manage database profiles.
 
 For full documentation, please visit the [project Wiki](https://github.com/MHSanaei/3x-ui/wiki).
 
