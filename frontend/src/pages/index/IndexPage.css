@@ -54,3 +54,71 @@
 .index-page .ip-visible .ant-statistic-content-value {
   filter: none;
 }
+
+/* Feed container and sections */
+.index-page-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 0;
+}
+
+.feed-section {
+  min-height: calc(100vh - 72px); /* Fill the remaining screen height under header */
+  scroll-margin-top: 72px; /* Sticky header offset */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 40px 0;
+  box-sizing: border-box;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (max-width: 768px) {
+  .feed-section {
+    min-height: calc(100vh - 64px);
+    scroll-margin-top: 64px;
+    padding: 24px 0;
+  }
+}
+
+/* Delay animations for a neat staggered loading effect */
+.feed-section:nth-child(1) { animation-delay: 0.1s; }
+.feed-section:nth-child(2) { animation-delay: 0.2s; }
+.feed-section:nth-child(3) { animation-delay: 0.3s; }
+.feed-section:nth-child(4) { animation-delay: 0.4s; }
+.feed-section:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feed-section .section-header {
+  margin-bottom: 32px;
+  border-bottom: 1px solid rgba(18, 19, 23, 0.05);
+  padding-bottom: 12px;
+}
+
+body.dark .feed-section .section-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.feed-section .section-header h2 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 28px;
+  color: #121317;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+body.dark .feed-section .section-header h2 {
+  color: #ffffff;
+}

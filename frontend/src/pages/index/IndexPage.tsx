@@ -40,8 +40,12 @@ import { HttpUtil, SizeFormatter, TimeFormatter, ClipboardManager, FileManager }
 import { useTheme } from '@/hooks/useTheme';
 import { useStatusQuery } from '@/api/queries/useStatusQuery';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import AppSidebar from '@/layouts/AppSidebar';
+import { useLocation } from 'react-router-dom';
 import { LazyMount } from '@/components/utility';
+import InboundsPage from '@/pages/inbounds/InboundsPage';
+import ClientsPage from '@/pages/clients/ClientsPage';
+import GroupsPage from '@/pages/groups/GroupsPage';
+import NodesPage from '@/pages/nodes/NodesPage';
 import { setMessageInstance } from '@/utils/messageBus';
 import { TelemetryGuideOverlay, TerminalBootLoader } from '@/components/ui';
 import StatusCard from './StatusCard';
@@ -99,6 +103,21 @@ export default function IndexPage() {
       if (msg?.success && msg.obj) setPanelUpdateInfo(msg.obj);
     });
   }, []);
+
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!fetched) return;
+    const targetId = hash.replace(/^#/, '').split('#')[0];
+    if (targetId) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [hash, fetched]);
 
   const displayVersion = useMemo(
     () => panelUpdateInfo.currentVersion || window.X_UI_CUR_VER || '?',
@@ -161,11 +180,9 @@ export default function IndexPage() {
   return (
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
-      <Layout className={pageClass}>
-        <AppSidebar />
-
-        <Layout className="content-shell">
-          <Layout.Content className="content-area">
+      <div className={`content-shell index-page-shell ${pageClass}`}>
+        <div className="content-area index-page-area">
+          <section id="dashboard" className="feed-section">
             <Spin
               spinning={loading || !fetched}
               delay={200}
@@ -444,8 +461,41 @@ export default function IndexPage() {
                 </Row>
               )}
             </Spin>
-          </Layout.Content>
-        </Layout>
+          </section>
+
+          <section id="inbounds" className="feed-section">
+            <div className="section-header">
+              <h2>{t('menu.inbounds')}</h2>
+            </div>
+            <InboundsPage />
+          </section>
+
+          <section id="clients" className="feed-section">
+            <div className="section-header">
+              <h2>{t('menu.clients')}</h2>
+            </div>
+            <ClientsPage />
+          </section>
+
+          <section id="groups" className="feed-section">
+            <div className="section-header">
+              <h2>{t('menu.groups')}</h2>
+            </div>
+            <GroupsPage />
+          </section>
+
+          <section id="nodes" className="feed-section">
+            <div className="section-header">
+              <h2>{t('menu.nodes')}</h2>
+            </div>
+            <NodesPage />
+          </section>
+
+
+
+
+        </div>
+      </div>
 
         <LazyMount when={panelUpdateOpen}>
           <PanelUpdateModal
@@ -528,7 +578,6 @@ export default function IndexPage() {
         </LazyMount>
         <TelemetryGuideOverlay active={guideActive} onClose={() => setGuideActive(false)} page="index" />
         {booting && <TerminalBootLoader onComplete={() => setBooting(false)} />}
-      </Layout>
     </ConfigProvider>
   );
 }

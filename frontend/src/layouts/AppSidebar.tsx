@@ -132,11 +132,11 @@ export default function AppSidebar() {
   const panelVersion = window.X_UI_CUR_VER || '';
 
   const tabs = useMemo<{ key: string; icon: IconName; title: string }[]>(() => [
-    { key: '/', icon: 'dashboard', title: t('menu.dashboard') },
-    { key: '/inbounds', icon: 'inbound', title: t('menu.inbounds') },
-    { key: '/clients', icon: 'team', title: t('menu.clients') },
-    { key: '/groups', icon: 'groups', title: t('menu.groups') },
-    { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
+    { key: '/#dashboard', icon: 'dashboard', title: t('menu.dashboard') },
+    { key: '/#inbounds', icon: 'inbound', title: t('menu.inbounds') },
+    { key: '/#clients', icon: 'team', title: t('menu.clients') },
+    { key: '/#groups', icon: 'groups', title: t('menu.groups') },
+    { key: '/#nodes', icon: 'cluster', title: t('menu.nodes') },
     { key: '/settings', icon: 'setting', title: t('menu.settings') },
     { key: '/xray', icon: 'tool', title: t('menu.xray') },
     { key: '/api-docs', icon: 'apidocs', title: t('menu.apiDocs') },
@@ -170,11 +170,22 @@ export default function AppSidebar() {
 
   const settingsActive = pathname === '/settings';
   const xrayActive = pathname === '/xray';
-  const selectedKey = settingsActive
-    ? `/settings${hash || '#general'}`
-    : xrayActive
-      ? `/xray${hash || '#basic'}`
-      : (pathname === '' ? '/' : pathname);
+  const apiDocsActive = pathname === '/api-docs';
+  
+  const selectedKey = useMemo(() => {
+    if (settingsActive) {
+      return `/settings${hash || '#general'}`;
+    }
+    if (xrayActive) {
+      return `/xray${hash || '#basic'}`;
+    }
+    if (apiDocsActive) {
+      return '/api-docs';
+    }
+    if (!hash) return '/#dashboard';
+    const mainHash = hash.split('#')[1] || '';
+    return `/#${mainHash}`;
+  }, [settingsActive, xrayActive, apiDocsActive, hash]);
 
   const openSubmenu = settingsActive ? '/settings' : xrayActive ? '/xray' : null;
   const [openKeys, setOpenKeys] = useState<string[]>(() => (openSubmenu ? [openSubmenu] : []));
@@ -203,8 +214,27 @@ export default function AppSidebar() {
       window.location.href = window.X_UI_BASE_PATH || '/';
       return;
     }
+    
+    if (key.startsWith('/#')) {
+      const parts = key.substring(2).split('#'); // e.g. ["inbounds"] or ["xray", "basic"]
+      const targetSectionId = parts[0];
+      
+      if (pathname !== '/') {
+        // Redirect to / with the hash
+        navigate(`/#${key.substring(2)}`);
+      } else {
+        // Smooth scroll to the section
+        const el = document.getElementById(targetSectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+          window.history.pushState(null, '', `/#${key.substring(2)}`);
+        }
+      }
+      return;
+    }
+    
     navigate(key);
-  }, [navigate]);
+  }, [navigate, pathname]);
 
   const onMenuClick = useCallback<NonNullable<MenuProps['onClick']>>(({ key }) => {
     openLink(String(key));
@@ -231,54 +261,56 @@ export default function AppSidebar() {
   }, [isDark, isUltra, toggleTheme, toggleUltra]);
 
   return (
-    <div className="ant-sidebar">
-      <Layout.Sider
-        theme={currentTheme}
-        width={220}
-        collapsible
-        collapsed={collapsed}
-        breakpoint="md"
-        onCollapse={onSiderCollapse}
-      >
-        <div className={`sider-brand${collapsed ? ' sider-brand-collapsed' : ''}`}>
-          <div className="brand-block">
-            <span className="brand-text">{collapsed ? '3X' : '3X-UI'}</span>
+    <header className="antigravity-header">
+      <div className="header-container">
+        <div className="header-left">
+          <div className="brand-block" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+            <svg className="antigravity-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24, marginRight: 8 }}>
+              <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
+              <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
+            </svg>
+            <span className="brand-text">3X-UI Antigravity</span>
           </div>
-          {!collapsed && (
-            <div className="brand-actions">
-              <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
-              <ThemeCycleButton
-                id="theme-cycle"
-                isDark={isDark}
-                isUltra={isUltra}
-                onCycle={() => cycleTheme('theme-cycle')}
-                ariaLabel={t('menu.theme')}
-              />
-            </div>
-          )}
         </div>
-        <Menu
-          theme={currentTheme}
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          openKeys={collapsed ? undefined : openKeys}
-          onOpenChange={(keys) => setOpenKeys(keys as string[])}
-          className="sider-nav"
-          items={toMenuItems(navItems)}
-          onClick={onMenuClick}
-        />
-        <Menu
-          theme={currentTheme}
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          className="sider-utility"
-          items={toMenuItems(utilItems)}
-          onClick={onMenuClick}
-        />
-        <div className="sider-footer">
-          <VersionBadge version={panelVersion} collapsed={collapsed} />
+
+        <div className="header-center">
+          <Menu
+            mode="horizontal"
+            selectedKeys={[selectedKey]}
+            className="header-nav-menu"
+            items={toMenuItems(navItems)}
+            onClick={onMenuClick}
+            style={{ border: 'none', background: 'transparent' }}
+          />
         </div>
-      </Layout.Sider>
+
+        <div className="header-right">
+          <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
+          <ThemeCycleButton
+            id="theme-cycle"
+            isDark={isDark}
+            isUltra={isUltra}
+            onCycle={() => cycleTheme('theme-cycle')}
+            ariaLabel={t('menu.theme')}
+          />
+          <VersionBadge version={panelVersion} />
+          <button
+            type="button"
+            className="logout-pill-btn"
+            onClick={() => openLink(LOGOUT_KEY)}
+          >
+            {t('logout')}
+          </button>
+          
+          <button
+            className="hamburger-menu-btn"
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <MenuOutlined />
+          </button>
+        </div>
+      </div>
 
       <Drawer
         placement="left"
@@ -338,17 +370,6 @@ export default function AppSidebar() {
           <VersionBadge version={panelVersion} />
         </div>
       </Drawer>
-
-      {!drawerOpen && (
-        <button
-          className="drawer-handle"
-          type="button"
-          aria-label={t('menu.dashboard')}
-          onClick={() => setDrawerOpen(true)}
-        >
-          <MenuOutlined />
-        </button>
-      )}
-    </div>
+    </header>
   );
 }

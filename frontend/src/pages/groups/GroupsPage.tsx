@@ -43,7 +43,6 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useClients } from '@/hooks/useClients';
 import { HttpUtil } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
-import AppSidebar from '@/layouts/AppSidebar';
 import { LazyMount } from '@/components/utility';
 import { keys } from '@/api/queryKeys';
 import {
@@ -430,11 +429,8 @@ export default function GroupsPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       {modalContextHolder}
-      <Layout className={pageClass}>
-        <AppSidebar />
-        <Layout className="content-shell">
-          <Layout.Content id="content-layout" className="content-area">
-            <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
+      <div className="section-content-wrapper groups-section-wrapper">
+        <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
               {!fetched ? (
                 <div className="loading-spacer" />
               ) : fetchError ? (
@@ -506,8 +502,6 @@ export default function GroupsPage() {
                 </Row>
               )}
             </Spin>
-          </Layout.Content>
-        </Layout>
 
         <Modal
           open={createOpen}
@@ -618,7 +612,7 @@ export default function GroupsPage() {
             }}
           />
         </LazyMount>
-      </Layout>
+      </div>
     </ConfigProvider>
   );
 }

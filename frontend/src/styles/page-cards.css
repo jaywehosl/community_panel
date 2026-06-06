@@ -6,8 +6,12 @@
 .nodes-page .ant-card,
 .groups-page .ant-card,
 .api-docs-page .ant-card {
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background: var(--bg-card) !important;
+  backdrop-filter: blur(var(--backdrop-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--backdrop-blur)) !important;
+  border-radius: 24px !important;
+  border: 1px solid var(--bg-card-border) !important;
+  box-shadow: 0 8px 30px rgba(18, 19, 23, 0.015) !important;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
 }
 
@@ -19,13 +23,7 @@
 .nodes-page.is-dark .ant-card,
 .groups-page.is-dark .ant-card,
 .api-docs-page.is-dark .ant-card {
-  background: rgba(13, 17, 23, 0.5) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-color: rgba(0, 240, 255, 0.1) !important;
-  box-shadow:
-    0 4px 30px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
 .index-page.is-dark.is-ultra .ant-card,
@@ -36,13 +34,7 @@
 .nodes-page.is-dark.is-ultra .ant-card,
 .groups-page.is-dark.is-ultra .ant-card,
 .api-docs-page.is-dark.is-ultra .ant-card {
-  background: rgba(5, 5, 7, 0.75) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-color: rgba(0, 240, 255, 0.06) !important;
-  box-shadow:
-    0 4px 30px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.015);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
 }
 
 .index-page .ant-card.ant-card-hoverable:hover,
@@ -54,7 +46,8 @@
 .groups-page .ant-card.ant-card-hoverable:hover,
 .api-docs-page .ant-card.ant-card-hoverable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border-color: rgba(50, 121, 249, 0.3) !important;
+  box-shadow: 0 16px 40px rgba(50, 121, 249, 0.04) !important;
 }
 
 .index-page.is-dark .ant-card.ant-card-hoverable:hover,
@@ -65,26 +58,8 @@
 .nodes-page.is-dark .ant-card.ant-card-hoverable:hover,
 .groups-page.is-dark .ant-card.ant-card-hoverable:hover,
 .api-docs-page.is-dark .ant-card.ant-card-hoverable:hover {
-  border-color: rgba(0, 240, 255, 0.5) !important;
-  box-shadow:
-    0 12px 30px rgba(0, 240, 255, 0.08),
-    0 0 15px rgba(0, 240, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.index-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
-.clients-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
-.inbounds-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
-.xray-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
-.settings-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
-.nodes-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
-.groups-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
-.api-docs-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover {
-  border-color: rgba(0, 240, 255, 0.4) !important;
-  box-shadow:
-    0 12px 30px rgba(0, 240, 255, 0.06),
-    0 0 12px rgba(0, 240, 255, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  border-color: rgba(50, 121, 249, 0.4) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3) !important;
 }
 
 .index-page .ant-card .ant-card-actions,
@@ -96,5 +71,36 @@
 .groups-page .ant-card .ant-card-actions,
 .api-docs-page .ant-card .ant-card-actions {
   background: transparent;
-  border-top: 1px solid rgba(0, 240, 255, 0.08);
+  border-top: 1px solid rgba(18, 19, 23, 0.05);
+}
+
+body.dark .index-page .ant-card .ant-card-actions,
+body.dark .clients-page .ant-card .ant-card-actions,
+body.dark .inbounds-page .ant-card .ant-card-actions,
+body.dark .xray-page .ant-card .ant-card-actions,
+body.dark .settings-page .ant-card .ant-card-actions,
+body.dark .nodes-page .ant-card .ant-card-actions,
+body.dark .groups-page .ant-card .ant-card-actions,
+body.dark .api-docs-page .ant-card .ant-card-actions {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ant-card-head {
+  border-bottom: 1px solid rgba(18, 19, 23, 0.05) !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 500 !important;
+}
+
+body.dark .ant-card-head {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.ant-card-head-title {
+  color: #121317 !important;
+  font-size: 16px !important;
+  letter-spacing: -0.2px !important;
+}
+
+body.dark .ant-card-head-title {
+  color: #ffffff !important;
 }

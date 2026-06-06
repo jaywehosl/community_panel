@@ -22,7 +22,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { AllSettingSchema } from '@/schemas/setting';
-import AppSidebar from '@/layouts/AppSidebar';
 import PlanVerificationModal from '@/components/ui/PlanVerificationModal';
 import GeneralTab from './GeneralTab';
 import SecurityTab from './SecurityTab';
@@ -221,9 +220,7 @@ export default function SettingsPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       {modalContextHolder}
-      <Layout className={pageClass}>
-        <AppSidebar />
-
+      <div className={pageClass}>
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
             <Spin spinning={spinning || !fetched} delay={200} description={t('loading')} size="large">
@@ -282,7 +279,7 @@ export default function SettingsPage() {
             </Spin>
           </Layout.Content>
         </Layout>
-      </Layout>
+      </div>
       <PlanVerificationModal
         open={showPlan}
         title="Settings Implementation Plan"

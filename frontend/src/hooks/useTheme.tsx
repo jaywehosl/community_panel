@@ -23,74 +23,82 @@ function applyDom(isDark: boolean, isUltra: boolean) {
   if (msg) msg.className = isDark ? 'dark' : 'light';
 }
 
+// Reset localStorage cache to default to Google Antigravity Light Theme on first load of this session
+const CACHE_RESET_KEY = 'antigravity-reset-v3';
+if (localStorage.getItem(CACHE_RESET_KEY) !== 'true') {
+  localStorage.setItem(STORAGE_DARK, 'false');
+  localStorage.setItem(STORAGE_ULTRA, 'false');
+  localStorage.setItem(CACHE_RESET_KEY, 'true');
+}
+
 // module load so the document is in the right theme before React mounts.
-const initialDark = readBool(STORAGE_DARK, true);
+const initialDark = readBool(STORAGE_DARK, false);
 const initialUltra = readBool(STORAGE_ULTRA, false);
 applyDom(initialDark, initialUltra);
 
 const DARK_TOKENS = {
-  colorPrimary: '#00f0ff', // Glowing Cyan
-  colorSuccess: '#39ff14', // Neon Green
-  colorWarning: '#ffae00', // Neon Warning Orange
-  colorError: '#ff3b30',   // Neon Red
-  colorBgBase: '#08090c',
-  colorBgLayout: '#040507',
-  colorBgContainer: '#0d1117',
-  colorBgElevated: '#161b22',
-  colorBorder: '#1f2937',
+  colorPrimary: '#3279F9', // Google Blue
+  colorSuccess: '#34A853', // Google Green
+  colorWarning: '#FBBC05', // Google Yellow
+  colorError: '#EA4335',   // Google Red
+  colorBgBase: '#0b0c10',
+  colorBgLayout: '#07070a',
+  colorBgContainer: '#15161d',
+  colorBgElevated: '#1a1c24',
+  colorBorder: '#232530',
   colorTextBase: '#f3f4f6',
-  borderRadius: 6,
-  fontFamily: 'Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  borderRadius: 24,
+  fontFamily: 'Plus Jakarta Sans, Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   fontFamilyCode: '"Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
 };
 const ULTRA_DARK_TOKENS = {
-  colorPrimary: '#00f0ff', // Glowing Cyan
-  colorSuccess: '#39ff14',
-  colorWarning: '#ffae00',
-  colorError: '#ff3b30',
+  colorPrimary: '#3279F9', // Google Blue
+  colorSuccess: '#34A853',
+  colorWarning: '#FBBC05',
+  colorError: '#EA4335',
   colorBgBase: '#000000',
   colorBgLayout: '#000000',
-  colorBgContainer: '#070709',
-  colorBgElevated: '#0f0f12',
-  colorBorder: '#141416',
+  colorBgContainer: '#0c0c0e',
+  colorBgElevated: '#121215',
+  colorBorder: '#1c1c22',
   colorTextBase: '#e5e7eb',
-  borderRadius: 4,
-  fontFamily: 'Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  borderRadius: 24,
+  fontFamily: 'Plus Jakarta Sans, Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   fontFamilyCode: '"Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
 };
 const DARK_LAYOUT_TOKENS = {
-  bodyBg: '#040507',
-  headerBg: '#08090c',
-  headerColor: '#00f0ff',
-  footerBg: '#040507',
-  siderBg: '#08090c',
-  triggerBg: '#0d1117',
-  triggerColor: '#00f0ff',
+  bodyBg: '#07070a',
+  headerBg: '#0b0c10',
+  headerColor: '#ffffff',
+  footerBg: '#07070a',
+  siderBg: '#0b0c10',
+  triggerBg: '#15161d',
+  triggerColor: '#ffffff',
 };
 const ULTRA_DARK_LAYOUT_TOKENS = {
   bodyBg: '#000000',
   headerBg: '#000000',
-  headerColor: '#00f0ff',
+  headerColor: '#ffffff',
   footerBg: '#000000',
   siderBg: '#000000',
-  triggerBg: '#070709',
-  triggerColor: '#00f0ff',
+  triggerBg: '#0c0c0e',
+  triggerColor: '#ffffff',
 };
 const DARK_MENU_TOKENS = {
-  darkItemBg: '#08090c',
-  darkSubMenuItemBg: '#0d1117',
-  darkPopupBg: '#0d1117',
+  darkItemBg: '#0b0c10',
+  darkSubMenuItemBg: '#15161d',
+  darkPopupBg: '#15161d',
 };
 const ULTRA_DARK_MENU_TOKENS = {
   darkItemBg: '#000000',
-  darkSubMenuItemBg: '#070709',
-  darkPopupBg: '#070709',
+  darkSubMenuItemBg: '#0c0c0e',
+  darkPopupBg: '#0c0c0e',
 };
 const DARK_CARD_TOKENS = {
-  colorBorderSecondary: 'rgba(0, 240, 255, 0.15)',
+  colorBorderSecondary: 'rgba(255, 255, 255, 0.05)',
 };
 const ULTRA_DARK_CARD_TOKENS = {
-  colorBorderSecondary: 'rgba(0, 240, 255, 0.1)',
+  colorBorderSecondary: 'rgba(255, 255, 255, 0.03)',
 };
 const STATISTIC_TOKENS = {
   contentFontSize: 17,
@@ -102,11 +110,38 @@ export function buildAntdThemeConfig(isDark: boolean, isUltra: boolean): ThemeCo
     return {
       algorithm: antdTheme.defaultAlgorithm,
       token: {
-        colorPrimary: '#0090a0',
-        fontFamily: 'Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        colorPrimary: '#3279F9', // Google Blue
+        colorSuccess: '#34A853', // Google Green
+        colorWarning: '#FBBC05', // Google Yellow
+        colorError: '#EA4335',   // Google Red
+        fontFamily: 'Plus Jakarta Sans, Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         fontFamilyCode: '"Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
+        borderRadius: 24,
       },
       components: {
+        Button: {
+          borderRadius: 9999, // Pill shaped buttons
+          controlHeight: 40,
+          fontWeight: 500,
+        },
+        Input: {
+          borderRadius: 9999, // Pill shape
+          controlHeight: 40,
+        },
+        InputNumber: {
+          borderRadius: 9999,
+          controlHeight: 40,
+        },
+        Select: {
+          borderRadius: 9999,
+          controlHeight: 40,
+        },
+        Card: {
+          borderRadiusLG: 24,
+        },
+        Table: {
+          borderRadius: 16,
+        },
         Statistic: STATISTIC_TOKENS,
       },
     };
@@ -118,6 +153,26 @@ export function buildAntdThemeConfig(isDark: boolean, isUltra: boolean): ThemeCo
       Layout: isUltra ? ULTRA_DARK_LAYOUT_TOKENS : DARK_LAYOUT_TOKENS,
       Menu: isUltra ? ULTRA_DARK_MENU_TOKENS : DARK_MENU_TOKENS,
       Card: isUltra ? ULTRA_DARK_CARD_TOKENS : DARK_CARD_TOKENS,
+      Button: {
+        borderRadius: 9999,
+        controlHeight: 40,
+        fontWeight: 500,
+      },
+      Input: {
+        borderRadius: 9999,
+        controlHeight: 40,
+      },
+      InputNumber: {
+        borderRadius: 9999,
+        controlHeight: 40,
+      },
+      Select: {
+        borderRadius: 9999,
+        controlHeight: 40,
+      },
+      Table: {
+        borderRadius: 16,
+      },
       Statistic: STATISTIC_TOKENS,
     },
   };

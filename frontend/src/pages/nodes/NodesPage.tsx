@@ -14,7 +14,6 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import { useNodeMutations } from '@/api/queries/useNodeMutations';
-import AppSidebar from '@/layouts/AppSidebar';
 import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
 import { setMessageInstance } from '@/utils/messageBus';
@@ -151,12 +150,8 @@ export default function NodesPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       {modalContextHolder}
-      <Layout className={pageClass}>
-        <AppSidebar />
-
-        <Layout className="content-shell">
-          <Layout.Content id="content-layout" className="content-area">
-            <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
+      <div className="section-content-wrapper nodes-section-wrapper">
+        <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
               {!fetched ? (
                 <div className="loading-spacer" />
               ) : fetchError ? (
@@ -223,8 +218,6 @@ export default function NodesPage() {
                 </Row>
               )}
             </Spin>
-          </Layout.Content>
-        </Layout>
 
         <NodeFormModal
           open={formOpen}
@@ -235,7 +228,7 @@ export default function NodesPage() {
           save={onSave}
           onOpenChange={setFormOpen}
         />
-      </Layout>
+      </div>
     </ConfigProvider>
   );
 }

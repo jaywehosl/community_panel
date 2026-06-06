@@ -9,11 +9,16 @@ export default function TerminalBootLoader({ onComplete }: TerminalBootLoaderPro
   const [fadeClass, setFadeClass] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
   useEffect(() => {
     // Session check to skip loader if already shown in this session
     const isLoaded = sessionStorage.getItem('antigravity_boot_loaded');
     if (isLoaded === 'true') {
-      onComplete();
+      onCompleteRef.current();
       return;
     }
 
@@ -112,7 +117,7 @@ export default function TerminalBootLoader({ onComplete }: TerminalBootLoaderPro
 
     const completeTimeout = setTimeout(() => {
       sessionStorage.setItem('antigravity_boot_loaded', 'true');
-      onComplete();
+      onCompleteRef.current();
     }, 2600);
 
     return () => {
@@ -121,7 +126,7 @@ export default function TerminalBootLoader({ onComplete }: TerminalBootLoaderPro
       clearTimeout(fadeTimeout);
       clearTimeout(completeTimeout);
     };
-  }, [onComplete]);
+  }, []);
 
   // If already shown in session, render nothing
   const isLoaded = sessionStorage.getItem('antigravity_boot_loaded');

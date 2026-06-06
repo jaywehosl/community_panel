@@ -24,7 +24,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useXraySetting } from '@/hooks/useXraySetting';
 import type { XraySettingsValue } from '@/hooks/useXraySetting';
-import AppSidebar from '@/layouts/AppSidebar';
 import { JsonEditor } from '@/components/form';
 import { setMessageInstance } from '@/utils/messageBus';
 
@@ -294,9 +293,7 @@ export default function XrayPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       {modalContextHolder}
-      <Layout className={pageClass}>
-        <AppSidebar />
-
+      <div className={pageClass}>
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
             <Spin spinning={spinning || !fetched} delay={200} description={t('loading')} size="large">
@@ -349,8 +346,6 @@ export default function XrayPage() {
                 </Row>
               )}
             </Spin>
-          </Layout.Content>
-        </Layout>
 
         <WarpModal
           open={warpOpen}
@@ -369,7 +364,9 @@ export default function XrayPage() {
           onRemoveOutbound={onRemoveOutboundByIndex}
           onRemoveRoutingRules={onRemoveRoutingRules}
         />
-      </Layout>
+          </Layout.Content>
+        </Layout>
+      </div>
     </ConfigProvider>
   );
 }

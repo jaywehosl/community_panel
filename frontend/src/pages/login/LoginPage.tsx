@@ -73,76 +73,65 @@ export default function LoginPage() {
     class Particle {
       x: number = Math.random() * width;
       y: number = Math.random() * height;
-      vx: number = 0;
-      vy: number = 0;
-      alpha: number = Math.random() * 0.4 + 0.15;
-      size: number = Math.random() * 1.5 + 0.5;
-      color: string = Math.random() > 0.55 ? '#00f0ff' : '#9b51e0'; // Cyan or Neon Purple
-      history: { x: number; y: number }[] = [];
+      vx: number = (Math.random() - 0.5) * 0.3;
+      vy: number = (Math.random() - 0.5) * 0.3;
+      size: number = Math.random() * 80 + 60; // Large organic glowing blobs
+      // Google Red (#EA4335) or Google Blue (#4285F4) with soft transparency
+      color: string = Math.random() > 0.5 ? 'rgba(66, 133, 244, 0.12)' : 'rgba(234, 67, 53, 0.10)';
 
-      update(time: number) {
-        const angleY = this.y * 0.003 + time * 0.0003;
-        const angleX = this.x * 0.003 + time * 0.0003;
-        
-        const fX = Math.cos(angleY) * 0.7 + Math.sin(angleX * 0.4) * 0.3;
-        const fY = Math.sin(angleX) * 0.7 + Math.cos(angleY * 0.4) * 0.3;
-
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const pull = Math.min(0.25, 60 / dist);
-
-        this.vx += (fX + (dx / dist) * pull - this.vx) * 0.04;
-        this.vy += (fY + (dy / dist) * pull - this.vy) * 0.04;
-
+      update() {
         this.x += this.vx;
         this.y += this.vy;
 
-        if (this.x < 0) this.x = width;
-        if (this.x > width) this.x = 0;
-        if (this.y < 0) this.y = height;
-        if (this.y > height) this.y = 0;
+        // Bounce/loop at margins
+        if (this.x < -150) this.x = width + 150;
+        if (this.x > width + 150) this.x = -150;
+        if (this.y < -150) this.y = height + 150;
+        if (this.y > height + 150) this.y = -150;
 
-        this.history.push({ x: this.x, y: this.y });
-        if (this.history.length > 20) {
-          this.history.shift();
+        // Mouse follow behavior
+        const dx = mouse.x - this.x;
+        const dy = mouse.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        if (dist < 400) {
+          const force = (400 - dist) / 4000;
+          this.vx += (dx / dist) * force * 0.2;
+          this.vy += (dy / dist) * force * 0.2;
+        }
+
+        // Limit speed
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (speed > 1.5) {
+          this.vx = (this.vx / speed) * 1.5;
+          this.vy = (this.vy / speed) * 1.5;
         }
       }
 
       draw(c: CanvasRenderingContext2D) {
-        if (this.history.length < 2) return;
         c.beginPath();
-        c.moveTo(this.history[0].x, this.history[0].y);
-        for (let i = 1; i < this.history.length; i++) {
-          c.lineTo(this.history[i].x, this.history[i].y);
-        }
-        c.strokeStyle = this.color;
-        c.globalAlpha = this.alpha;
-        c.lineWidth = this.size;
-        c.stroke();
+        const grad = c.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+        grad.addColorStop(0, this.color);
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        c.fillStyle = grad;
+        c.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        c.fill();
       }
     }
 
     const particles: Particle[] = [];
-    const particleCount = Math.min(100, Math.floor((width * height) / 15000));
-    for (let i = 0; i < particleCount; i++) {
+    const count = Math.min(24, Math.floor((width * height) / 40000));
+    for (let i = 0; i < count; i++) {
       particles.push(new Particle());
     }
 
-    let startTime = Date.now();
     const render = () => {
-      const elapsed = Date.now() - startTime;
-      
-      mouse.x += (mouse.tx - mouse.x) * 0.06;
-      mouse.y += (mouse.ty - mouse.y) * 0.06;
+      mouse.x += (mouse.tx - mouse.x) * 0.05;
+      mouse.y += (mouse.ty - mouse.y) * 0.05;
 
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = isDark ? (isUltra ? 'rgba(0, 0, 0, 0.06)' : 'rgba(8, 9, 12, 0.06)') : 'rgba(238, 242, 255, 0.06)';
-      ctx.fillRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
 
-      ctx.globalCompositeOperation = 'screen';
       particles.forEach((p) => {
-        p.update(elapsed);
+        p.update();
         p.draw(ctx);
       });
 
@@ -156,25 +145,12 @@ export default function LoginPage() {
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationId);
     };
-  }, [isDark, isUltra]);
+  }, []);
 
   const [fetched, setFetched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [twoFactorEnable, setTwoFactorEnable] = useState(false);
-  const [headlineIndex, setHeadlineIndex] = useState(0);
   const [lang, setLang] = useState<string>(() => LanguageManager.getLanguage());
-
-  const headlineWords = useMemo(
-    () => [t('pages.login.hello'), t('pages.login.title')],
-    [t],
-  );
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setHeadlineIndex((i) => (i + 1) % headlineWords.length);
-    }, HEADLINE_INTERVAL_MS);
-    return () => window.clearInterval(timer);
-  }, [headlineWords.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -243,41 +219,59 @@ export default function LoginPage() {
       <Layout className={pageClass}>
         <canvas ref={canvasRef} className="kinetic-canvas" />
         <Layout.Content className="login-content">
-          <div className="login-toolbar">
-            <Button
-              id="login-theme-cycle"
-              shape="circle"
-              size="large"
-              className="toolbar-btn"
-              aria-label={t('menu.theme')}
-              title={t('menu.theme')}
-              icon={themeIcon}
-              onClick={cycleTheme}
-            />
-            <Popover
-              rootClassName={isDark ? 'dark' : 'light'}
-              placement="bottomRight"
-              trigger="click"
-              styles={{ content: { padding: 4 } }}
-              content={
-                <Menu
-                  mode="vertical"
-                  selectable
-                  selectedKeys={[lang]}
-                  items={langMenuItems}
-                  onClick={({ key }) => onLangChange(key)}
-                  style={{ border: 'none', minWidth: 160 }}
-                />
-              }
-            >
+          <div className="login-header">
+            <div className="brand-block">
+              <svg className="antigravity-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24, marginRight: 8 }}>
+                <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
+                <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
+              </svg>
+              <span className="brand-text">3X-UI Antigravity</span>
+            </div>
+            <div className="login-header-right">
               <Button
+                id="login-theme-cycle"
                 shape="circle"
                 size="large"
                 className="toolbar-btn"
-                aria-label={t('pages.settings.language')}
-                icon={<TranslationOutlined />}
+                aria-label={t('menu.theme')}
+                title={t('menu.theme')}
+                icon={themeIcon}
+                onClick={cycleTheme}
               />
-            </Popover>
+              <Popover
+                rootClassName={isDark ? 'dark' : 'light'}
+                placement="bottomRight"
+                trigger="click"
+                styles={{ content: { padding: 4 } }}
+                content={
+                  <Menu
+                    mode="vertical"
+                    selectable
+                    selectedKeys={[lang]}
+                    items={langMenuItems}
+                    onClick={({ key }) => onLangChange(key)}
+                    style={{ border: 'none', minWidth: 160 }}
+                  />
+                }
+              >
+                <Button
+                  shape="circle"
+                  size="large"
+                  className="toolbar-btn"
+                  aria-label={t('pages.settings.language')}
+                  icon={<TranslationOutlined />}
+                />
+              </Popover>
+            </div>
+          </div>
+
+          <div className="login-hero-container">
+            <h1 className="login-hero-title">
+              Experience liftoff with next-gen connection management
+            </h1>
+            <p className="login-hero-subtitle">
+              A clean, spacious, and high-performance panel powered by Xray-core.
+            </p>
           </div>
 
           <div className="login-wrapper">
@@ -287,14 +281,6 @@ export default function LoginPage() {
               </div>
             ) : (
               <div className="login-card">
-                <div className="brand">
-                  <span className="brand-name">3X-UI</span>
-                  <span className="brand-accent" aria-hidden="true" />
-                </div>
-                <h2 className="welcome">
-                  <b key={headlineIndex}>{headlineWords[headlineIndex]}</b>
-                </h2>
-
                 <Form
                   layout="vertical"
                   className="login-form"
@@ -307,7 +293,7 @@ export default function LoginPage() {
                     rules={[antdRule(LoginFormSchema.shape.username, t)]}
                   >
                     <Input
-                      prefix={<UserOutlined />}
+                      prefix={<UserOutlined style={{ color: '#3279F9' }} />}
                       autoComplete="username"
                       size="large"
                       placeholder={t('username')}
@@ -321,7 +307,7 @@ export default function LoginPage() {
                     rules={[antdRule(LoginFormSchema.shape.password, t)]}
                   >
                     <Input.Password
-                      prefix={<LockOutlined />}
+                      prefix={<LockOutlined style={{ color: '#3279F9' }} />}
                       autoComplete="current-password"
                       size="large"
                       placeholder={t('password')}
@@ -335,7 +321,7 @@ export default function LoginPage() {
                       rules={[antdRule(TwoFactorCodeSchema, t)]}
                     >
                       <Input
-                        prefix={<KeyOutlined />}
+                        prefix={<KeyOutlined style={{ color: '#3279F9' }} />}
                         autoComplete="one-time-code"
                         size="large"
                         placeholder={t('twoFactorCode')}
@@ -350,6 +336,7 @@ export default function LoginPage() {
                       loading={submitting}
                       size="large"
                       block
+                      className="login-submit-btn"
                     >
                       {t('login')}
                     </Button>

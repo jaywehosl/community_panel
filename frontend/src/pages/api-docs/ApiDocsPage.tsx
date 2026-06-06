@@ -4,7 +4,6 @@ import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 
 import { useTheme } from '@/hooks/useTheme';
-import AppSidebar from '@/layouts/AppSidebar';
 import './ApiDocsPage.css';
 
 const basePath = window.X_UI_BASE_PATH || '';
@@ -22,9 +21,7 @@ export default function ApiDocsPage() {
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
-      <Layout className={pageClass}>
-        <AppSidebar />
-
+      <div className={pageClass}>
         <Layout className="content-shell">
           <Layout.Content className="content-area">
             <div className="docs-wrapper">
@@ -37,7 +34,7 @@ export default function ApiDocsPage() {
             </div>
           </Layout.Content>
         </Layout>
-      </Layout>
+      </div>
     </ConfigProvider>
   );
 }

@@ -556,11 +556,7 @@ export default function InboundsPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       {modalContextHolder}
-      <Layout className={`inbounds-page${isDark ? ' is-dark' : ''}${isUltra ? ' is-ultra' : ''}`}>
-        <AppSidebar />
-
-        <Layout className="content-shell">
-          <Layout.Content id="content-layout" className="content-area">
+      <div className="section-content-wrapper inbounds-section-wrapper">
             <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
               {!fetched ? (
                 <div className="loading-spacer" />
@@ -624,9 +620,6 @@ export default function InboundsPage() {
                 </Row>
               )}
             </Spin>
-          </Layout.Content>
-        </Layout>
-
         <LazyMount when={formOpen}>
           <InboundFormModal
             open={formOpen}
@@ -721,7 +714,7 @@ export default function InboundsPage() {
           />
         </LazyMount>
         <TelemetryGuideOverlay active={guideActive} onClose={() => setGuideActive(false)} page="inbounds" />
-      </Layout>
+      </div>
     </ConfigProvider>
   );
 }

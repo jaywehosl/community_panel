@@ -1,3 +1,55 @@
+.panel-app-wrapper {
+  --bg-page: #F8F9FC;
+  --bg-card: rgba(255, 255, 255, 0.82);
+  --bg-card-border: rgba(18, 19, 23, 0.05);
+  --backdrop-blur: 16px;
+  background-color: var(--bg-page);
+  background-image: radial-gradient(rgba(18, 19, 23, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-attachment: fixed;
+  min-height: 100vh;
+  position: relative;
+  transition: background 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-app-wrapper.is-dark {
+  --bg-page: #0b0c10;
+  --bg-card: rgba(21, 22, 29, 0.82);
+  --bg-card-border: rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-page);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.panel-app-wrapper.is-dark.is-ultra {
+  --bg-page: #000000;
+  --bg-card: rgba(12, 12, 14, 0.85);
+  --bg-card-border: rgba(255, 255, 255, 0.03);
+  background-color: var(--bg-page);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+.panel-main-content {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.antigravity-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+
 .index-page,
 .clients-page,
 .inbounds-page,
@@ -6,50 +58,15 @@
 .nodes-page,
 .groups-page,
 .api-docs-page {
-  --bg-page: #e6e8ec;
-  --bg-card: #ffffff;
   min-height: 100vh;
-  background: var(--bg-page);
-  transition: background 0.3s ease, background-image 0.3s ease;
-}
-
-.index-page.is-dark,
-.clients-page.is-dark,
-.inbounds-page.is-dark,
-.xray-page.is-dark,
-.settings-page.is-dark,
-.nodes-page.is-dark,
-.groups-page.is-dark,
-.api-docs-page.is-dark {
-  --bg-page: #08090c;
-  --bg-card: rgba(13, 17, 23, 0.45);
-  background: radial-gradient(circle at 50% 50%, #0d1117 0%, #040507 100%);
-  background-image: 
-    radial-gradient(circle at 50% 50%, #0d1117 0%, #040507 100%),
-    linear-gradient(rgba(0, 240, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 240, 255, 0.015) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
-  background-position: center;
-  background-attachment: fixed;
-}
-
-.index-page.is-dark.is-ultra,
-.clients-page.is-dark.is-ultra,
-.inbounds-page.is-dark.is-ultra,
-.xray-page.is-dark.is-ultra,
-.settings-page.is-dark.is-ultra,
-.nodes-page.is-dark.is-ultra,
-.groups-page.is-dark.is-ultra,
-.api-docs-page.is-dark.is-ultra {
-  --bg-page: #000000;
-  --bg-card: rgba(7, 7, 9, 0.55);
-  background: #000000;
-  background-image: 
-    linear-gradient(rgba(0, 240, 255, 0.008) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 240, 255, 0.008) 1px, transparent 1px);
-  background-size: 30px 30px, 30px 30px;
-  background-position: center;
-  background-attachment: fixed;
+  background-color: transparent !important;
+  background-image: none !important;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: background 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .index-page .ant-layout,
@@ -68,7 +85,7 @@
 .groups-page .ant-layout-content,
 .api-docs-page .ant-layout,
 .api-docs-page .ant-layout-content {
-  background: transparent;
+  background: transparent !important;
 }
 
 .index-page .content-shell,
@@ -79,7 +96,10 @@
 .nodes-page .content-shell,
 .groups-page .content-shell,
 .api-docs-page .content-shell {
-  background: transparent;
+  background: transparent !important;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .index-page .content-area,
@@ -88,39 +108,84 @@
 .xray-page .content-area,
 .settings-page .content-area,
 .nodes-page .content-area,
-.groups-page .content-area {
-  padding: 24px;
+.groups-page .content-area,
+.api-docs-page .content-area {
+  padding: 48px 24px;
+  max-width: 1380px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 @media (max-width: 768px) {
+  .index-page .content-area,
   .clients-page .content-area,
   .inbounds-page .content-area,
   .nodes-page .content-area,
-  .groups-page .content-area {
-    padding: 8px;
+  .groups-page .content-area,
+  .xray-page .content-area,
+  .settings-page .content-area {
+    padding: 24px 16px;
   }
 }
 
 .loading-spacer {
-  min-height: calc(100vh - 120px);
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ant Dropdown Custom styling */
+.ant-dropdown-menu {
+  border-radius: 16px !important;
+  padding: 6px !important;
+  border: 1px solid rgba(18, 19, 23, 0.05) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.dark .ant-dropdown-menu {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+.ant-dropdown-menu-item {
+  border-radius: 8px !important;
 }
 
 .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):not(.ant-dropdown-menu-item-danger):hover,
 .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):not(.ant-dropdown-menu-item-danger):hover .ant-dropdown-menu-title-content,
 .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):not(.ant-dropdown-menu-item-danger):hover > .anticon {
-  color: var(--ant-color-primary) !important;
+  color: #3279F9 !important;
 }
 
 .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):not(.ant-dropdown-menu-item-danger):hover {
-  background-color: color-mix(in srgb, var(--ant-color-primary) 14%, transparent) !important;
+  background-color: rgba(50, 121, 249, 0.08) !important;
 }
 
 .ant-dropdown-menu-item-divider {
-  background-color: var(--ant-color-border) !important;
+  background-color: rgba(18, 19, 23, 0.05) !important;
 }
 
 body.dark .ant-dropdown-menu-item-divider {
-  background-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Page titles */
+h1.ant-typography,
+.ant-typography h1,
+.page-header h1 {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 28px !important;
+  letter-spacing: -0.5px !important;
+  color: #121317 !important;
+  margin-bottom: 24px !important;
+}
+
+body.dark h1.ant-typography,
+body.dark .ant-typography h1,
+body.dark .page-header h1 {
+  color: #ffffff !important;
 }
 
 .settings-page .header-row,
@@ -128,6 +193,8 @@ body.dark .ant-dropdown-menu-item-divider {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
 }
 
 .settings-page .header-actions,

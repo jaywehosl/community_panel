@@ -5,7 +5,7 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 const outDir = path.resolve(__dirname, '../web/dist');
-const BACKEND_TARGET = 'http://localhost:2053';
+const BACKEND_TARGET = 'http://62.60.155.31:2053';
 
 function resolveDBPath() {
   const envFolder = process.env.XUI_DB_FOLDER;
@@ -269,7 +269,7 @@ export default defineConfig({
       '^/$': makeBackendProxy(BACKEND_TARGET),
       '^/[^/]+/$': makeBackendProxy(BACKEND_TARGET),
       '^/(?:[^/]+/)?ws$': {
-        target: 'ws://localhost:2053',
+        target: 'ws://62.60.155.31:2053',
         ws: true,
         changeOrigin: true,
         rewrite: rewriteToBackend,

@@ -52,7 +52,6 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { useClients } from '@/hooks/useClients';
 import { useDatepicker } from '@/hooks/useDatepicker';
 import type { ClientRecord, InboundOption } from '@/hooks/useClients';
-import AppSidebar from '@/layouts/AppSidebar';
 import { IntlUtil, SizeFormatter } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
 import { LazyMount } from '@/components/utility';
@@ -792,12 +791,8 @@ export default function ClientsPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       {modalContextHolder}
-      <Layout className={pageClass}>
-        <AppSidebar />
-
-        <Layout className="content-shell">
-          <Layout.Content id="content-layout" className="content-area">
-            <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
+      <div className="section-content-wrapper clients-section-wrapper">
+        <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
               {!fetched ? (
                 <div className="loading-spacer" />
               ) : fetchError ? (
@@ -1197,8 +1192,6 @@ export default function ClientsPage() {
                 </Row>
               )}
             </Spin>
-          </Layout.Content>
-        </Layout>
 
         <LazyMount when={formOpen}>
           <ClientFormModal
@@ -1325,7 +1318,7 @@ export default function ClientsPage() {
             groups={groupOptions}
           />
         </LazyMount>
-      </Layout>
+      </div>
     </ConfigProvider>
   );
 }
