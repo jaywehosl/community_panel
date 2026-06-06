@@ -1,197 +1,67 @@
-[English](/README.md) | [فارسی](/README.fa_IR.md) | [العربية](/README.ar_EG.md) | [中文](/README.zh_CN.md) | [Español](/README.es_ES.md) | [Русский](/README.ru_RU.md)
+# Ultra Uber Panel (3X-UI Antigravity Edition)
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./media/3x-ui-dark.png">
-    <img alt="3x-ui" src="./media/3x-ui-light.png">
-  </picture>
-</p>
+[English](/README.md) | [Русский](/README.ru_RU.md)
 
-<p align="center">
-  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/mhsanaei/3x-ui" alt="Release"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg" alt="Build"></a>
-  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg" alt="GO Version"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/mhsanaei/3x-ui/total.svg" alt="Downloads"></a>
-  <a href="https://www.gnu.org/licenses/gpl-3.0.en.html"><img src="https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true" alt="License"></a>
-  <a href="https://pkg.go.dev/github.com/mhsanaei/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/mhsanaei/3x-ui/v3.svg" alt="Go Reference"></a>
-  <a href="https://goreportcard.com/report/github.com/mhsanaei/3x-ui/v3"><img src="https://goreportcard.com/badge/github.com/mhsanaei/3x-ui/v3" alt="Go Report Card"></a>
-</p>
+An advanced, premium-styled web control panel for managing [Xray-core](https://github.com/XTLS/Xray-core) servers, redesigned with a high-end **Google Antigravity** visual theme, single-page dashboard layout, and localized diagnostics.
 
-**3X-UI** is an advanced, open-source web control panel for managing [Xray-core](https://github.com/XTLS/Xray-core) servers. It provides a clean, multi-language interface for deploying, configuring, and monitoring a wide range of proxy and VPN protocols — from a single VPS to multi-node deployments.
+This is a custom edition of the 3X-UI control panel. It removes page division in favor of a single continuous feed, introduces responsive glassmorphism styles, and integrates an organic particle gravity engine.
 
-Built as an enhanced fork of the original X-UI project, 3X-UI adds broader protocol support, improved stability, per-client traffic accounting, and many quality-of-life features.
+---
 
-> [!IMPORTANT]
-> This project is intended for personal use only. Please do not use it for illegal purposes or in a production environment.
+## Key Enhancements
 
-## Features
+* **Antigravity Particle Engine**: A global `<GravityVortexCanvas />` renders an organic particle swarm. Orbiting rings distort dynamically with waves and swirl cyclone-style around the user's cursor.
+* **Single-Page Dashboard (SPA)**: Telemetry, inbounds, clients, groups, nodes, and system status widgets are consolidated into a single vertical scrolling landing page.
+* **Premium Glassmorphic Styling**: Transparent overlays, harmonious color palettes, and `backdrop-filter: blur(16px)` allow the particle vortex to be viewed clearly behind content cards.
+* **Localization Fixes**: Fully translated server telemetry, dashboard statistics, and diagnostic sections in Russian and English.
+* **Local Dev & Automation Scripts**: Added local runner (`run.sh`) and build-and-deploy server script (`deploy.sh`).
 
-- **Multi-protocol inbounds** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel, and TUN.
-- **Modern transports & security** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade, and XHTTP, secured with TLS, XTLS, and REALITY.
-- **Fallbacks** — serve multiple protocols on a single port (e.g. VLESS and Trojan on 443) using Xray's fallback support.
-- **Per-client management** — traffic quotas, expiry dates, IP limits, live online status, and one-click share links, QR codes, and subscriptions.
-- **Traffic statistics** — per inbound, per client, and per outbound, with reset controls.
-- **Multi-node support** — manage and scale across multiple servers from a single panel.
-- **Outbound & routing** — WARP, NordVPN, custom routing rules, load balancers, and outbound proxy chaining.
-- **Built-in subscription server** with multiple output formats.
-- **Telegram bot** for remote monitoring and management.
-- **RESTful API** with in-panel Swagger documentation.
-- **Flexible storage** — SQLite (default) or PostgreSQL.
-- **13 UI languages** with dark and light themes.
-- **Fail2ban integration** for enforcing per-client IP limits.
-
-## Screenshots
-
-<details>
-<summary>Click to expand</summary>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/01-overview-dark.png">
-  <img alt="Overview" src="./media/01-overview-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/02-add-inbound-dark.png">
-  <img alt="Inbounds" src="./media/02-add-inbound-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/03-add-client-dark.png">
-  <img alt="Add client" src="./media/03-add-client-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/05-add-nodes-dark.png">
-  <img alt="Configs" src="./media/05-add-nodes-light.png">
-</picture>
-
-</details>
+---
 
 ## Quick Start
 
-### 1. Pre-built Release Installation (Standard)
+### 1. Precompiled Custom Release (Recommended)
+You can deploy the precompiled release directly on any Linux AMD64 VPS without installing Go or Node.js. It contains all custom styles, compiled binaries, startup scripts, and systemd definitions:
+
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+# Download the custom release archive
+wget https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/v3.2.8-antigravity/x-ui-linux-amd64.tar.gz
+
+# Extract the archive
+tar -zxvf x-ui-linux-amd64.tar.gz
+
+# Install and start the service
+cd x-ui
+sudo ./x-ui.sh install
 ```
 
-### 2. Build from Source & Run Locally (Developer Mode)
+### 2. Run Locally (Developer Mode)
 Prerequisites: Go 1.21+ and Node.js 18+.
+
 ```bash
 # Clone the repository
-git clone https://github.com/MHSanaei/3x-ui.git
-cd 3x-ui
+git clone https://github.com/jaywehosl/ultrasuperheckedupthing.git
+cd ultrasuperheckedupthing
 
-# Run the local build & execution script
+# Build assets and start local dev server
 chmod +x run.sh
 ./run.sh
 ```
-This script will build the React SPA frontend, compile the Go binary with the embedded assets, and start the local development server.
 
-### 3. Build & Deploy on Linux Server
-To compile the panel locally on the server and register it as a systemd service (with full support for SSL, domains, Fail2ban, and active services):
+### 3. Build & Deploy from Source on Server
+To build the assets, compile the Go binary, and register the systemd service on a Linux machine:
+
 ```bash
 sudo chmod +x deploy.sh
 sudo ./deploy.sh
 ```
-During installation, run `x-ui` to open the management menu, where you can configure SSL, add custom domains, reset credentials, and manage database profiles.
 
-For full documentation, please visit the [project Wiki](https://github.com/MHSanaei/3x-ui/wiki).
+---
 
-## Supported Platforms
+## Project Structure
 
-**Operating systems:** Ubuntu, Debian, Armbian, Fedora, CentOS, RHEL, AlmaLinux, Rocky Linux, Oracle Linux, Amazon Linux, Virtuozzo, Arch, Manjaro, Parch, openSUSE (Tumbleweed / Leap), Alpine, and Windows.
-
-**Architectures:** `amd64` · `386` · `arm64` (aarch64) · `armv7` · `armv6` · `armv5` · `s390x`.
-
-## Database Options
-
-3X-UI supports two backends, chosen during the install:
-
-- **SQLite** (default) — a single file at `/etc/x-ui/x-ui.db`. Zero setup, ideal for small and medium deployments.
-- **PostgreSQL** — recommended for high client counts or multi-node setups. The installer can install PostgreSQL locally for you, or accept a DSN to an existing server.
-
-At runtime the backend is selected via environment variables (the installer writes these to `/etc/default/x-ui` for you):
-
-```
-XUI_DB_TYPE=postgres
-XUI_DB_DSN=postgres://xui:password@127.0.0.1:5432/xui?sslmode=disable
-```
-
-### Migrating an existing SQLite install to PostgreSQL
-
-```bash
-x-ui migrate-db --dsn "postgres://xui:password@127.0.0.1:5432/xui?sslmode=disable"
-# then set XUI_DB_TYPE and XUI_DB_DSN in /etc/default/x-ui and restart:
-systemctl restart x-ui
-```
-
-The source SQLite file is left untouched; remove it manually once you have verified the new backend.
-
-### Docker
-
-The default `docker compose up -d` keeps using SQLite. To run with the bundled PostgreSQL service, uncomment the two `XUI_DB_*` env lines in `docker-compose.yml` and start with the profile:
-
-```bash
-docker compose --profile postgres up -d
-```
-
-The image bundles Fail2ban (enabled by default) to enforce per-client **IP limits**. Fail2ban bans offenders with `iptables`, which requires the `NET_ADMIN` capability. `docker-compose.yml` already grants it via `cap_add`; if you start the container with `docker run` instead, add the capabilities yourself, otherwise bans are logged but never applied:
-
-```bash
-docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
-```
-
-## Environment Variables
-
-| Variable | Description | Default |
-| --- | --- | --- |
-| `XUI_DB_TYPE` | Database backend: `sqlite` or `postgres` | `sqlite` |
-| `XUI_DB_DSN` | PostgreSQL connection string (when `XUI_DB_TYPE=postgres`) | — |
-| `XUI_DB_FOLDER` | Directory for the SQLite database file | `/etc/x-ui` |
-| `XUI_DB_MAX_OPEN_CONNS` | Maximum open connections (PostgreSQL pool) | — |
-| `XUI_DB_MAX_IDLE_CONNS` | Maximum idle connections (PostgreSQL pool) | — |
-| `XUI_ENABLE_FAIL2BAN` | Enable Fail2ban-based IP-limit enforcement | `true` |
-| `XUI_LOG_LEVEL` | Log verbosity (`debug`, `info`, `warning`, `error`) | `info` |
-| `XUI_DEBUG` | Enable debug mode | `false` |
-
-## Supported Languages
-
-The panel UI is available in 13 languages:
-
-English · فارسی · العربية · 中文（简体） · 中文（繁體） · Español · Русский · Українська · Türkçe · Tiếng Việt · 日本語 · Bahasa Indonesia · Português (Brasil)
-
-## Contributing
-
-Contributions are welcome. Please read the [Contributing Guide](/CONTRIBUTING.md) before opening an issue or pull request.
-
-## A Special Thanks to
-
-- [alireza0](https://github.com/alireza0/)
-
-## Acknowledgment
-
-- [Iran v2ray rules](https://github.com/chocolate4u/Iran-v2ray-rules) (License: **GPL-3.0**): _Enhanced v2ray/xray and v2ray/xray-clients routing rules with built-in Iranian domains and a focus on security and adblocking._
-- [Russia v2ray rules](https://github.com/runetfreedom/russia-v2ray-rules-dat) (License: **GPL-3.0**): _This repository contains automatically updated V2Ray routing rules based on data on blocked domains and addresses in Russia._
-
-## Community Tools
-
-Tools and integrations built by the community around 3x-ui.
-
-- [terraform-provider-3x-ui](https://github.com/batonogov/terraform-provider-threexui) (License: **MIT**): _Manage inbounds, clients, panel settings, and Xray configuration as code with Terraform / OpenTofu._
-
-## Support project
-
-**If this project is helpful to you, you may wish to give it a**:star2:
-
-<a href="https://www.buymeacoffee.com/MHSanaei" target="_blank">
-<img src="./media/default-yellow.png" alt="Buy Me A Coffee" style="height: 70px !important;width: 277px !important;" >
-</a>
-
-</br>
-<a href="https://nowpayments.io/donation/hsanaei" target="_blank" rel="noreferrer noopener">
-   <img src="./media/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
-</a>
-
-## Stargazers over Time
-
-[![Stargazers over time](https://starchart.cc/MHSanaei/3x-ui.svg?variant=adaptive)](https://starchart.cc/MHSanaei/3x-ui)
+* `/frontend`: React + TypeScript Single Page Application.
+* `/web`: Go web server, REST API, controllers, and translation dictionaries.
+* `/xray`: Go wrapper for interacting with the Xray-core daemon.
+* `/util`, `/logger`, `/sub`: Helper modules, logging, subscription engine, and utils.
+* `/install.sh`, `/update.sh`: Classic installer scripts.
