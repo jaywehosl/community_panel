@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Col, ConfigProvider, Layout, Modal, Result, Row, Spin, Statistic, message } from '@/components/ui';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -9,6 +8,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons';
 
+import { Button, Card, Dialog, Stat } from '@/components/ds';
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
@@ -16,17 +16,22 @@ import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import { useNodeMutations } from '@/api/queries/useNodeMutations';
 import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
-import { setMessageInstance } from '@/utils/messageBus';
-import { HttpUtil } from '@/utils';
+import { getMessage } from '@/utils/messageBus';
+import { serverApi } from '@/generated/client';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
+
+interface ConfirmState {
+  title: string;
+  content: string;
+  okText: string;
+  onOk: () => void | Promise<void>;
+}
 
 export default function NodesPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra } = useTheme();
   const { isMobile } = useMediaQuery();
-  const [modal, modalContextHolder] = Modal.useModal();
-  const [messageApi, messageContextHolder] = message.useMessage();
-  useEffect(() => { setMessageInstance(messageApi); }, [messageApi]);
+  const message = getMessage();
 
   const { nodes, loading, fetched, fetchError, refetch, totals } = useNodesQuery();
   const { create, update, remove, setEnable, testConnection, fetchFingerprint, probe, updatePanels } = useNodeMutations();
@@ -34,7 +39,7 @@ export default function NodesPage() {
   const { data: latestVersion = '' } = useQuery({
     queryKey: ['server', 'panelUpdateInfo'],
     queryFn: async () => {
-      const msg = await HttpUtil.get<PanelUpdateInfo>('/panel/api/server/getPanelUpdateInfo');
+      const msg = await serverApi.getPanelUpdateInfo<PanelUpdateInfo>(undefined, { silent: true });
       return msg?.obj?.latestVersion || '';
     },
     staleTime: 5 * 60 * 1000,
@@ -44,50 +49,42 @@ export default function NodesPage() {
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [formNode, setFormNode] = useState<NodeRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
-  const onAdd = useCallback(() => {
-    setFormMode('add');
-    setFormNode(null);
-    setFormOpen(true);
-  }, []);
+  function runConfirm() {
+    if (!confirm) return;
+    setConfirmBusy(true);
+    Promise.resolve(confirm.onOk()).finally(() => { setConfirmBusy(false); setConfirm(null); });
+  }
 
-  const onEdit = useCallback((node: NodeRecord) => {
-    setFormMode('edit');
-    setFormNode({ ...node });
-    setFormOpen(true);
-  }, []);
+  const onAdd = useCallback(() => { setFormMode('add'); setFormNode(null); setFormOpen(true); }, []);
+  const onEdit = useCallback((node: NodeRecord) => { setFormMode('edit'); setFormNode({ ...node }); setFormOpen(true); }, []);
 
   const onSave = useCallback(async (payload: Partial<NodeRecord>) => {
-    if (formMode === 'edit' && formNode?.id) {
-      return update(formNode.id, payload);
-    }
+    if (formMode === 'edit' && formNode?.id) return update(formNode.id, payload);
     return create(payload);
   }, [formMode, formNode, update, create]);
 
   const onDelete = useCallback((node: NodeRecord) => {
-    modal.confirm({
+    setConfirm({
       title: t('pages.nodes.deleteConfirmTitle', { name: node.name }),
       content: t('pages.nodes.deleteConfirmContent'),
       okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
       onOk: async () => {
         const msg = await remove(node.id);
-        if (msg?.success) messageApi.success(t('pages.nodes.toasts.deleted'));
+        if (msg?.success) message.success(t('pages.nodes.toasts.deleted'));
       },
     });
-  }, [modal, t, remove, messageApi]);
+  }, [t, remove, message]);
 
   const onProbe = useCallback(async (node: NodeRecord) => {
     const msg = await probe(node.id);
     if (msg?.success && msg.obj) {
-      if (msg.obj.status === 'online') {
-        messageApi.success(t('pages.nodes.connectionOk', { ms: msg.obj.latencyMs }));
-      } else {
-        messageApi.error(msg.obj.error || t('pages.nodes.toasts.probeFailed'));
-      }
+      if (msg.obj.status === 'online') message.success(t('pages.nodes.connectionOk', { ms: msg.obj.latencyMs }));
+      else message.error(msg.obj.error || t('pages.nodes.toasts.probeFailed'));
     }
-  }, [probe, t, messageApi]);
+  }, [probe, t, message]);
 
   const onToggleEnable = useCallback(async (node: NodeRecord, next: boolean) => {
     await setEnable(node.id, next);
@@ -95,140 +92,108 @@ export default function NodesPage() {
 
   const runUpdate = useCallback(async (ids: number[]) => {
     const msg = await updatePanels(ids);
-    if (!msg?.success) {
-      messageApi.error(msg?.msg || t('somethingWentWrong'));
-      return;
-    }
+    if (!msg?.success) { message.error(msg?.msg || t('somethingWentWrong')); return; }
     const results = msg.obj ?? [];
     const ok = results.filter((r) => r.ok).length;
     const failed = results.length - ok;
-    if (failed === 0) {
-      messageApi.success(t('pages.nodes.toasts.updateStarted'));
-    } else {
+    if (failed === 0) message.success(t('pages.nodes.toasts.updateStarted'));
+    else {
       const firstError = results.find((r) => !r.ok)?.error ?? '';
       const base = t('pages.nodes.toasts.updateResult', { ok, failed });
-      messageApi.warning(firstError ? `${base} — ${firstError}` : base);
+      message.warning(firstError ? `${base} — ${firstError}` : base);
     }
     setSelectedIds([]);
-  }, [updatePanels, messageApi, t]);
+  }, [updatePanels, message, t]);
 
   const onUpdateNode = useCallback((node: NodeRecord) => {
-    modal.confirm({
+    setConfirm({
       title: t('pages.nodes.updateConfirmTitle', { count: 1 }),
       content: t('pages.nodes.updateConfirmContent'),
       okText: t('update'),
-      cancelText: t('cancel'),
       onOk: () => runUpdate([node.id]),
     });
-  }, [modal, t, runUpdate]);
+  }, [t, runUpdate]);
 
   const onUpdateSelected = useCallback(() => {
     const eligible = nodes
       .filter((n) => selectedIds.includes(n.id) && n.enable && n.status === 'online')
       .map((n) => n.id);
-    if (eligible.length === 0) {
-      messageApi.warning(t('pages.nodes.toasts.updateNoneEligible'));
-      return;
-    }
-    modal.confirm({
+    if (eligible.length === 0) { message.warning(t('pages.nodes.toasts.updateNoneEligible')); return; }
+    setConfirm({
       title: t('pages.nodes.updateConfirmTitle', { count: eligible.length }),
       content: t('pages.nodes.updateConfirmContent'),
       okText: t('update'),
-      cancelText: t('cancel'),
       onOk: () => runUpdate(eligible),
     });
-  }, [modal, t, nodes, selectedIds, runUpdate, messageApi]);
+  }, [t, nodes, selectedIds, runUpdate, message]);
 
-  const pageClass = useMemo(() => {
-    const classes = ['nodes-page'];
-    if (isDark) classes.push('is-dark');
-    if (isUltra) classes.push('is-ultra');
-    return classes.join(' ');
-  }, [isDark, isUltra]);
+  const pageClass = useMemo(
+    () => ['nodes-page', isDark && 'is-dark', isUltra && 'is-ultra'].filter(Boolean).join(' '),
+    [isDark, isUltra],
+  );
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
-      {messageContextHolder}
-      {modalContextHolder}
-      <div className="section-content-wrapper nodes-section-wrapper">
-        <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
-              {!fetched ? (
-                <div className="loading-spacer" />
-              ) : fetchError ? (
-                <Result
-                  status="error"
-                  title={t('somethingWentWrong')}
-                  subTitle={fetchError}
-                  extra={<Button type="primary" loading={loading} onClick={() => refetch()}>{t('refresh')}</Button>}
-                />
-              ) : (
-                <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
-                  <Col span={24}>
-                    <Card size="small" hoverable className="summary-card">
-                      <Row gutter={[16, isMobile ? 16 : 12]}>
-                        <Col xs={12} sm={12} md={6}>
-                          <Statistic
-                            title={t('pages.nodes.totalNodes')}
-                            value={String(totals.total)}
-                            prefix={<CloudServerOutlined />}
-                          />
-                        </Col>
-                        <Col xs={12} sm={12} md={6}>
-                          <Statistic
-                            title={t('pages.nodes.onlineNodes')}
-                            value={String(totals.online)}
-                            prefix={<CheckCircleOutlined style={{ color: 'var(--ant-color-success)' }} />}
-                          />
-                        </Col>
-                        <Col xs={12} sm={12} md={6}>
-                          <Statistic
-                            title={t('pages.nodes.offlineNodes')}
-                            value={String(totals.offline)}
-                            prefix={<CloseCircleOutlined style={{ color: 'var(--ant-color-error)' }} />}
-                          />
-                        </Col>
-                        <Col xs={12} sm={12} md={6}>
-                          <Statistic
-                            title={t('pages.nodes.avgLatency')}
-                            value={totals.avgLatency > 0 ? `${totals.avgLatency} ms` : '-'}
-                            prefix={<ThunderboltOutlined />}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
+    <div className={`section-content-wrapper nodes-section-wrapper ${pageClass}`}>
+      {!fetched ? (
+        <div className="ds-table__empty">{t('loading')}</div>
+      ) : fetchError ? (
+        <Card>
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <h3>{t('somethingWentWrong')}</h3>
+            <p className="ds-muted">{fetchError}</p>
+            <Button variant="primary" loading={loading} onClick={() => refetch()}>{t('refresh')}</Button>
+          </div>
+        </Card>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Card>
+            <div className="ds-stats-grid">
+              <Stat title={t('pages.nodes.totalNodes')} value={totals.total} prefix={<CloudServerOutlined />} />
+              <Stat title={t('pages.nodes.onlineNodes')} value={totals.online} prefix={<CheckCircleOutlined style={{ color: 'var(--color-success)' }} />} />
+              <Stat title={t('pages.nodes.offlineNodes')} value={totals.offline} prefix={<CloseCircleOutlined style={{ color: 'var(--color-error)' }} />} />
+              <Stat title={t('pages.nodes.avgLatency')} value={totals.avgLatency > 0 ? `${totals.avgLatency} ms` : '-'} prefix={<ThunderboltOutlined />} />
+            </div>
+          </Card>
 
-                  <Col span={24}>
-                    <NodeList
-                      nodes={nodes}
-                      loading={loading}
-                      isMobile={isMobile}
-                      latestVersion={latestVersion}
-                      selectedIds={selectedIds}
-                      onSelectionChange={setSelectedIds}
-                      onAdd={onAdd}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                      onProbe={onProbe}
-                      onToggleEnable={onToggleEnable}
-                      onUpdateNode={onUpdateNode}
-                      onUpdateSelected={onUpdateSelected}
-                    />
-                  </Col>
-                </Row>
-              )}
-            </Spin>
+          <NodeList
+            nodes={nodes}
+            loading={loading}
+            isMobile={isMobile}
+            latestVersion={latestVersion}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            onAdd={onAdd}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onProbe={onProbe}
+            onToggleEnable={onToggleEnable}
+            onUpdateNode={onUpdateNode}
+            onUpdateSelected={onUpdateSelected}
+          />
+        </div>
+      )}
 
-        <NodeFormModal
-          open={formOpen}
-          mode={formMode}
-          node={formNode}
-          testConnection={testConnection}
-          fetchFingerprint={fetchFingerprint}
-          save={onSave}
-          onOpenChange={setFormOpen}
-        />
-      </div>
-    </ConfigProvider>
+      <Dialog
+        open={confirm !== null}
+        onOpenChange={(o) => !o && setConfirm(null)}
+        title={confirm?.title ?? ''}
+        okText={confirm?.okText ?? t('confirm')}
+        okDanger
+        confirmLoading={confirmBusy}
+        onOk={runConfirm}
+      >
+        <p style={{ margin: 0 }}>{confirm?.content}</p>
+      </Dialog>
+
+      <NodeFormModal
+        open={formOpen}
+        mode={formMode}
+        node={formNode}
+        testConnection={testConnection}
+        fetchFingerprint={fetchFingerprint}
+        save={onSave}
+        onOpenChange={setFormOpen}
+      />
+    </div>
   );
 }
