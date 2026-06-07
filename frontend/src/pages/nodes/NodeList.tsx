@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Switch, Table } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
 import {
   ClusterOutlined,
   CloudDownloadOutlined,
@@ -21,11 +19,14 @@ import {
 import {
   Button,
   Card,
+  DataTable,
   Dialog,
   DropdownMenu,
+  Switch,
   Tag,
   Tooltip,
   TooltipProvider,
+  type ColumnDef,
   type MenuEntry,
 } from '@/components/ds';
 import NodeHistoryPanel from './NodeHistoryPanel';
@@ -108,7 +109,6 @@ function useRelativeTime() {
 
 export default function NodeList({
   nodes,
-  loading = false,
   isMobile = false,
   latestVersion = '',
   selectedIds,
@@ -145,52 +145,54 @@ export default function NodeList({
     });
   }
 
-  const columns = useMemo<ColumnsType<NodeRow>>(() => [
+  const columns = useMemo<ColumnDef<NodeRow, unknown>[]>(() => [
     {
-      title: t('pages.nodes.actions'),
-      align: 'center',
-      width: 190,
-      render: (_value, record) => (
-        <HStack>
-          <Tooltip title={t('pages.nodes.probe')}>
-            <Button variant="text" size="sm" icon={<ThunderboltOutlined />} onClick={() => onProbe(record)} />
-          </Tooltip>
-          {isUpdateEligible(record) && (
-            <Tooltip title={t('pages.nodes.updatePanel')}>
-              <Button variant="text" size="sm" icon={<CloudDownloadOutlined />} onClick={() => onUpdateNode(record)} />
+      id: 'actions',
+      size: 190,
+      header: () => t('pages.nodes.actions'),
+      cell: ({ row }) => {
+        const record = row.original;
+        return (
+          <HStack>
+            <Tooltip title={t('pages.nodes.probe')}>
+              <Button variant="text" size="sm" icon={<ThunderboltOutlined />} onClick={() => onProbe(record)} />
             </Tooltip>
-          )}
-          <Tooltip title={t('edit')}>
-            <Button variant="text" size="sm" icon={<EditOutlined />} onClick={() => onEdit(record)} />
-          </Tooltip>
-          <Tooltip title={t('delete')}>
-            <Button variant="text" size="sm" danger icon={<DeleteOutlined />} onClick={() => onDelete(record)} />
-          </Tooltip>
-        </HStack>
+            {isUpdateEligible(record) && (
+              <Tooltip title={t('pages.nodes.updatePanel')}>
+                <Button variant="text" size="sm" icon={<CloudDownloadOutlined />} onClick={() => onUpdateNode(record)} />
+              </Tooltip>
+            )}
+            <Tooltip title={t('edit')}>
+              <Button variant="text" size="sm" icon={<EditOutlined />} onClick={() => onEdit(record)} />
+            </Tooltip>
+            <Tooltip title={t('delete')}>
+              <Button variant="text" size="sm" danger icon={<DeleteOutlined />} onClick={() => onDelete(record)} />
+            </Tooltip>
+          </HStack>
+        );
+      },
+    },
+    {
+      id: 'enable',
+      size: 80,
+      header: () => t('pages.nodes.enable'),
+      cell: ({ row }) => (
+        <Switch checked={!!row.original.enable} onChange={(v) => onToggleEnable(row.original, v)} />
       ),
     },
     {
-      title: t('pages.nodes.enable'),
-      dataIndex: 'enable',
-      align: 'center',
-      width: 80,
-      render: (_value, record) => (
-        <Switch checked={!!record.enable} size="small" onChange={(v) => onToggleEnable(record, v)} />
-      ),
-    },
-    {
-      title: t('pages.nodes.name'),
-      dataIndex: 'name',
-      ellipsis: true,
-      render: (_value, record) => (
+      id: 'name',
+      header: () => t('pages.nodes.name'),
+      cell: ({ row }) => (
         <div className="name-cell">
-          <span className="name">{record.name}</span>
-          {record.remark && <span className="remark">{record.remark}</span>}
+          <span className="name">{row.original.name}</span>
+          {row.original.remark && <span className="remark">{row.original.remark}</span>}
         </div>
       ),
     },
     {
-      title: (
+      id: 'url',
+      header: () => (
         <span className="address-header">
           {t('pages.nodes.address')}
           <Tooltip title={t('pages.index.toggleIpVisibility')}>
@@ -202,60 +204,43 @@ export default function NodeList({
           </Tooltip>
         </span>
       ),
-      dataIndex: 'url',
-      ellipsis: true,
-      render: (_value, record) => (
+      cell: ({ row }) => (
         <a
-          href={record.url}
+          href={row.original.url}
           target="_blank"
           rel="noopener noreferrer"
           className={showAddress ? 'address-visible' : 'address-hidden'}
         >
-          {record.url}
+          {row.original.url}
         </a>
       ),
     },
     {
-      title: t('pages.nodes.status'),
-      dataIndex: 'status',
-      align: 'center',
-      render: (_value, record) => (
-        <HStack gap={4}>
-          <StatusDot status={record.status} />
-          <StatusLabel status={record.status} />
-          {record.lastError && (
-            <Tooltip title={record.lastError}>
-              <ExclamationCircleOutlined style={{ color: 'var(--color-warning)' }} />
-            </Tooltip>
-          )}
-        </HStack>
-      ),
+      id: 'status',
+      header: () => t('pages.nodes.status'),
+      cell: ({ row }) => {
+        const record = row.original;
+        return (
+          <HStack gap={4}>
+            <StatusDot status={record.status} />
+            <StatusLabel status={record.status} />
+            {record.lastError && (
+              <Tooltip title={record.lastError}>
+                <ExclamationCircleOutlined style={{ color: 'var(--color-warning)' }} />
+              </Tooltip>
+            )}
+          </HStack>
+        );
+      },
     },
+    { id: 'cpu', size: 90, header: () => t('pages.nodes.cpu'), cell: ({ row }) => formatPct(row.original.cpuPct) },
+    { id: 'mem', size: 90, header: () => t('pages.nodes.mem'), cell: ({ row }) => formatPct(row.original.memPct) },
+    { id: 'xrayVersion', header: () => t('pages.nodes.xrayVersion'), cell: ({ row }) => row.original.xrayVersion || '-' },
     {
-      title: t('pages.nodes.cpu'),
-      dataIndex: 'cpuPct',
-      align: 'center',
-      width: 90,
-      render: (_value, record) => formatPct(record.cpuPct),
-    },
-    {
-      title: t('pages.nodes.mem'),
-      dataIndex: 'memPct',
-      align: 'center',
-      width: 90,
-      render: (_value, record) => formatPct(record.memPct),
-    },
-    {
-      title: t('pages.nodes.xrayVersion'),
-      dataIndex: 'xrayVersion',
-      align: 'center',
-      render: (_value, record) => record.xrayVersion || '-',
-    },
-    {
-      title: t('pages.nodes.panelVersion') || 'Panel version',
-      dataIndex: 'panelVersion',
-      align: 'center',
-      render: (_value, record) => {
+      id: 'panelVersion',
+      header: () => t('pages.nodes.panelVersion') || 'Panel version',
+      cell: ({ row }) => {
+        const record = row.original;
         const canUpdate = isUpdateEligible(record)
           && isPanelUpdateAvailable(latestVersion, record.panelVersion || '');
         return (
@@ -272,38 +257,33 @@ export default function NodeList({
         );
       },
     },
+    { id: 'uptime', header: () => t('pages.nodes.uptime'), cell: ({ row }) => formatUptime(row.original.uptimeSecs) },
     {
-      title: t('pages.nodes.uptime'),
-      dataIndex: 'uptimeSecs',
-      align: 'center',
-      render: (_value, record) => formatUptime(record.uptimeSecs),
+      id: 'clients',
+      size: 160,
+      header: () => t('clients'),
+      cell: ({ row }) => {
+        const record = row.original;
+        return (
+          <HStack gap={4}>
+            <Tag tone="success">{record.clientCount || 0}</Tag>
+            {record.onlineCount ? <Tag tone="primary">{record.onlineCount} {t('online')}</Tag> : null}
+            {record.depletedCount ? <Tag tone="danger">{record.depletedCount} {t('depleted')}</Tag> : null}
+          </HStack>
+        );
+      },
     },
     {
-      title: t('clients'),
-      align: 'center',
-      width: 160,
-      render: (_value, record) => (
-        <HStack gap={4}>
-          <Tag tone="success">{record.clientCount || 0}</Tag>
-          {record.onlineCount ? <Tag tone="primary">{record.onlineCount} {t('online')}</Tag> : null}
-          {record.depletedCount ? <Tag tone="danger">{record.depletedCount} {t('depleted')}</Tag> : null}
-        </HStack>
-      ),
+      id: 'latency',
+      size: 100,
+      header: () => t('pages.nodes.latency'),
+      cell: ({ row }) => (row.original.latencyMs && row.original.latencyMs > 0 ? `${row.original.latencyMs} ms` : '-'),
     },
     {
-      title: t('pages.nodes.latency'),
-      dataIndex: 'latencyMs',
-      align: 'center',
-      width: 100,
-      render: (_value, record) =>
-        record.latencyMs && record.latencyMs > 0 ? `${record.latencyMs} ms` : '-',
-    },
-    {
-      title: t('pages.nodes.lastHeartbeat'),
-      dataIndex: 'lastHeartbeat',
-      align: 'center',
-      width: 120,
-      render: (_value, record) => relativeTime(record.lastHeartbeat),
+      id: 'lastHeartbeat',
+      size: 120,
+      header: () => t('pages.nodes.lastHeartbeat'),
+      cell: ({ row }) => relativeTime(row.original.lastHeartbeat),
     },
   ], [t, showAddress, relativeTime, latestVersion, onToggleEnable, onProbe, onEdit, onDelete, onUpdateNode]);
 
@@ -351,7 +331,7 @@ export default function NodeList({
                         <Tooltip title={t('info')}>
                           <InfoCircleOutlined className="row-action-trigger" onClick={() => setStatsNode(record)} />
                         </Tooltip>
-                        <Switch checked={!!record.enable} size="small" onChange={(v) => onToggleEnable(record, v)} />
+                        <Switch checked={!!record.enable} onChange={(v) => onToggleEnable(record, v)} />
                         <DropdownMenu
                           items={mobileMenu(record)}
                           trigger={<MoreOutlined className="row-action-trigger" />}
@@ -450,30 +430,23 @@ export default function NodeList({
             </Dialog>
           </>
         ) : (
-          <Table<NodeRow>
-            dataSource={dataSource}
+          <DataTable<NodeRow>
+            data={dataSource}
             columns={columns}
-            pagination={false}
-            loading={loading}
-            scroll={{ x: 'max-content' }}
-            size="middle"
-            rowKey="id"
+            getRowId={(n) => String(n.id)}
+            sortable={false}
             rowSelection={dataSource.length > 1 ? {
-              selectedRowKeys: selectedIds,
-              onChange: (keys) => onSelectionChange(keys as number[]),
-              getCheckboxProps: (record) => ({ disabled: !isUpdateEligible(record) }),
+              selectedIds: selectedIds.map(String),
+              onChange: (ids) => onSelectionChange(ids.map(Number)),
+              isSelectable: (record) => isUpdateEligible(record),
             } : undefined}
-            locale={{
-              emptyText: (
-                <div className="card-empty">
-                  <ClusterOutlined style={{ fontSize: 32, marginBottom: 8 }} />
-                  <div>{t('noData')}</div>
-                </div>
-              ),
-            }}
-            expandable={{
-              expandedRowRender: (record) => <NodeHistoryPanel node={record} />,
-            }}
+            expandable={{ render: (record) => <NodeHistoryPanel node={record} /> }}
+            empty={
+              <>
+                <ClusterOutlined style={{ fontSize: 32, marginBottom: 8 }} />
+                <div>{t('noData')}</div>
+              </>
+            }
           />
         )}
       </Card>

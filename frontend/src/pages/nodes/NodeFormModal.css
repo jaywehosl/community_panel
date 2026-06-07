@@ -20,3 +20,17 @@
 .test-result {
   width: 100%;
 }
+
+/* DS form layout */
+.node-form { display: flex; flex-direction: column; gap: 16px; }
+.node-form-grid { display: grid; gap: 16px; }
+.node-form-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.node-form-grid.cols-scheme { grid-template-columns: 1fr 2fr 1fr; }
+.node-form-inline { display: flex; gap: 8px; align-items: center; }
+.node-form-inline .ds-input { flex: 1; }
+.node-form-hint { font-size: 12px; color: var(--text-3); margin-top: 4px; display: block; }
+
+@media (max-width: 640px) {
+  .node-form-grid.cols-2,
+  .node-form-grid.cols-scheme { grid-template-columns: 1fr; }
+}

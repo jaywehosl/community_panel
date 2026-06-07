@@ -1,24 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  Button,
-  Col,
-  Modal,
-  Row,
-  message,
-} from '@/components/ui';
-import {
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Switch,
-} from 'antd';
+
+import { Alert, Button, Dialog, Field, Input, Select, Switch } from '@/components/ds';
+import { getMessage } from '@/utils/messageBus';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import type { Msg } from '@/utils';
 import { NodeFormSchema, type NodeFormValues, type ProbeResult } from '@/schemas/node';
-import { antdRule } from '@/utils/zodForm';
 import './NodeFormModal.css';
 
 type Mode = 'add' | 'edit';
@@ -60,101 +47,91 @@ export default function NodeFormModal({
   onOpenChange,
 }: NodeFormModalProps) {
   const { t } = useTranslation();
-  const [form] = Form.useForm<NodeFormValues>();
-  const [messageApi, messageContextHolder] = message.useMessage();
+  const message = getMessage();
 
+  const [values, setValues] = useState<NodeFormValues>(defaultValues);
   const [submitting, setSubmitting] = useState(false);
   const [testing, setTesting] = useState(false);
   const [fetchingPin, setFetchingPin] = useState(false);
   const [testResult, setTestResult] = useState<ProbeResult | null>(null);
-  const scheme = Form.useWatch('scheme', form) ?? 'https';
-  const tlsVerifyMode = Form.useWatch('tlsVerifyMode', form) ?? 'verify';
+
+  function set<K extends keyof NodeFormValues>(key: K, value: NodeFormValues[K]) {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  }
 
   useEffect(() => {
     if (!open) return;
     const base = defaultValues();
     const next: NodeFormValues = mode === 'edit' && node
-      ? {
-        ...base,
-        ...(node as unknown as Partial<NodeFormValues>),
-        id: node.id,
-        scheme: (node.scheme as 'http' | 'https') || base.scheme,
-      }
+      ? { ...base, ...(node as unknown as Partial<NodeFormValues>), id: node.id, scheme: (node.scheme as 'http' | 'https') || base.scheme }
       : base;
     if (next.scheme === 'http') next.tlsVerifyMode = 'skip';
-    form.resetFields();
-    form.setFieldsValue(next);
+    setValues(next);
     setTestResult(null);
-  }, [open, mode, node, form]);
+  }, [open, mode, node]);
 
   const title = useMemo(
     () => (mode === 'edit' ? t('pages.nodes.editNode') : t('pages.nodes.addNode')),
     [mode, t],
   );
 
-  function buildPayload(values: NodeFormValues): Partial<NodeRecord> {
+  function buildPayload(v: NodeFormValues): Partial<NodeRecord> {
     return {
-      id: values.id || 0,
-      name: values.name.trim(),
-      remark: values.remark?.trim() || '',
-      scheme: values.scheme,
-      address: values.address.trim(),
-      port: values.port,
-      basePath: values.basePath.trim() || '/',
-      apiToken: values.apiToken.trim(),
-      enable: values.enable,
-      allowPrivateAddress: values.allowPrivateAddress,
-      tlsVerifyMode: values.tlsVerifyMode,
-      pinnedCertSha256: values.tlsVerifyMode === 'pin' ? values.pinnedCertSha256.trim() : '',
+      id: v.id || 0,
+      name: v.name.trim(),
+      remark: v.remark?.trim() || '',
+      scheme: v.scheme,
+      address: v.address.trim(),
+      port: v.port,
+      basePath: v.basePath.trim() || '/',
+      apiToken: v.apiToken.trim(),
+      enable: v.enable,
+      allowPrivateAddress: v.allowPrivateAddress,
+      tlsVerifyMode: v.tlsVerifyMode,
+      pinnedCertSha256: v.tlsVerifyMode === 'pin' ? v.pinnedCertSha256.trim() : '',
     };
   }
 
-  async function onTest() {
-    try {
-      await form.validateFields(['address', 'port']);
-    } catch {
-      return;
+  function requireAddressPort(): boolean {
+    if (!values.address.trim() || !values.port) {
+      message.error(t('pages.nodes.toasts.fillRequired'));
+      return false;
     }
+    return true;
+  }
+
+  async function onTest() {
+    if (!requireAddressPort()) return;
     setTesting(true);
     setTestResult(null);
     try {
-      const payload = buildPayload(form.getFieldsValue(true));
-      const msg = await testConnection(payload);
-      if (msg?.success && msg.obj) {
-        setTestResult(msg.obj);
-      } else {
-        setTestResult({ status: 'offline', error: msg?.msg || 'unknown error' });
-      }
+      const msg = await testConnection(buildPayload(values));
+      setTestResult(msg?.success && msg.obj ? msg.obj : { status: 'offline', error: msg?.msg || 'unknown error' });
     } finally {
       setTesting(false);
     }
   }
 
   async function onFetchPin() {
-    try {
-      await form.validateFields(['address', 'port']);
-    } catch {
-      return;
-    }
+    if (!requireAddressPort()) return;
     setFetchingPin(true);
     try {
-      const payload = buildPayload(form.getFieldsValue(true));
-      const msg = await fetchFingerprint(payload);
+      const msg = await fetchFingerprint(buildPayload(values));
       if (msg?.success && msg.obj) {
-        form.setFieldValue('pinnedCertSha256', msg.obj);
-        messageApi.success(t('pages.nodes.pinFetched'));
+        set('pinnedCertSha256', msg.obj);
+        message.success(t('pages.nodes.pinFetched'));
       } else {
-        messageApi.error(msg?.msg || t('pages.nodes.pinFetchFailed'));
+        message.error(msg?.msg || t('pages.nodes.pinFetchFailed'));
       }
     } finally {
       setFetchingPin(false);
     }
   }
 
-  async function onFinish(values: NodeFormValues) {
+  async function submit() {
     const result = NodeFormSchema.safeParse(values);
     if (!result.success) {
-      messageApi.error(t(result.error.issues[0]?.message ?? 'pages.nodes.toasts.fillRequired'));
+      message.error(t(result.error.issues[0]?.message ?? 'pages.nodes.toasts.fillRequired'));
       return;
     }
     setSubmitting(true);
@@ -168,189 +145,132 @@ export default function NodeFormModal({
       }
       setTestResult(probe);
       const msg = await save(payload);
-      if (msg?.success) {
-        onOpenChange(false);
-      }
+      if (msg?.success) onOpenChange(false);
     } finally {
       setSubmitting(false);
     }
   }
 
-  function close() {
-    if (!submitting) onOpenChange(false);
+  function onSchemeChange(value: string) {
+    set('scheme', value as 'http' | 'https');
+    if (value === 'http') set('tlsVerifyMode', 'skip');
   }
 
   return (
-    <>
-      {messageContextHolder}
-      <Modal
-        open={open}
-        title={title}
-        confirmLoading={submitting}
-        okText={t('save')}
-        cancelText={t('cancel')}
-        mask={{ closable: false }}
-        width="640px"
-        onOk={() => form.submit()}
-        onCancel={close}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={defaultValues()}
-          onFinish={onFinish}
-        >
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label={t('pages.nodes.name')}
-                name="name"
-                rules={[antdRule(NodeFormSchema.shape.name, t)]}
-              >
-                <Input placeholder={t('pages.nodes.namePlaceholder')} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label={t('pages.nodes.remark')} name="remark">
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => { if (!o && !submitting) onOpenChange(false); }}
+      title={title}
+      width={640}
+      okText={t('save')}
+      confirmLoading={submitting}
+      onOk={submit}
+    >
+      <div className="node-form">
+        <div className="node-form-grid cols-2">
+          <Field label={t('pages.nodes.name')}>
+            <Input value={values.name} onChange={(e) => set('name', e.target.value)} placeholder={t('pages.nodes.namePlaceholder')} />
+          </Field>
+          <Field label={t('pages.nodes.remark')}>
+            <Input value={values.remark} onChange={(e) => set('remark', e.target.value)} />
+          </Field>
+        </div>
 
-          <Row gutter={16}>
-            <Col xs={24} md={6}>
-              <Form.Item label={t('pages.nodes.scheme')} name="scheme">
-                <Select
-                  options={[
-                    { value: 'https', label: 'https' },
-                    { value: 'http', label: 'http' },
-                  ]}
-                  onChange={(value) => {
-                    if (value === 'http') form.setFieldValue('tlsVerifyMode', 'skip');
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label={t('pages.nodes.address')}
-                name="address"
-                rules={[antdRule(NodeFormSchema.shape.address, t)]}
-              >
-                <Input placeholder={t('pages.nodes.addressPlaceholder')} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item
-                label={t('pages.nodes.port')}
-                name="port"
-                rules={[antdRule(NodeFormSchema.shape.port, t)]}
-              >
-                <InputNumber min={1} max={65535} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item label={t('pages.nodes.basePath')} name="basePath">
-                <Input placeholder="/" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label={t('pages.nodes.enable')}
-                name="enable"
-                valuePropName="checked"
-              >
-                <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            label={t('pages.nodes.allowPrivateAddress')}
-            name="allowPrivateAddress"
-            valuePropName="checked"
-            extra={t('pages.nodes.allowPrivateAddressHint')}
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t('pages.nodes.tlsVerifyMode')}
-            name="tlsVerifyMode"
-            extra={t('pages.nodes.tlsVerifyModeHint')}
-          >
+        <div className="node-form-grid cols-scheme">
+          <Field label={t('pages.nodes.scheme')}>
             <Select
-              disabled={scheme === 'http'}
-              options={[
-                { value: 'verify', label: t('pages.nodes.tlsVerify') },
-                { value: 'pin', label: t('pages.nodes.tlsPin') },
-                { value: 'skip', label: t('pages.nodes.tlsSkip') },
-              ]}
+              value={values.scheme}
+              onChange={onSchemeChange}
+              options={[{ value: 'https', label: 'https' }, { value: 'http', label: 'http' }]}
             />
-          </Form.Item>
-
-          {tlsVerifyMode === 'skip' && (
-            <Alert
-              type="warning"
-              showIcon
-              style={{ marginBottom: 16 }}
-              title={t('pages.nodes.tlsSkipWarning')}
+          </Field>
+          <Field label={t('pages.nodes.address')}>
+            <Input value={values.address} onChange={(e) => set('address', e.target.value)} placeholder={t('pages.nodes.addressPlaceholder')} />
+          </Field>
+          <Field label={t('pages.nodes.port')}>
+            <Input
+              type="number"
+              min={1}
+              max={65535}
+              value={values.port}
+              onChange={(e) => set('port', Number(e.target.value))}
             />
-          )}
+          </Field>
+        </div>
 
-          {tlsVerifyMode === 'pin' && (
-            <Form.Item
-              label={t('pages.nodes.pinnedCert')}
-              name="pinnedCertSha256"
-              extra={t('pages.nodes.pinnedCertHint')}
-            >
-              <Input.Search
+        <div className="node-form-grid cols-2">
+          <Field label={t('pages.nodes.basePath')}>
+            <Input value={values.basePath} onChange={(e) => set('basePath', e.target.value)} placeholder="/" />
+          </Field>
+          <Field label={t('pages.nodes.enable')}>
+            <Switch checked={values.enable} onChange={(v) => set('enable', v)} />
+          </Field>
+        </div>
+
+        <Field label={t('pages.nodes.allowPrivateAddress')}>
+          <Switch checked={values.allowPrivateAddress} onChange={(v) => set('allowPrivateAddress', v)} />
+          <span className="node-form-hint">{t('pages.nodes.allowPrivateAddressHint')}</span>
+        </Field>
+
+        <Field label={t('pages.nodes.tlsVerifyMode')}>
+          <Select
+            value={values.tlsVerifyMode}
+            onChange={(v) => set('tlsVerifyMode', v as NodeFormValues['tlsVerifyMode'])}
+            disabled={values.scheme === 'http'}
+            options={[
+              { value: 'verify', label: t('pages.nodes.tlsVerify') },
+              { value: 'pin', label: t('pages.nodes.tlsPin') },
+              { value: 'skip', label: t('pages.nodes.tlsSkip') },
+            ]}
+          />
+          <span className="node-form-hint">{t('pages.nodes.tlsVerifyModeHint')}</span>
+        </Field>
+
+        {values.tlsVerifyMode === 'skip' && (
+          <Alert tone="warning" style={{ marginBottom: 16 }} title={t('pages.nodes.tlsSkipWarning')} />
+        )}
+
+        {values.tlsVerifyMode === 'pin' && (
+          <Field label={t('pages.nodes.pinnedCert')}>
+            <div className="node-form-inline">
+              <Input
+                value={values.pinnedCertSha256}
+                onChange={(e) => set('pinnedCertSha256', e.target.value)}
                 placeholder={t('pages.nodes.pinnedCertPlaceholder')}
-                enterButton={t('pages.nodes.fetchPin')}
-                loading={fetchingPin}
-                onSearch={onFetchPin}
               />
-            </Form.Item>
+              <Button loading={fetchingPin} onClick={onFetchPin}>{t('pages.nodes.fetchPin')}</Button>
+            </div>
+            <span className="node-form-hint">{t('pages.nodes.pinnedCertHint')}</span>
+          </Field>
+        )}
+
+        <Field label={t('pages.nodes.apiToken')}>
+          <Input
+            type="password"
+            value={values.apiToken}
+            onChange={(e) => set('apiToken', e.target.value)}
+            placeholder={t('pages.nodes.apiTokenPlaceholder')}
+          />
+          <span className="node-form-hint">{t('pages.nodes.apiTokenHint')}</span>
+        </Field>
+
+        <div className="test-row">
+          <Button loading={testing} onClick={onTest}>{t('pages.nodes.testConnection')}</Button>
+          {testResult && (
+            <div className="test-result">
+              {testResult.status === 'online' ? (
+                <Alert
+                  tone="success"
+                  title={t('pages.nodes.connectionOk', { ms: testResult.latencyMs })}
+                  description={testResult.xrayVersion ? `Xray ${testResult.xrayVersion}` : undefined}
+                />
+              ) : (
+                <Alert tone="error" title={t('pages.nodes.connectionFailed')} description={testResult.error} />
+              )}
+            </div>
           )}
-
-          <Form.Item
-            label={t('pages.nodes.apiToken')}
-            name="apiToken"
-            rules={[antdRule(NodeFormSchema.shape.apiToken, t)]}
-            extra={t('pages.nodes.apiTokenHint')}
-          >
-            <Input.Password placeholder={t('pages.nodes.apiTokenPlaceholder')} />
-          </Form.Item>
-
-          <div className="test-row">
-            <Button type="default" loading={testing} onClick={onTest}>
-              {t('pages.nodes.testConnection')}
-            </Button>
-            {testResult && (
-              <div className="test-result">
-                {testResult.status === 'online' ? (
-                  <Alert
-                    type="success"
-                    showIcon
-                    title={t('pages.nodes.connectionOk', { ms: testResult.latencyMs })}
-                    description={testResult.xrayVersion ? `Xray ${testResult.xrayVersion}` : undefined}
-                  />
-                ) : (
-                  <Alert
-                    type="error"
-                    showIcon
-                    title={t('pages.nodes.connectionFailed')}
-                    description={testResult.error}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        </Form>
-      </Modal>
-    </>
+        </div>
+      </div>
+    </Dialog>
   );
 }

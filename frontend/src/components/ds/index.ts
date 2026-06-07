@@ -27,4 +27,13 @@ export { Tooltip, TooltipProvider } from './Tooltip';
 export type { TooltipProps } from './Tooltip';
 
 export { DataTable } from './DataTable';
-export type { DataTableProps, ColumnDef } from './DataTable';
+export type { DataTableProps, DataTableRowSelection, DataTableExpandable, ColumnDef } from './DataTable';
+
+export { Switch } from './Switch';
+export type { SwitchProps } from './Switch';
+
+export { Select } from './Select';
+export type { SelectProps, SelectOption } from './Select';
+
+export { Alert } from './Alert';
+export type { AlertProps, AlertTone } from './Alert';
