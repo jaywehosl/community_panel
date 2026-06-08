@@ -234,8 +234,10 @@ Big clusters, roughly in dependency order:
    (Nord/Warp) were already DS before this phase. **Still open from this cluster:**
    `SubJsonFinalMaskForm` lives under `src/pages/settings/` and is part of the
    Settings phase (item 5) — it still uses the antd `FinalMaskForm` branch.
-4. **Clients leftovers / QR:** `ClientQrModal`, `ClientInfoModal` layering, any
-   remaining antd in `clients/*`.
+4. ~~**Clients leftovers / QR**~~ ✅ **DONE** (commit `34da83d`). Only
+   `ClientQrModal` had raw antd (Modal→DS Dialog, Collapse→`.ds-collapse`,
+   Spin→CustomUI shim); `ClientInfoModal` and the rest of `clients/*` were
+   already antd-free. QR still uses QrPanel's leaf antd `QRCode`.
 5. ~~**Settings**~~ ✅ **DONE** (commit `556c396`). Turned out the tab files
    (GeneralTab, SecurityTab, Telegram, Subscription*, SettingsPage) were already
    antd-free; the only raw-antd file was `SubJsonFinalMaskForm` (migrated to the
@@ -328,14 +330,14 @@ For each subsystem (a modal + its field tree):
 2. `cd frontend && npx tsc --noEmit` and `npx vitest run` to confirm the green
    baseline before changing anything.
 3. Pick the next subsystem from §5 (Outbounds + Inbound list/info/QR + Xray page
-   tabs + Settings are now done — recommended next: **Clients leftovers/QR** or
+   tabs + Settings + Clients leftovers/QR are now done — recommended next:
    **Index/dashboard modals**), apply §6 recipe.
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> Current branch tip: `556c396` (settings/FinalMaskForm) on `redesign/ds-foundation`.
+> Current branch tip: `34da83d` (clients QR) on `redesign/ds-foundation`.
 > Inbound modal + **Outbounds** + **Inbound list/info/QR** + **Xray page tabs** +
-> **Settings** = done; `FinalMaskForm` is context-only (no more antd dual-mode).
-> §5 items 4, 6–9 = open (next recommended: **Clients leftovers/QR** or
-> **Index/dashboard modals**). Suite green at 397/25 files.
+> **Settings** + **Clients leftovers/QR** = done; `FinalMaskForm` is context-only.
+> §5 items 6–9 = open (next recommended: **Index/dashboard modals**).
+> Suite green at 397/25 files.
