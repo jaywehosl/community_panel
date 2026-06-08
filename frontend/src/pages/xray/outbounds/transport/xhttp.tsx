@@ -1,355 +1,186 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input, InputNumber, Select, Switch, type FormInstance } from 'antd';
-
+import { Field, Input, Select, Switch } from '@/components/ds';
 import { HeaderMapEditor } from '@/components/form';
-import type { OutboundFormValues } from '@/schemas/forms/outbound-form';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 import { MODE_OPTIONS } from '../outbound-form-constants';
 
+const X = ['streamSettings', 'xhttpSettings'] as const;
+const XM = [...X, 'xmux'] as const;
+
+const PLACEMENT_OPTIONS = [
+  { value: '', label: 'Default (path)' },
+  { value: 'path', label: 'path' },
+  { value: 'header', label: 'header' },
+  { value: 'cookie', label: 'cookie' },
+  { value: 'query', label: 'query' },
+];
+
 interface XhttpFormProps {
-  form: FormInstance<OutboundFormValues>;
   onXmuxToggle: (checked: boolean) => void;
 }
 
-export default function XhttpForm({ form, onXmuxToggle }: XhttpFormProps) {
+export default function XhttpForm({ onXmuxToggle }: XhttpFormProps) {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
+
+  const mode = (ctl.get([...X, 'mode']) as string) ?? '';
+  const obfs = !!ctl.get([...X, 'xPaddingObfsMode']);
+  const sessionPlacement = (ctl.get([...X, 'sessionPlacement']) as string) ?? '';
+  const seqPlacement = (ctl.get([...X, 'seqPlacement']) as string) ?? '';
+  const uplinkDataPlacement = (ctl.get([...X, 'uplinkDataPlacement']) as string) ?? '';
+  const enableXmux = !!ctl.get([...X, 'enableXmux']);
+
   return (
     <>
-      <Form.Item
-        label={t('host')}
-        name={['streamSettings', 'xhttpSettings', 'host']}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        label={t('path')}
-        name={['streamSettings', 'xhttpSettings', 'path']}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.info.mode')}
-        name={['streamSettings', 'xhttpSettings', 'mode']}
-      >
-        <Select options={MODE_OPTIONS} />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.form.paddingBytes')}
-        name={['streamSettings', 'xhttpSettings', 'xPaddingBytes']}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.form.headers')}
-        name={['streamSettings', 'xhttpSettings', 'headers']}
-      >
-        <HeaderMapEditor mode="v1" />
-      </Form.Item>
+      <Field label={t('host')}>
+        <Input value={ctl.get([...X, 'host']) ?? ''} onChange={(e) => ctl.set([...X, 'host'], e.target.value)} />
+      </Field>
+      <Field label={t('path')}>
+        <Input value={ctl.get([...X, 'path']) ?? ''} onChange={(e) => ctl.set([...X, 'path'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.inbounds.info.mode')}>
+        <Select value={mode} onChange={(v) => ctl.set([...X, 'mode'], v)} options={MODE_OPTIONS} />
+      </Field>
+      <Field label={t('pages.inbounds.form.paddingBytes')}>
+        <Input value={ctl.get([...X, 'xPaddingBytes']) ?? ''} onChange={(e) => ctl.set([...X, 'xPaddingBytes'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.inbounds.form.headers')}>
+        <HeaderMapEditor mode="v1" value={ctl.get([...X, 'headers'])} onChange={(v) => ctl.set([...X, 'headers'], v)} />
+      </Field>
 
-      {/* Padding obfs sub-section: gated by a Switch.
-          When on, four extra knobs (key/header/placement/
-          method) tune how Xray injects random padding to
-          disguise the post body shape. */}
-      <Form.Item
-        label={t('pages.inbounds.form.paddingObfsMode')}
-        name={['streamSettings', 'xhttpSettings', 'xPaddingObfsMode']}
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
-      <Form.Item shouldUpdate noStyle>
-        {() => {
-          const obfs = !!form.getFieldValue([
-            'streamSettings', 'xhttpSettings', 'xPaddingObfsMode',
-          ]);
-          if (!obfs) return null;
-          return (
-            <>
-              <Form.Item
-                label={t('pages.inbounds.form.paddingKey')}
-                name={['streamSettings', 'xhttpSettings', 'xPaddingKey']}
-              >
-                <Input placeholder="x_padding" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.paddingHeader')}
-                name={['streamSettings', 'xhttpSettings', 'xPaddingHeader']}
-              >
-                <Input placeholder="X-Padding" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.paddingPlacement')}
-                name={['streamSettings', 'xhttpSettings', 'xPaddingPlacement']}
-              >
-                <Select
-                  options={[
-                    { value: '', label: 'Default (queryInHeader)' },
-                    { value: 'queryInHeader', label: 'queryInHeader' },
-                    { value: 'header', label: 'header' },
-                    { value: 'cookie', label: 'cookie' },
-                    { value: 'query', label: 'query' },
-                  ]}
-                />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.paddingMethod')}
-                name={['streamSettings', 'xhttpSettings', 'xPaddingMethod']}
-              >
-                <Select
-                  options={[
-                    { value: '', label: 'Default (repeat-x)' },
-                    { value: 'repeat-x', label: 'repeat-x' },
-                    { value: 'tokenish', label: 'tokenish' },
-                  ]}
-                />
-              </Form.Item>
-            </>
-          );
-        }}
-      </Form.Item>
+      <Field label={t('pages.inbounds.form.paddingObfsMode')}>
+        <Switch checked={obfs} onChange={(v) => ctl.set([...X, 'xPaddingObfsMode'], v)} />
+      </Field>
+      {obfs && (
+        <>
+          <Field label={t('pages.inbounds.form.paddingKey')}>
+            <Input placeholder="x_padding" value={ctl.get([...X, 'xPaddingKey']) ?? ''} onChange={(e) => ctl.set([...X, 'xPaddingKey'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.paddingHeader')}>
+            <Input placeholder="X-Padding" value={ctl.get([...X, 'xPaddingHeader']) ?? ''} onChange={(e) => ctl.set([...X, 'xPaddingHeader'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.paddingPlacement')}>
+            <Select
+              value={(ctl.get([...X, 'xPaddingPlacement']) as string) ?? ''}
+              onChange={(v) => ctl.set([...X, 'xPaddingPlacement'], v)}
+              options={[
+                { value: '', label: 'Default (queryInHeader)' },
+                { value: 'queryInHeader', label: 'queryInHeader' },
+                { value: 'header', label: 'header' },
+                { value: 'cookie', label: 'cookie' },
+                { value: 'query', label: 'query' },
+              ]}
+            />
+          </Field>
+          <Field label={t('pages.inbounds.form.paddingMethod')}>
+            <Select
+              value={(ctl.get([...X, 'xPaddingMethod']) as string) ?? ''}
+              onChange={(v) => ctl.set([...X, 'xPaddingMethod'], v)}
+              options={[
+                { value: '', label: 'Default (repeat-x)' },
+                { value: 'repeat-x', label: 'repeat-x' },
+                { value: 'tokenish', label: 'tokenish' },
+              ]}
+            />
+          </Field>
+        </>
+      )}
 
-      <Form.Item
-        noStyle
-        shouldUpdate={(prev, curr) =>
-          prev?.streamSettings?.xhttpSettings?.mode !==
-          curr?.streamSettings?.xhttpSettings?.mode
-        }
-      >
-        {() => {
-          const mode = form.getFieldValue([
-            'streamSettings', 'xhttpSettings', 'mode',
-          ]);
-          return (
-            <Form.Item
-              label={t('pages.inbounds.form.uplinkHttpMethod')}
-              name={['streamSettings', 'xhttpSettings', 'uplinkHTTPMethod']}
-            >
-              <Select
-                placeholder="Default (POST)"
-                options={[
-                  { value: '', label: 'Default (POST)' },
-                  { value: 'POST', label: 'POST' },
-                  { value: 'PUT', label: 'PUT' },
-                  { value: 'GET', label: 'GET (packet-up only)', disabled: mode !== 'packet-up' },
-                ]}
-              />
-            </Form.Item>
-          );
-        }}
-      </Form.Item>
-
-      {/* Session + sequence + uplinkData placements:
-          three orthogonal slots Xray uses to thread
-          request metadata through the transport
-          (path / header / cookie / query). Key field
-          only matters when placement is not 'path'. */}
-      <Form.Item
-        label={t('pages.inbounds.form.sessionPlacement')}
-        name={['streamSettings', 'xhttpSettings', 'sessionPlacement']}
-      >
+      <Field label={t('pages.inbounds.form.uplinkHttpMethod')}>
         <Select
-          placeholder="Default (path)"
+          value={(ctl.get([...X, 'uplinkHTTPMethod']) as string) ?? ''}
+          onChange={(v) => ctl.set([...X, 'uplinkHTTPMethod'], v)}
           options={[
-            { value: '', label: 'Default (path)' },
-            { value: 'path', label: 'path' },
-            { value: 'header', label: 'header' },
-            { value: 'cookie', label: 'cookie' },
-            { value: 'query', label: 'query' },
+            { value: '', label: 'Default (POST)' },
+            { value: 'POST', label: 'POST' },
+            { value: 'PUT', label: 'PUT' },
+            { value: 'GET', label: 'GET (packet-up only)', disabled: mode !== 'packet-up' },
           ]}
         />
-      </Form.Item>
-      <Form.Item shouldUpdate noStyle>
-        {() => {
-          const placement = form.getFieldValue([
-            'streamSettings', 'xhttpSettings', 'sessionPlacement',
-          ]);
-          if (!placement || placement === 'path') return null;
-          return (
-            <Form.Item
-              label={t('pages.inbounds.form.sessionKey')}
-              name={['streamSettings', 'xhttpSettings', 'sessionKey']}
-            >
-              <Input placeholder="x_session" />
-            </Form.Item>
-          );
-        }}
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.form.sequencePlacement')}
-        name={['streamSettings', 'xhttpSettings', 'seqPlacement']}
-      >
-        <Select
-          placeholder="Default (path)"
-          options={[
-            { value: '', label: 'Default (path)' },
-            { value: 'path', label: 'path' },
-            { value: 'header', label: 'header' },
-            { value: 'cookie', label: 'cookie' },
-            { value: 'query', label: 'query' },
-          ]}
-        />
-      </Form.Item>
-      <Form.Item shouldUpdate noStyle>
-        {() => {
-          const placement = form.getFieldValue([
-            'streamSettings', 'xhttpSettings', 'seqPlacement',
-          ]);
-          if (!placement || placement === 'path') return null;
-          return (
-            <Form.Item
-              label={t('pages.inbounds.form.sequenceKey')}
-              name={['streamSettings', 'xhttpSettings', 'seqKey']}
-            >
-              <Input placeholder="x_seq" />
-            </Form.Item>
-          );
-        }}
-      </Form.Item>
+      </Field>
 
-      {/* Mode-conditional sub-sections. */}
-      <Form.Item shouldUpdate noStyle>
-        {() => {
-          const mode = form.getFieldValue([
-            'streamSettings', 'xhttpSettings', 'mode',
-          ]);
-          if (mode !== 'packet-up') return null;
-          return (
-            <>
-              <Form.Item
-                label={t('pages.xray.outboundForm.minUploadInterval')}
-                name={['streamSettings', 'xhttpSettings', 'scMinPostsIntervalMs']}
-              >
-                <Input placeholder="30" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.xray.outboundForm.maxUploadSizeBytes')}
-                name={['streamSettings', 'xhttpSettings', 'scMaxEachPostBytes']}
-              >
-                <Input placeholder="1000000" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.uplinkDataPlacement')}
-                name={['streamSettings', 'xhttpSettings', 'uplinkDataPlacement']}
-              >
-                <Select
-                  options={[
-                    { value: '', label: 'Default (body)' },
-                    { value: 'body', label: 'body' },
-                    { value: 'header', label: 'header' },
-                    { value: 'cookie', label: 'cookie' },
-                    { value: 'query', label: 'query' },
-                  ]}
-                />
-              </Form.Item>
-              <Form.Item shouldUpdate noStyle>
-                {() => {
-                  const place = form.getFieldValue([
-                    'streamSettings', 'xhttpSettings', 'uplinkDataPlacement',
-                  ]);
-                  if (!place || place === 'body') return null;
-                  return (
-                    <>
-                      <Form.Item
-                        label={t('pages.inbounds.form.uplinkDataKey')}
-                        name={['streamSettings', 'xhttpSettings', 'uplinkDataKey']}
-                      >
-                        <Input placeholder="x_data" />
-                      </Form.Item>
-                      <Form.Item
-                        label={t('pages.xray.outboundForm.uplinkChunkSize')}
-                        name={['streamSettings', 'xhttpSettings', 'uplinkChunkSize']}
-                      >
-                        <InputNumber
-                          min={0}
-                          placeholder="0 (unlimited)"
-                          style={{ width: '100%' }}
-                        />
-                      </Form.Item>
-                    </>
-                  );
-                }}
-              </Form.Item>
-            </>
-          );
-        }}
-      </Form.Item>
-      <Form.Item shouldUpdate noStyle>
-        {() => {
-          const mode = form.getFieldValue([
-            'streamSettings', 'xhttpSettings', 'mode',
-          ]);
-          if (mode !== 'stream-up' && mode !== 'stream-one') return null;
-          return (
-            <Form.Item
-              label={t('pages.xray.outboundForm.noGrpcHeader')}
-              name={['streamSettings', 'xhttpSettings', 'noGRPCHeader']}
-              valuePropName="checked"
-            >
-              <Switch />
-            </Form.Item>
-          );
-        }}
-      </Form.Item>
+      <Field label={t('pages.inbounds.form.sessionPlacement')}>
+        <Select value={sessionPlacement} onChange={(v) => ctl.set([...X, 'sessionPlacement'], v)} options={PLACEMENT_OPTIONS} />
+      </Field>
+      {sessionPlacement && sessionPlacement !== 'path' && (
+        <Field label={t('pages.inbounds.form.sessionKey')}>
+          <Input placeholder="x_session" value={ctl.get([...X, 'sessionKey']) ?? ''} onChange={(e) => ctl.set([...X, 'sessionKey'], e.target.value)} />
+        </Field>
+      )}
+      <Field label={t('pages.inbounds.form.sequencePlacement')}>
+        <Select value={seqPlacement} onChange={(v) => ctl.set([...X, 'seqPlacement'], v)} options={PLACEMENT_OPTIONS} />
+      </Field>
+      {seqPlacement && seqPlacement !== 'path' && (
+        <Field label={t('pages.inbounds.form.sequenceKey')}>
+          <Input placeholder="x_seq" value={ctl.get([...X, 'seqKey']) ?? ''} onChange={(e) => ctl.set([...X, 'seqKey'], e.target.value)} />
+        </Field>
+      )}
 
-      {/* XMUX is the connection-multiplexing layer
-          xHTTP uses to fan out parallel requests over
-          a small pool of upstream connections. UI-only
-          toggle (enableXmux) hides the 6 nested knobs
-          when off. */}
-      <Form.Item
-        label="XMUX"
-        name={['streamSettings', 'xhttpSettings', 'enableXmux']}
-        valuePropName="checked"
-      >
-        <Switch onChange={onXmuxToggle} />
-      </Form.Item>
-      <Form.Item shouldUpdate noStyle>
-        {() => {
-          if (!form.getFieldValue([
-            'streamSettings', 'xhttpSettings', 'enableXmux',
-          ])) return null;
-          return (
+      {mode === 'packet-up' && (
+        <>
+          <Field label={t('pages.xray.outboundForm.minUploadInterval')}>
+            <Input placeholder="30" value={ctl.get([...X, 'scMinPostsIntervalMs']) ?? ''} onChange={(e) => ctl.set([...X, 'scMinPostsIntervalMs'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.xray.outboundForm.maxUploadSizeBytes')}>
+            <Input placeholder="1000000" value={ctl.get([...X, 'scMaxEachPostBytes']) ?? ''} onChange={(e) => ctl.set([...X, 'scMaxEachPostBytes'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.uplinkDataPlacement')}>
+            <Select
+              value={uplinkDataPlacement}
+              onChange={(v) => ctl.set([...X, 'uplinkDataPlacement'], v)}
+              options={[
+                { value: '', label: 'Default (body)' },
+                { value: 'body', label: 'body' },
+                { value: 'header', label: 'header' },
+                { value: 'cookie', label: 'cookie' },
+                { value: 'query', label: 'query' },
+              ]}
+            />
+          </Field>
+          {uplinkDataPlacement && uplinkDataPlacement !== 'body' && (
             <>
-              <Form.Item
-                label={t('pages.xray.outboundForm.maxConcurrency')}
-                name={['streamSettings', 'xhttpSettings', 'xmux', 'maxConcurrency']}
-              >
-                <Input placeholder="16-32" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.xray.outboundForm.maxConnections')}
-                name={['streamSettings', 'xhttpSettings', 'xmux', 'maxConnections']}
-              >
-                <Input placeholder="0" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.xray.outboundForm.maxReuseTimes')}
-                name={['streamSettings', 'xhttpSettings', 'xmux', 'cMaxReuseTimes']}
-              >
-                <Input />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.xray.outboundForm.maxRequestTimes')}
-                name={['streamSettings', 'xhttpSettings', 'xmux', 'hMaxRequestTimes']}
-              >
-                <Input placeholder="600-900" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.xray.outboundForm.maxReusableSecs')}
-                name={['streamSettings', 'xhttpSettings', 'xmux', 'hMaxReusableSecs']}
-              >
-                <Input placeholder="1800-3000" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.xray.outboundForm.keepAlivePeriod')}
-                name={['streamSettings', 'xhttpSettings', 'xmux', 'hKeepAlivePeriod']}
-              >
-                <InputNumber min={0} style={{ width: '100%' }} />
-              </Form.Item>
+              <Field label={t('pages.inbounds.form.uplinkDataKey')}>
+                <Input placeholder="x_data" value={ctl.get([...X, 'uplinkDataKey']) ?? ''} onChange={(e) => ctl.set([...X, 'uplinkDataKey'], e.target.value)} />
+              </Field>
+              <Field label={t('pages.xray.outboundForm.uplinkChunkSize')}>
+                <Input type="number" min={0} placeholder="0 (unlimited)" value={ctl.get([...X, 'uplinkChunkSize']) ?? ''} onChange={(e) => ctl.set([...X, 'uplinkChunkSize'], Number(e.target.value) || 0)} />
+              </Field>
             </>
-          );
-        }}
-      </Form.Item>
+          )}
+        </>
+      )}
+      {(mode === 'stream-up' || mode === 'stream-one') && (
+        <Field label={t('pages.xray.outboundForm.noGrpcHeader')}>
+          <Switch checked={!!ctl.get([...X, 'noGRPCHeader'])} onChange={(v) => ctl.set([...X, 'noGRPCHeader'], v)} />
+        </Field>
+      )}
+
+      <Field label="XMUX">
+        <Switch checked={enableXmux} onChange={(v) => { ctl.set([...X, 'enableXmux'], v); onXmuxToggle(v); }} />
+      </Field>
+      {enableXmux && (
+        <>
+          <Field label={t('pages.xray.outboundForm.maxConcurrency')}>
+            <Input placeholder="16-32" value={ctl.get([...XM, 'maxConcurrency']) ?? ''} onChange={(e) => ctl.set([...XM, 'maxConcurrency'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.xray.outboundForm.maxConnections')}>
+            <Input placeholder="0" value={ctl.get([...XM, 'maxConnections']) ?? ''} onChange={(e) => ctl.set([...XM, 'maxConnections'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.xray.outboundForm.maxReuseTimes')}>
+            <Input value={ctl.get([...XM, 'cMaxReuseTimes']) ?? ''} onChange={(e) => ctl.set([...XM, 'cMaxReuseTimes'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.xray.outboundForm.maxRequestTimes')}>
+            <Input placeholder="600-900" value={ctl.get([...XM, 'hMaxRequestTimes']) ?? ''} onChange={(e) => ctl.set([...XM, 'hMaxRequestTimes'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.xray.outboundForm.maxReusableSecs')}>
+            <Input placeholder="1800-3000" value={ctl.get([...XM, 'hMaxReusableSecs']) ?? ''} onChange={(e) => ctl.set([...XM, 'hMaxReusableSecs'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.xray.outboundForm.keepAlivePeriod')}>
+            <Input type="number" min={0} value={ctl.get([...XM, 'hKeepAlivePeriod']) ?? ''} onChange={(e) => ctl.set([...XM, 'hKeepAlivePeriod'], Number(e.target.value) || 0)} />
+          </Field>
+        </>
+      )}
     </>
   );
 }

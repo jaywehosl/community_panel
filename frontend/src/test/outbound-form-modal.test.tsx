@@ -1,12 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
 import OutboundFormModal from '@/pages/xray/outbounds/OutboundFormModal';
-import {
-  renderWithProviders,
-  fieldLabels,
-  listSelectOptions,
-  chooseSelectOption,
-} from './test-utils';
+import { OutboundProtocols } from '@/schemas/primitives';
+import { renderWithProviders, dsFieldLabels } from './test-utils';
 
 function renderModal(outbound: Record<string, unknown> | null = null) {
   return renderWithProviders(
@@ -23,17 +19,17 @@ function renderModal(outbound: Record<string, unknown> | null = null) {
 describe('OutboundFormModal', () => {
   it('renders add mode without crashing', () => {
     renderModal(null);
-    expect(document.querySelector('.ant-modal')).toBeTruthy();
-    expect(fieldLabels().length).toBeGreaterThan(0);
+    expect(document.querySelector('.ds-dialog__content')).toBeTruthy();
+    expect(dsFieldLabels().length).toBeGreaterThan(0);
   });
 
   it('field structure is stable for every protocol', () => {
-    renderModal(null);
-    const protocols = listSelectOptions('protocol');
+    const protocols = Object.values(OutboundProtocols);
     expect(protocols.length).toBeGreaterThan(3);
     for (const proto of protocols) {
-      chooseSelectOption('protocol', proto);
-      expect(fieldLabels()).toMatchSnapshot(proto);
+      const { unmount } = renderModal({ protocol: proto });
+      expect(dsFieldLabels()).toMatchSnapshot(proto);
+      unmount();
     }
   });
 });

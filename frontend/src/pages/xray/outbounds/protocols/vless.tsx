@@ -1,33 +1,21 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input } from 'antd';
-
-import {
-  VlessOutboundFormSettingsSchema,
-  VmessOutboundFormSettingsSchema,
-} from '@/schemas/forms/outbound-form';
-import { antdRule } from '@/utils/zodForm';
+import { Field, Input } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 export default function VlessFields() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item
-        label="ID"
-        name={['settings', 'id']}
-        rules={[antdRule(VmessOutboundFormSettingsSchema.shape.id, t)]}
-      >
-        <Input placeholder="UUID" />
-      </Form.Item>
-      <Form.Item
-        label={t('encryption')}
-        name={['settings', 'encryption']}
-        rules={[antdRule(VlessOutboundFormSettingsSchema.shape.encryption, t)]}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item label={t('pages.clients.reverseTag')} name={['settings', 'reverseTag']}>
-        <Input placeholder={t('pages.xray.outboundForm.optional')} />
-      </Form.Item>
+      <Field label="ID">
+        <Input placeholder="UUID" value={ctl.get(['settings', 'id']) ?? ''} onChange={(e) => ctl.set(['settings', 'id'], e.target.value)} />
+      </Field>
+      <Field label={t('encryption')}>
+        <Input value={ctl.get(['settings', 'encryption']) ?? ''} onChange={(e) => ctl.set(['settings', 'encryption'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.clients.reverseTag')}>
+        <Input placeholder={t('pages.xray.outboundForm.optional')} value={ctl.get(['settings', 'reverseTag']) ?? ''} onChange={(e) => ctl.set(['settings', 'reverseTag'], e.target.value)} />
+      </Field>
     </>
   );
 }

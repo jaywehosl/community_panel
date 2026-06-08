@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input } from 'antd';
+import { Field, Input } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 export default function LoopbackFields() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
-    <Form.Item label={t('pages.xray.outboundForm.inboundTag')} name={['settings', 'inboundTag']}>
-      <Input placeholder={t('pages.xray.outboundForm.inboundTagPlaceholder')} />
-    </Form.Item>
+    <Field label={t('pages.xray.outboundForm.inboundTag')}>
+      <Input placeholder={t('pages.xray.outboundForm.inboundTagPlaceholder')} value={ctl.get(['settings', 'inboundTag']) ?? ''} onChange={(e) => ctl.set(['settings', 'inboundTag'], e.target.value)} />
+    </Field>
   );
 }

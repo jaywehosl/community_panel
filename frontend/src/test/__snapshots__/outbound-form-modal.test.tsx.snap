@@ -5,12 +5,9 @@ exports[`OutboundFormModal > field structure is stable for every protocol > blac
   "Protocol",
   "Tag",
   "Send Through",
-  "Address",
-  "Port",
-  "ID",
-  "Encryption",
-  "Reverse tag",
-  "Mux",
+  "Response type",
+  "Sockopts",
+  "TCP Masks",
 ]
 `;
 
@@ -19,12 +16,13 @@ exports[`OutboundFormModal > field structure is stable for every protocol > dns 
   "Protocol",
   "Tag",
   "Send Through",
-  "Address",
-  "Port",
-  "ID",
-  "Encryption",
-  "Reverse tag",
-  "Mux",
+  "Rewrite network",
+  "Rewrite address",
+  "Rewrite port",
+  "User Level",
+  "Rules",
+  "Sockopts",
+  "TCP Masks",
 ]
 `;
 
@@ -33,11 +31,29 @@ exports[`OutboundFormModal > field structure is stable for every protocol > free
   "Protocol",
   "Tag",
   "Send Through",
+  "Strategy",
+  "Redirect",
+  "User Level",
+  "Proxy protocol",
+  "Fragment",
+  "Noises",
+  "Final Rules",
+  "Sockopts",
+  "TCP Masks",
+]
+`;
+
+exports[`OutboundFormModal > field structure is stable for every protocol > http 1`] = `
+[
+  "Protocol",
+  "Tag",
+  "Send Through",
   "Address",
   "Port",
-  "ID",
-  "Encryption",
-  "Reverse tag",
+  "Username",
+  "Password",
+  "Sockopts",
+  "TCP Masks",
   "Mux",
 ]
 `;
@@ -49,10 +65,32 @@ exports[`OutboundFormModal > field structure is stable for every protocol > hyst
   "Send Through",
   "Address",
   "Port",
-  "ID",
-  "Encryption",
-  "Reverse tag",
-  "Mux",
+  "Transmission",
+  "Version",
+  "Auth password",
+  "UDP idle timeout (s)",
+  "Masquerade",
+  "Security",
+  "SNI",
+  "uTLS",
+  "ALPN",
+  "ECH",
+  "Verify peer name",
+  "Pinned SHA256",
+  "Sockopts",
+  "UDP Masks",
+  "QUIC Params",
+]
+`;
+
+exports[`OutboundFormModal > field structure is stable for every protocol > loopback 1`] = `
+[
+  "Protocol",
+  "Tag",
+  "Send Through",
+  "Inbound tag",
+  "Sockopts",
+  "TCP Masks",
 ]
 `;
 
@@ -63,9 +101,15 @@ exports[`OutboundFormModal > field structure is stable for every protocol > shad
   "Send Through",
   "Address",
   "Port",
-  "ID",
+  "Password",
   "Encryption",
-  "Reverse tag",
+  "UDP over TCP",
+  "UoT version",
+  "Transmission",
+  "HTTP Obfuscation",
+  "Security",
+  "Sockopts",
+  "TCP Masks",
   "Mux",
 ]
 `;
@@ -77,9 +121,10 @@ exports[`OutboundFormModal > field structure is stable for every protocol > sock
   "Send Through",
   "Address",
   "Port",
-  "ID",
-  "Encryption",
-  "Reverse tag",
+  "Username",
+  "Password",
+  "Sockopts",
+  "TCP Masks",
   "Mux",
 ]
 `;
@@ -91,9 +136,12 @@ exports[`OutboundFormModal > field structure is stable for every protocol > troj
   "Send Through",
   "Address",
   "Port",
-  "ID",
-  "Encryption",
-  "Reverse tag",
+  "Password",
+  "Transmission",
+  "HTTP Obfuscation",
+  "Security",
+  "Sockopts",
+  "TCP Masks",
   "Mux",
 ]
 `;
@@ -108,6 +156,11 @@ exports[`OutboundFormModal > field structure is stable for every protocol > vles
   "ID",
   "Encryption",
   "Reverse tag",
+  "Transmission",
+  "HTTP Obfuscation",
+  "Security",
+  "Sockopts",
+  "TCP Masks",
   "Mux",
 ]
 `;
@@ -120,8 +173,12 @@ exports[`OutboundFormModal > field structure is stable for every protocol > vmes
   "Address",
   "Port",
   "ID",
-  "Encryption",
-  "Reverse tag",
+  "Security",
+  "Transmission",
+  "HTTP Obfuscation",
+  "Security",
+  "Sockopts",
+  "TCP Masks",
   "Mux",
 ]
 `;
@@ -132,10 +189,15 @@ exports[`OutboundFormModal > field structure is stable for every protocol > wire
   "Tag",
   "Send Through",
   "Address",
-  "Port",
-  "ID",
-  "Encryption",
-  "Reverse tag",
-  "Mux",
+  "Private Key",
+  "Public Key",
+  "Domain Strategy",
+  "MTU",
+  "Workers",
+  "No-kernel TUN",
+  "Reserved",
+  "Peers",
+  "Sockopts",
+  "TCP Masks",
 ]
 `;

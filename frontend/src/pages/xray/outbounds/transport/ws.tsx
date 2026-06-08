@@ -1,30 +1,27 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input, InputNumber } from 'antd';
-
+import { Field, Input } from '@/components/ds';
 import { HeaderMapEditor } from '@/components/form';
+import { useFormCtl } from '@/lib/form/FormContext';
+
+const WS = ['streamSettings', 'wsSettings'] as const;
 
 export default function WsForm() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item label={t('host')} name={['streamSettings', 'wsSettings', 'host']}>
-        <Input />
-      </Form.Item>
-      <Form.Item label={t('path')} name={['streamSettings', 'wsSettings', 'path']}>
-        <Input />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.form.heartbeatPeriod')}
-        name={['streamSettings', 'wsSettings', 'heartbeatPeriod']}
-      >
-        <InputNumber min={0} />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.form.headers')}
-        name={['streamSettings', 'wsSettings', 'headers']}
-      >
-        <HeaderMapEditor mode="v1" />
-      </Form.Item>
+      <Field label={t('host')}>
+        <Input value={ctl.get([...WS, 'host']) ?? ''} onChange={(e) => ctl.set([...WS, 'host'], e.target.value)} />
+      </Field>
+      <Field label={t('path')}>
+        <Input value={ctl.get([...WS, 'path']) ?? ''} onChange={(e) => ctl.set([...WS, 'path'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.inbounds.form.heartbeatPeriod')}>
+        <Input type="number" min={0} value={ctl.get([...WS, 'heartbeatPeriod']) ?? ''} onChange={(e) => ctl.set([...WS, 'heartbeatPeriod'], Number(e.target.value) || 0)} />
+      </Field>
+      <Field label={t('pages.inbounds.form.headers')}>
+        <HeaderMapEditor mode="v1" value={ctl.get([...WS, 'headers'])} onChange={(v) => ctl.set([...WS, 'headers'], v)} />
+      </Field>
     </>
   );
 }

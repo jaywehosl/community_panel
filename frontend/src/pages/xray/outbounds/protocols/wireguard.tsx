@@ -1,142 +1,93 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Form, Input, InputNumber, Select, Space, Switch, type FormInstance } from 'antd';
-import { DeleteOutlined, MinusOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Button, Field, Input, Select, Switch } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 import { Wireguard } from '@/utils';
-import { InputAddon } from '@/components/ui';
 import { WireguardDomainStrategy } from '@/schemas/primitives';
-import type { OutboundFormValues } from '@/schemas/forms/outbound-form';
 
-export default function WireguardFields({ form }: { form: FormInstance<OutboundFormValues> }) {
+interface Peer { publicKey?: string; psk?: string; allowedIPs?: string[]; endpoint?: string; keepAlive?: number }
+
+export default function WireguardFields() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
+
+  const peers = ctl.get<Peer[]>(['settings', 'peers']) ?? [];
+  const setPeers = (next: Peer[]) => ctl.set(['settings', 'peers'], next);
+  const patchPeer = (idx: number, p: Partial<Peer>) => setPeers(peers.map((peer, i) => (i === idx ? { ...peer, ...p } : peer)));
+
   return (
     <>
-      <Form.Item label={t('pages.inbounds.address')} name={['settings', 'address']}>
-        <Input placeholder="comma-separated, e.g. 10.0.0.1,fd00::1" />
-      </Form.Item>
-      <Form.Item label={t('pages.inbounds.privatekey')}>
-        <Space.Compact block>
-          <Form.Item name={['settings', 'secretKey']} noStyle>
-            <Input style={{ width: 'calc(100% - 32px)' }} />
-          </Form.Item>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              const pair = Wireguard.generateKeypair();
-              form.setFieldValue(['settings', 'secretKey'], pair.privateKey);
-              form.setFieldValue(['settings', 'pubKey'], pair.publicKey);
-            }}
-          />
-        </Space.Compact>
-      </Form.Item>
-      <Form.Item label={t('pages.inbounds.publicKey')} name={['settings', 'pubKey']}>
-        <Input disabled />
-      </Form.Item>
-      <Form.Item label={t('pages.xray.wireguard.domainStrategy')} name={['settings', 'domainStrategy']}>
+      <Field label={t('pages.inbounds.address')}>
+        <Input placeholder="comma-separated, e.g. 10.0.0.1,fd00::1" value={ctl.get(['settings', 'address']) ?? ''} onChange={(e) => ctl.set(['settings', 'address'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.inbounds.privatekey')}>
+        <div className="ifm-inline">
+          <Input value={ctl.get(['settings', 'secretKey']) ?? ''} onChange={(e) => ctl.set(['settings', 'secretKey'], e.target.value)} />
+          <Button variant="default" onClick={() => {
+            const pair = Wireguard.generateKeypair();
+            ctl.set(['settings', 'secretKey'], pair.privateKey);
+            ctl.set(['settings', 'pubKey'], pair.publicKey);
+          }}>↻</Button>
+        </div>
+      </Field>
+      <Field label={t('pages.inbounds.publicKey')}>
+        <Input disabled value={ctl.get(['settings', 'pubKey']) ?? ''} />
+      </Field>
+      <Field label={t('pages.xray.wireguard.domainStrategy')}>
         <Select
-          options={[
-            { value: '', label: `(${t('none')})` },
-            ...WireguardDomainStrategy.map((s) => ({ value: s, label: s })),
-          ]}
+          value={(ctl.get(['settings', 'domainStrategy']) as string) ?? ''}
+          onChange={(v) => ctl.set(['settings', 'domainStrategy'], v)}
+          options={[{ value: '', label: `(${t('none')})` }, ...WireguardDomainStrategy.map((s) => ({ value: s, label: s }))]}
         />
-      </Form.Item>
-      <Form.Item label="MTU" name={['settings', 'mtu']}>
-        <InputNumber min={0} />
-      </Form.Item>
-      <Form.Item label={t('pages.xray.outboundForm.workers')} name={['settings', 'workers']}>
-        <InputNumber min={0} />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.info.noKernelTun')}
-        name={['settings', 'noKernelTun']}
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
-      <Form.Item label={t('pages.xray.outboundForm.reserved')} name={['settings', 'reserved']}>
-        <Input placeholder="comma-separated bytes, e.g. 1,2,3" />
-      </Form.Item>
-      <Form.List name={['settings', 'peers']}>
-        {(fields, { add, remove }) => (
-          <>
-            <Form.Item label={t('pages.inbounds.form.peers')}>
-              <Button
-                size="small"
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() =>
-                  add({
-                    publicKey: '',
-                    psk: '',
-                    allowedIPs: ['0.0.0.0/0', '::/0'],
-                    endpoint: '',
-                    keepAlive: 0,
-                  })
-                }
-              />
-            </Form.Item>
-            {fields.map((field, index) => (
-              <div key={field.key}>
-                <Form.Item wrapperCol={{ md: { span: 14, offset: 8 } }}>
-                  <div className="item-heading">
-                    <span>{t('pages.inbounds.info.peerNumber', { n: index + 1 })}</span>
-                    {fields.length > 1 && (
-                      <DeleteOutlined
-                        className="danger-icon"
-                        onClick={() => remove(field.name)}
-                      />
-                    )}
-                  </div>
-                </Form.Item>
-                <Form.Item label={t('pages.xray.wireguard.endpoint')} name={[field.name, 'endpoint']}>
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  label={t('pages.inbounds.publicKey')}
-                  name={[field.name, 'publicKey']}
-                >
-                  <Input />
-                </Form.Item>
-                <Form.Item label="PSK" name={[field.name, 'psk']}>
-                  <Input />
-                </Form.Item>
-                <Form.Item label={t('pages.xray.wireguard.allowedIPs')}>
-                  <Form.List name={[field.name, 'allowedIPs']}>
-                    {(ipFields, { add: addIp, remove: removeIp }) => (
-                      <>
-                        {ipFields.map((ipField, ipIdx) => (
-                          <Space.Compact
-                            key={ipField.key}
-                            block
-                            style={{ marginBottom: 4 }}
-                          >
-                            <Form.Item noStyle name={ipField.name}>
-                              <Input />
-                            </Form.Item>
-                            {ipFields.length > 1 && (
-                              <InputAddon onClick={() => removeIp(ipIdx)}>
-                                <MinusOutlined />
-                              </InputAddon>
-                            )}
-                          </Space.Compact>
-                        ))}
-                        <Button
-                          size="small"
-                          icon={<PlusOutlined />}
-                          onClick={() => addIp('')}
-                        />
-                      </>
-                    )}
-                  </Form.List>
-                </Form.Item>
-                <Form.Item label={t('pages.inbounds.info.keepAlive')} name={[field.name, 'keepAlive']}>
-                  <InputNumber min={0} />
-                </Form.Item>
-              </div>
-            ))}
-          </>
-        )}
-      </Form.List>
+      </Field>
+      <Field label="MTU">
+        <Input type="number" min={0} value={ctl.get(['settings', 'mtu']) ?? ''} onChange={(e) => ctl.set(['settings', 'mtu'], Number(e.target.value) || 0)} />
+      </Field>
+      <Field label={t('pages.xray.outboundForm.workers')}>
+        <Input type="number" min={0} value={ctl.get(['settings', 'workers']) ?? ''} onChange={(e) => ctl.set(['settings', 'workers'], Number(e.target.value) || 0)} />
+      </Field>
+      <Field label={t('pages.inbounds.info.noKernelTun')}>
+        <Switch checked={!!ctl.get(['settings', 'noKernelTun'])} onChange={(v) => ctl.set(['settings', 'noKernelTun'], v)} />
+      </Field>
+      <Field label={t('pages.xray.outboundForm.reserved')}>
+        <Input placeholder="comma-separated bytes, e.g. 1,2,3" value={ctl.get(['settings', 'reserved']) ?? ''} onChange={(e) => ctl.set(['settings', 'reserved'], e.target.value)} />
+      </Field>
+
+      <Field label={t('pages.inbounds.form.peers')}>
+        <Button size="sm" variant="primary" onClick={() => setPeers([...peers, { publicKey: '', psk: '', allowedIPs: ['0.0.0.0/0', '::/0'], endpoint: '', keepAlive: 0 }])} style={{ alignSelf: 'flex-start' }}>+</Button>
+      </Field>
+      {peers.map((peer, index) => (
+        <div key={index}>
+          <Field label={t('pages.inbounds.info.peerNumber', { n: index + 1 })}>
+            {peers.length > 1 && <Button size="sm" danger onClick={() => setPeers(peers.filter((_, i) => i !== index))}>−</Button>}
+          </Field>
+          <Field label={t('pages.xray.wireguard.endpoint')}>
+            <Input value={peer.endpoint ?? ''} onChange={(e) => patchPeer(index, { endpoint: e.target.value })} />
+          </Field>
+          <Field label={t('pages.inbounds.publicKey')}>
+            <Input value={peer.publicKey ?? ''} onChange={(e) => patchPeer(index, { publicKey: e.target.value })} />
+          </Field>
+          <Field label="PSK">
+            <Input value={peer.psk ?? ''} onChange={(e) => patchPeer(index, { psk: e.target.value })} />
+          </Field>
+          <Field label={t('pages.xray.wireguard.allowedIPs')}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {(peer.allowedIPs ?? []).map((ip, ipIdx) => (
+                <div key={ipIdx} className="ifm-inline">
+                  <Input value={ip} onChange={(e) => patchPeer(index, { allowedIPs: (peer.allowedIPs ?? []).map((v, i) => (i === ipIdx ? e.target.value : v)) })} />
+                  {(peer.allowedIPs ?? []).length > 1 && (
+                    <Button size="sm" variant="default" onClick={() => patchPeer(index, { allowedIPs: (peer.allowedIPs ?? []).filter((_, i) => i !== ipIdx) })}>−</Button>
+                  )}
+                </div>
+              ))}
+              <Button size="sm" variant="default" onClick={() => patchPeer(index, { allowedIPs: [...(peer.allowedIPs ?? []), ''] })} style={{ alignSelf: 'flex-start' }}>+</Button>
+            </div>
+          </Field>
+          <Field label={t('pages.inbounds.info.keepAlive')}>
+            <Input type="number" min={0} value={peer.keepAlive ?? ''} onChange={(e) => patchPeer(index, { keepAlive: Number(e.target.value) || 0 })} />
+          </Field>
+        </div>
+      ))}
     </>
   );
 }

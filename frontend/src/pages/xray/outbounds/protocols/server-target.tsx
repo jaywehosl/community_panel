@@ -1,24 +1,18 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input, InputNumber } from 'antd';
+import { Field, Input } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 export default function ServerTarget() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item
-        label={t('pages.inbounds.address')}
-        name={['settings', 'address']}
-        rules={[{ required: true, message: t('pages.xray.outboundForm.addressRequired') }]}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.port')}
-        name={['settings', 'port']}
-        rules={[{ required: true, message: t('pages.xray.outboundForm.portRequired') }]}
-      >
-        <InputNumber min={1} max={65535} style={{ width: '100%' }} />
-      </Form.Item>
+      <Field label={t('pages.inbounds.address')}>
+        <Input value={ctl.get(['settings', 'address']) ?? ''} onChange={(e) => ctl.set(['settings', 'address'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.inbounds.port')}>
+        <Input type="number" min={1} max={65535} value={ctl.get(['settings', 'port']) ?? ''} onChange={(e) => ctl.set(['settings', 'port'], Number(e.target.value) || 0)} />
+      </Field>
     </>
   );
 }

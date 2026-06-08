@@ -1,18 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input } from 'antd';
-
-import { TrojanOutboundFormSettingsSchema } from '@/schemas/forms/outbound-form';
-import { antdRule } from '@/utils/zodForm';
+import { Field, Input } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 export default function TrojanFields() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
-    <Form.Item
-      label={t('password')}
-      name={['settings', 'password']}
-      rules={[antdRule(TrojanOutboundFormSettingsSchema.shape.password, t)]}
-    >
-      <Input />
-    </Form.Item>
+    <Field label={t('password')}>
+      <Input value={ctl.get(['settings', 'password']) ?? ''} onChange={(e) => ctl.set(['settings', 'password'], e.target.value)} />
+    </Field>
   );
 }

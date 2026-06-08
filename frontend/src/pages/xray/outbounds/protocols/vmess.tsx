@@ -1,29 +1,20 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input, Select } from 'antd';
-
-import { VmessOutboundFormSettingsSchema } from '@/schemas/forms/outbound-form';
-import { antdRule } from '@/utils/zodForm';
+import { Field, Input, Select } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 import { SECURITY_OPTIONS } from '../outbound-form-constants';
 
 export default function VmessFields() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item
-        label="ID"
-        name={['settings', 'id']}
-        rules={[antdRule(VmessOutboundFormSettingsSchema.shape.id, t)]}
-      >
-        <Input placeholder="UUID" />
-      </Form.Item>
-      <Form.Item
-        label={t('security')}
-        name={['settings', 'security']}
-        rules={[antdRule(VmessOutboundFormSettingsSchema.shape.security, t)]}
-      >
-        <Select options={SECURITY_OPTIONS} />
-      </Form.Item>
+      <Field label="ID">
+        <Input placeholder="UUID" value={ctl.get(['settings', 'id']) ?? ''} onChange={(e) => ctl.set(['settings', 'id'], e.target.value)} />
+      </Field>
+      <Field label={t('security')}>
+        <Select value={(ctl.get(['settings', 'security']) as string) ?? ''} onChange={(v) => ctl.set(['settings', 'security'], v)} options={SECURITY_OPTIONS} />
+      </Field>
     </>
   );
 }

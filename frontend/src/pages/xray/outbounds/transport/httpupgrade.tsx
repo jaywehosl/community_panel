@@ -1,30 +1,24 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input } from 'antd';
-
+import { Field, Input } from '@/components/ds';
 import { HeaderMapEditor } from '@/components/form';
+import { useFormCtl } from '@/lib/form/FormContext';
+
+const H = ['streamSettings', 'httpupgradeSettings'] as const;
 
 export default function HttpUpgradeForm() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item
-        label={t('host')}
-        name={['streamSettings', 'httpupgradeSettings', 'host']}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        label={t('path')}
-        name={['streamSettings', 'httpupgradeSettings', 'path']}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.form.headers')}
-        name={['streamSettings', 'httpupgradeSettings', 'headers']}
-      >
-        <HeaderMapEditor mode="v1" />
-      </Form.Item>
+      <Field label={t('host')}>
+        <Input value={ctl.get([...H, 'host']) ?? ''} onChange={(e) => ctl.set([...H, 'host'], e.target.value)} />
+      </Field>
+      <Field label={t('path')}>
+        <Input value={ctl.get([...H, 'path']) ?? ''} onChange={(e) => ctl.set([...H, 'path'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.inbounds.form.headers')}>
+        <HeaderMapEditor mode="v1" value={ctl.get([...H, 'headers'])} onChange={(v) => ctl.set([...H, 'headers'], v)} />
+      </Field>
     </>
   );
 }
