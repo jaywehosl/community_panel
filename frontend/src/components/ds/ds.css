@@ -380,6 +380,41 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
    "catching up" the blur on every tab switch). Instant swap = clean, no jitter. */
 .ds-tabs__content { outline: none; }
 
+/* ---- Pagination ----------------------------------------------------------- */
+.ds-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 4px 0;
+}
+.ds-pagination__total { margin-right: auto; color: var(--text-3); font-size: 13px; }
+.ds-pagination__pages { display: flex; align-items: center; gap: 4px; }
+.ds-pagination__size { width: 120px; }
+.ds-pager__btn {
+  min-width: 32px; height: 32px;
+  padding: 0 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.30);
+  -webkit-backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate));
+  color: var(--text-1);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out-quint), box-shadow var(--dur-fast) var(--ease-out-quint), background var(--dur-fast);
+}
+.ds-pager__btn:hover:not(:disabled) { border-color: rgba(var(--color-primary-rgb), 0.5); box-shadow: var(--hover-glow); }
+.ds-pager__btn.is-active {
+  background: rgba(var(--color-primary-rgb), 0.12);
+  border-color: rgba(var(--color-primary-rgb), 0.45);
+  color: var(--color-primary-strong);
+}
+.ds-pager__btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ds-pager__gap { padding: 0 4px; color: var(--text-3); }
+
 /* ---- native checkbox (table selection) ------------------------------------ */
 .ds-check {
   width: 16px; height: 16px;

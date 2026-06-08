@@ -9,6 +9,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
+import { Pagination, type PaginationProps } from './Pagination';
 
 export type { ColumnDef } from '@tanstack/react-table';
 
@@ -34,6 +35,9 @@ export interface DataTableProps<T> {
   sortable?: boolean;
   rowSelection?: DataTableRowSelection<T>;
   expandable?: DataTableExpandable<T>;
+  /** Server-mode pagination: pass current page state; rows are supplied by the
+   *  parent (DataTable does not slice). Omit for no pagination. */
+  pagination?: PaginationProps;
 }
 
 /**
@@ -48,6 +52,7 @@ export function DataTable<T>({
   sortable = true,
   rowSelection,
   expandable,
+  pagination,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -98,6 +103,7 @@ export function DataTable<T>({
   }
 
   return (
+    <>
     <div className="ds-table-wrap">
       <table className="ds-table">
         <thead>
@@ -194,5 +200,7 @@ export function DataTable<T>({
         </tbody>
       </table>
     </div>
+    {pagination && <Pagination {...pagination} />}
+    </>
   );
 }

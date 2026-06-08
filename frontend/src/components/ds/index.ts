@@ -29,6 +29,9 @@ export type { TooltipProps } from './Tooltip';
 export { DataTable } from './DataTable';
 export type { DataTableProps, DataTableRowSelection, DataTableExpandable, ColumnDef } from './DataTable';
 
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
+
 export { Switch } from './Switch';
 export type { SwitchProps } from './Switch';
 
