@@ -318,43 +318,66 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   padding: 40px; color: var(--text-3);
 }
 
-/* ---- Tabs (Radix) --------------------------------------------------------- */
+/* ---- Divider -------------------------------------------------------------- */
+.ds-divider {
+  height: 1px;
+  margin: 20px 0;
+  background: var(--hairline-soft);
+}
+.ds-divider--labelled {
+  height: auto;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ds-divider--labelled::before,
+.ds-divider--labelled::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--hairline-soft);
+}
+
+/* ---- Tabs (Radix) — pill selection like the header nav (no underline bar) -- */
 .ds-tabs__list {
   display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--hairline-soft);
+  gap: 6px;
+  flex-wrap: wrap;
   margin-bottom: 18px;
-  overflow-x: auto;
 }
 .ds-tabs__trigger {
-  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 8px 16px;
   border: none;
   background: transparent;
+  border-radius: 99px; /* pill, like .nav-menu-item */
   color: var(--text-3);
   font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  transition: color var(--dur-fast) var(--ease-out-quint), background var(--dur-fast);
+  transition: color var(--dur-fast) var(--ease-out-quint), background var(--dur-fast) var(--ease-out-quint);
 }
-.ds-tabs__trigger:hover { color: var(--text-1); background: var(--surface-hover); }
-.ds-tabs__trigger[data-state='active'] { color: var(--color-primary-strong); }
-.ds-tabs__trigger[data-state='active']::after {
-  content: '';
-  position: absolute;
-  left: 8px; right: 8px; bottom: -1px;
-  height: 3px;
-  border-radius: 99px;
-  background: var(--color-primary);
+.ds-tabs__trigger:hover {
+  background: rgba(var(--color-primary-rgb), 0.06);
+  color: var(--color-primary);
+}
+.ds-tabs__trigger[data-state='active'] {
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+  font-weight: 600;
 }
 .ds-tabs__trigger[disabled] { opacity: 0.45; cursor: not-allowed; }
-.ds-tabs__content:focus-visible { outline: none; }
+/* smooth, jitter-free swap: opacity only (no translate/slide) */
+.ds-tabs__content { outline: none; }
+.ds-tabs__content[data-state='active'] { animation: ds-fade-in var(--dur-mid) var(--ease-out-quint); }
 
 /* ---- native checkbox (table selection) ------------------------------------ */
 .ds-check {

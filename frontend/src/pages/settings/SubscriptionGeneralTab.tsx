@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { Divider, Input, InputNumber, Select, Space, Switch, Tabs } from 'antd';
 import { ClockCircleOutlined, InfoCircleOutlined, SafetyCertificateOutlined, SettingOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { Divider, Input, Select, Switch, Tabs, Tag, Textarea } from '@/components/ds';
 import type { AllSetting } from '@/models/setting';
 import { SettingListItem } from '@/components/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -36,8 +36,9 @@ export default function SubscriptionGeneralTab({ allSetting, updateSetting }: Su
     return parts.length === 0 ? '' : parts.join(remarkSeparator);
   }, [remarkModel, remarkSeparator]);
 
-  function setRemarkModel(parts: string[]) {
-    updateSetting({ remarkModel: remarkSeparator + parts.join('') });
+  function toggleModel(k: string) {
+    const next = remarkModel.includes(k) ? remarkModel.filter((x) => x !== k) : [...remarkModel, k];
+    updateSetting({ remarkModel: remarkSeparator + next.join('') });
   }
 
   function setRemarkSeparator(sep: string) {
@@ -68,8 +69,7 @@ export default function SubscriptionGeneralTab({ allSetting, updateSetting }: Su
               <Input value={allSetting.subDomain} onChange={(e) => updateSetting({ subDomain: e.target.value })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.subPort')} description={t('pages.settings.subPortDesc')}>
-              <InputNumber value={allSetting.subPort} min={1} max={65535} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ subPort: Number(v) || 0 })} />
+              <Input type="number" min={1} max={65535} value={allSetting.subPort} onChange={(e) => updateSetting({ subPort: Number(e.target.value) || 0 })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.subPath')} description={t('pages.settings.subPathDesc')}>
               <Input
@@ -80,8 +80,7 @@ export default function SubscriptionGeneralTab({ allSetting, updateSetting }: Su
               />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.subURI')} description={t('pages.settings.subURIDesc')}>
-              <Input value={allSetting.subURI} placeholder="(http|https)://domain[:port]/path/"
-                onChange={(e) => updateSetting({ subURI: e.target.value })} />
+              <Input value={allSetting.subURI} placeholder="(http|https)://domain[:port]/path/" onChange={(e) => updateSetting({ subURI: e.target.value })} />
             </SettingListItem>
           </>
         ),
@@ -107,36 +106,33 @@ export default function SubscriptionGeneralTab({ allSetting, updateSetting }: Su
               description={
                 <>
                   {t('pages.settings.sampleRemark')}:{' '}
-                  <span
-                    style={{
-                      fontFamily: 'monospace',
-                      padding: '1px 6px',
-                      borderRadius: 4,
-                      border: '1px solid var(--ant-color-border)',
-                      background: 'var(--ant-color-fill-tertiary)',
-                      whiteSpace: 'pre',
-                    }}
-                  >
+                  <span style={{ fontFamily: 'var(--font-mono, monospace)', padding: '1px 6px', borderRadius: 4, border: '1px solid var(--surface-border)', background: 'var(--surface-2)', whiteSpace: 'pre' }}>
                     {remarkSample ? `#${remarkSample}` : '—'}
                   </span>
                 </>
               }
             >
-              <Space.Compact style={{ width: '100%' }}>
-                <Select
-                  mode="multiple"
-                  value={remarkModel}
-                  onChange={setRemarkModel}
-                  style={{ paddingRight: '.5rem', minWidth: '80%', width: 'auto' }}
-                  options={Object.entries(REMARK_MODELS).map(([k, l]) => ({ value: k, label: l }))}
-                />
-                <Select
-                  value={remarkSeparator}
-                  onChange={setRemarkSeparator}
-                  style={{ width: '20%' }}
-                  options={REMARK_SEPARATORS.map((s) => ({ value: s, label: s === ' ' ? '␣' : s }))}
-                />
-              </Space.Compact>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', width: '100%' }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {Object.entries(REMARK_MODELS).map(([k, l]) => (
+                    <Tag
+                      key={k}
+                      tone={remarkModel.includes(k) ? 'primary' : 'neutral'}
+                      onClick={() => toggleModel(k)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {l}
+                    </Tag>
+                  ))}
+                </div>
+                <div style={{ width: 90 }}>
+                  <Select
+                    value={remarkSeparator}
+                    onChange={setRemarkSeparator}
+                    options={REMARK_SEPARATORS.map((s) => ({ value: s, label: s === ' ' ? '␣' : s }))}
+                  />
+                </div>
+              </div>
             </SettingListItem>
 
             <Divider>{t('pages.settings.subTitle')}</Divider>
@@ -145,16 +141,13 @@ export default function SubscriptionGeneralTab({ allSetting, updateSetting }: Su
               <Input value={allSetting.subTitle} onChange={(e) => updateSetting({ subTitle: e.target.value })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.subSupportUrl')} description={t('pages.settings.subSupportUrlDesc')}>
-              <Input value={allSetting.subSupportUrl} placeholder="https://example.com"
-                onChange={(e) => updateSetting({ subSupportUrl: e.target.value })} />
+              <Input value={allSetting.subSupportUrl} placeholder="https://example.com" onChange={(e) => updateSetting({ subSupportUrl: e.target.value })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.subProfileUrl')} description={t('pages.settings.subProfileUrlDesc')}>
-              <Input value={allSetting.subProfileUrl} placeholder="https://example.com"
-                onChange={(e) => updateSetting({ subProfileUrl: e.target.value })} />
+              <Input value={allSetting.subProfileUrl} placeholder="https://example.com" onChange={(e) => updateSetting({ subProfileUrl: e.target.value })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.subAnnounce')} description={t('pages.settings.subAnnounceDesc')}>
-              <Input.TextArea value={allSetting.subAnnounce}
-                onChange={(e) => updateSetting({ subAnnounce: e.target.value })} />
+              <Textarea value={allSetting.subAnnounce} onChange={(e) => updateSetting({ subAnnounce: e.target.value })} />
             </SettingListItem>
 
             <Divider>Happ</Divider>
@@ -163,8 +156,7 @@ export default function SubscriptionGeneralTab({ allSetting, updateSetting }: Su
               <Switch checked={allSetting.subEnableRouting} onChange={(v) => updateSetting({ subEnableRouting: v })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.subRoutingRules')} description={t('pages.settings.subRoutingRulesDesc')}>
-              <Input.TextArea value={allSetting.subRoutingRules} placeholder="happ://routing/add/..."
-                onChange={(e) => updateSetting({ subRoutingRules: e.target.value })} />
+              <Textarea value={allSetting.subRoutingRules} placeholder="happ://routing/add/..." onChange={(e) => updateSetting({ subRoutingRules: e.target.value })} />
             </SettingListItem>
 
             <Divider>Clash / Mihomo</Divider>
@@ -173,7 +165,7 @@ export default function SubscriptionGeneralTab({ allSetting, updateSetting }: Su
               <Switch checked={allSetting.subClashEnableRouting} onChange={(v) => updateSetting({ subClashEnableRouting: v })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.subClashRoutingRules')} description={t('pages.settings.subClashRoutingRulesDesc')}>
-              <Input.TextArea
+              <Textarea
                 value={allSetting.subClashRules}
                 rows={8}
                 placeholder={'GEOSITE,category-ir,DIRECT\nGEOIP,private,DIRECT'}
@@ -201,12 +193,9 @@ export default function SubscriptionGeneralTab({ allSetting, updateSetting }: Su
         key: '4',
         label: catTabLabel(<ClockCircleOutlined />, t('pages.settings.intervals'), isMobile),
         children: (
-          <>
-            <SettingListItem paddings="small" title={t('pages.settings.subUpdates')} description={t('pages.settings.subUpdatesDesc')}>
-              <InputNumber value={allSetting.subUpdates} min={1} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ subUpdates: Number(v) || 0 })} />
-            </SettingListItem>
-          </>
+          <SettingListItem paddings="small" title={t('pages.settings.subUpdates')} description={t('pages.settings.subUpdatesDesc')}>
+            <Input type="number" min={1} value={allSetting.subUpdates} onChange={(e) => updateSetting({ subUpdates: Number(e.target.value) || 0 })} />
+          </SettingListItem>
         ),
       },
     ]} />

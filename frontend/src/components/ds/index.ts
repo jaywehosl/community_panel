@@ -40,3 +40,6 @@ export type { AlertProps, AlertTone } from './Alert';
 
 export { Tabs } from './Tabs';
 export type { TabsProps, TabItem } from './Tabs';
+
+export { Divider } from './Divider';
+export type { DividerProps } from './Divider';
