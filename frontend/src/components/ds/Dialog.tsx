@@ -55,24 +55,28 @@ export function Dialog({
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
         <RDialog.Overlay className="ds-dialog__overlay" />
-        <RDialog.Content
-          className="ds-dialog__content"
-          style={width ? { width: typeof width === 'number' ? `${width}px` : width } : undefined}
-          aria-describedby={undefined}
-        >
-          <div className="ds-dialog__header">
-            <RDialog.Title className="ds-dialog__title">{title}</RDialog.Title>
-            {!hideClose && (
-              <RDialog.Close asChild>
-                <button className="ds-dialog__close" aria-label="Close">
-                  &times;
-                </button>
-              </RDialog.Close>
-            )}
-          </div>
-          <div className="ds-dialog__body">{children}</div>
-          {resolvedFooter != null && <div className="ds-dialog__footer">{resolvedFooter}</div>}
-        </RDialog.Content>
+        {/* fixed flex-centring viewport → integer position, no translate() layer
+            that settles and nudges text on open (see REDESIGN_TODO). */}
+        <div className="ds-dialog__viewport">
+          <RDialog.Content
+            className="ds-dialog__content"
+            style={width ? { width: typeof width === 'number' ? `${width}px` : width } : undefined}
+            aria-describedby={undefined}
+          >
+            <div className="ds-dialog__header">
+              <RDialog.Title className="ds-dialog__title">{title}</RDialog.Title>
+              {!hideClose && (
+                <RDialog.Close asChild>
+                  <button className="ds-dialog__close" aria-label="Close">
+                    &times;
+                  </button>
+                </RDialog.Close>
+              )}
+            </div>
+            <div className="ds-dialog__body">{children}</div>
+            {resolvedFooter != null && <div className="ds-dialog__footer">{resolvedFooter}</div>}
+          </RDialog.Content>
+        </div>
       </RDialog.Portal>
     </RDialog.Root>
   );
