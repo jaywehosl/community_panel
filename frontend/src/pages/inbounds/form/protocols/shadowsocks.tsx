@@ -21,7 +21,7 @@ export default function ShadowsocksFields({ isSSWith2022 }: { isSSWith2022: bool
       </Field>
       {isSSWith2022 && (
         <Field label={t('password')}>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className="ifm-inline">
             <Input value={ctl.get(['settings', 'password']) ?? ''} onChange={(e) => ctl.set(['settings', 'password'], e.target.value)} />
             <Button
               variant="default"

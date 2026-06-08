@@ -462,8 +462,9 @@ export default function InboundFormModal({
       </div>
 
       <div className="ifm-grid ifm-grid--2-1">
-        <Field label={t('pages.inbounds.address')} error={t('pages.inbounds.form.listenHelp')}>
+        <Field label={t('pages.inbounds.address')}>
           <Input placeholder={t('pages.inbounds.monitorDesc')} value={ctl.get(['listen']) ?? ''} onChange={(e) => ctl.set(['listen'], e.target.value)} />
+          <span className="ifm-hint">{t('pages.inbounds.form.listenHelp')}</span>
         </Field>
         <Field label={t('pages.inbounds.port')}>
           <Input type="number" min={isUdsListen ? 0 : 1} max={65535} value={ctl.get(['port']) ?? ''} onChange={(e) => ctl.set(['port'], Number(e.target.value) || 0)} />
@@ -709,7 +710,7 @@ export default function InboundFormModal({
   const sniffingTab = <SniffingTab sniffingEnabled={sniffingEnabled} />;
 
   const tabItems = [
-    { key: 'basic', label: t('pages.xray.basicTemplate'), children: basicTab },
+    { key: 'basic', label: t('pages.xray.basicTemplate'), children: <div className="ifm-tab">{basicTab}</div> },
     ...(([
       Protocols.VLESS,
       Protocols.SHADOWSOCKS,
@@ -719,15 +720,15 @@ export default function InboundFormModal({
       Protocols.TUN,
       Protocols.WIREGUARD,
     ] as string[]).includes(protocol) || isFallbackHost
-      ? [{ key: 'protocol', label: t('pages.inbounds.protocol'), children: protocolTab }]
+      ? [{ key: 'protocol', label: t('pages.inbounds.protocol'), children: <div className="ifm-tab">{protocolTab}</div> }]
       : []),
     ...(streamEnabled
       ? [
-        { key: 'stream', label: t('pages.inbounds.streamTab'), children: streamTab },
-        { key: 'security', label: t('pages.inbounds.securityTab'), children: securityTab },
+        { key: 'stream', label: t('pages.inbounds.streamTab'), children: <div className="ifm-tab">{streamTab}</div> },
+        { key: 'security', label: t('pages.inbounds.securityTab'), children: <div className="ifm-tab">{securityTab}</div> },
       ]
       : []),
-    { key: 'sniffing', label: t('pages.inbounds.sniffingTab'), children: sniffingTab },
+    { key: 'sniffing', label: t('pages.inbounds.sniffingTab'), children: <div className="ifm-tab">{sniffingTab}</div> },
     { key: 'advanced', label: t('pages.xray.advancedTemplate'), children: advancedTab },
   ];
 

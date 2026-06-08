@@ -53,7 +53,7 @@ export default function WireguardFields({ wgPubKey, regenInboundWg, regenWgPeerK
   return (
     <>
       <Field label={t('pages.xray.wireguard.secretKey')}>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="ifm-inline">
           <Input value={ctl.get(['settings', 'secretKey']) ?? ''} onChange={(e) => ctl.set(['settings', 'secretKey'], e.target.value)} />
           <Button variant="default" onClick={regenInboundWg}>↻</Button>
         </div>
@@ -99,7 +99,7 @@ export default function WireguardFields({ wgPubKey, regenInboundWg, regenWgPeerK
               </span>
             </Divider>
             <Field label={t('pages.xray.wireguard.secretKey')}>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div className="ifm-inline">
                 <Input value={peer.privateKey ?? ''} onChange={(e) => patchPeer(idx, { privateKey: e.target.value })} />
                 <Button variant="default" onClick={() => regenWgPeerKeypair(idx)}>↻</Button>
               </div>

@@ -325,7 +325,7 @@ function UdpMaskItem({ ctl, listPath, itemPath, displayIndex, isHysteria, networ
       </Field>
       {type === 'salamander' && (
         <Field label="Password">
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <Input placeholder="Obfuscation password" value={(ctl.get([...sp, 'password']) as string) ?? ''} onChange={(e) => ctl.set([...sp, 'password'], e.target.value)} />
             <Button variant="default" onClick={() => ctl.set([...sp, 'password'], RandomUtil.randomLowerAndNum(16))}>↻</Button>
           </div>
@@ -455,7 +455,7 @@ function ItemEditor({ ctl, itemPath, delayMode }: { ctl: Ctl; itemPath: FieldPat
       )}
       {type === 'base64' && (
         <Field label="Packet">
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <Input placeholder="binary data" value={(ctl.get([...itemPath, 'packet']) as string) ?? ''} onChange={(e) => ctl.set([...itemPath, 'packet'], e.target.value)} />
             <Button variant="default" onClick={() => ctl.set([...itemPath, 'packet'], RandomUtil.randomBase64())}>↻</Button>
           </div>

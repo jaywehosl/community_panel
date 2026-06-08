@@ -43,7 +43,7 @@ export default function RealityForm({
         />
       </Field>
       <Field label={t('pages.inbounds.form.target')}>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="ifm-inline">
           <Input value={ctl.get([...R, 'target']) ?? ''} onChange={(e) => ctl.set([...R, 'target'], e.target.value)} />
           <Button variant="default" onClick={randomizeRealityTarget}>↻</Button>
         </div>
