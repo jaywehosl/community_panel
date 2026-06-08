@@ -186,6 +186,28 @@ handoff). When you change a migrated component's DOM, regenerate snapshots with
 
 Net so far: the inbound add/edit modal is 100% antd-free and visually on-spec.
 
+- **Outbounds — fully migrated (commits `cddac16`, `b1533ba`):**
+  - **Form subsystem** (`cddac16`): `OutboundFormModal.tsx` rewritten to
+    `useFormState` + `FormProvider` + DS `Dialog/Tabs/Segmented`; protocol/
+    network/security cascades are imperative `ctl.set`; JSON tab keeps
+    link-import + `JsonEditor`; submit builds the wire payload via the existing
+    adapter. All `protocols/*` (Form.List → controlled arrays: freedom
+    noises/finalRules, wireguard peers/allowedIPs, dns rules), `transport/*`
+    (raw/ws/grpc/kcp/httpupgrade/xhttp/hysteria/mux/sockopt), `security/*`
+    (flat tls/reality) on `useFormCtl` + DS. **`FinalMaskForm` now called WITHOUT
+    `form=` → uses the controlled context branch.** Test rewritten to the DS
+    harness (`dsFieldLabels` per protocol); snapshots regenerated.
+  - **Display layer** (`b1533ba`): `OutboundsTab` (DS `DataTable`, flex toolbar,
+    `Segmented` testMode, DS `Dialog` confirm replacing `Modal.confirm` +
+    `Popconfirm`), `useOutboundColumns` (TanStack `ColumnDef` + DS
+    `DropdownMenu`/`Tag`/`Tooltip`/`Popover`), `OutboundCardList`. Only
+    `@ant-design/icons` imports remain (same convention as the DS itself).
+  - **`OutboundFormModal.css`** is self-contained (its own `.ifm-tab`/`.ifm-inline`/
+    `.ifm-hint` + `.ofm-json`) so it doesn't depend on the inbound CSS loading.
+  - ⚠️ **`FinalMaskForm`'s antd branch is STILL needed** — `SubJsonFinalMaskForm`
+    (settings) still passes `form={form}` (showAll mode). Don't remove the antd
+    branch until the Settings/SubJson phase is migrated.
+
 ---
 
 ## 5. What REMAINS (priority order)
@@ -193,15 +215,9 @@ Net so far: the inbound add/edit modal is 100% antd-free and visually on-spec.
 `grep -rl "from 'antd'\|@ant-design/icons" src` shows ~100 files still on antd.
 Big clusters, roughly in dependency order:
 
-1. **Outbounds (the next phase — large).** Entire tree under
-   `src/pages/xray/outbounds/`: `OutboundFormModal.tsx` (orchestrator),
-   `protocols/*` (vless/vmess/trojan/ss/socks/http/freedom/blackhole/dns/loopback/
-   wireguard/server-target), `transport/*` (raw/ws/grpc/kcp/httpupgrade/xhttp/
-   hysteria/mux/sockopt), `security/{tls,reality}.tsx`, `OutboundsTab`,
-   `OutboundCardList`, `useOutboundColumns`. These still use antd `Form` +
-   `FinalMaskForm` (antd branch) + their own `SockoptForm`/`TlsForm`/`RealityForm`
-   (distinct from the inbound ones — note the duplication). **After this,
-   `FinalMaskForm`'s antd adapter can be removed.**
+1. ~~**Outbounds**~~ ✅ **DONE** (commits `cddac16`, `b1533ba`) — see §4.
+   Note: `FinalMaskForm`'s antd adapter still can't be removed yet because
+   `SubJsonFinalMaskForm` (settings) still uses it.
 2. **Inbound list + info + QR:** `src/pages/inbounds/list/` (`InboundList`,
    `RowActions`, `useInboundColumns`), `inbounds/info/InboundInfoModal.tsx` (~839
    lines), `inbounds/qr/` (`QrCodeModal`, `QrPanel`).
@@ -300,10 +316,12 @@ For each subsystem (a modal + its field tree):
    `ds.css` and `NodeFormModal.tsx`/`InboundFormModal.tsx`.
 2. `cd frontend && npx tsc --noEmit` and `npx vitest run` to confirm the green
    baseline before changing anything.
-3. Pick the next subsystem from §5 (recommended: **Outbounds**), apply §6 recipe.
+3. Pick the next subsystem from §5 (Outbounds is now done — recommended next:
+   **Inbound list/info/QR** or **Xray page tabs**), apply §6 recipe.
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> Current branch tip at handoff: `5f6dfc3` (inbound modal polish) on
-> `redesign/ds-foundation`. Inbound subsystem = done; everything in §5 = open.
+> Current branch tip: `b1533ba` (outbounds display layer) on
+> `redesign/ds-foundation`. Inbound modal + **Outbounds** subsystems = done;
+> §5 items 2–9 = open. Suite green at 397/25 files.
