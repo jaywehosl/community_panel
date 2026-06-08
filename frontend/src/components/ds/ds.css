@@ -375,9 +375,10 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   font-weight: 600;
 }
 .ds-tabs__trigger[disabled] { opacity: 0.45; cursor: not-allowed; }
-/* smooth, jitter-free swap: opacity only (no translate/slide) */
+/* No opacity/transform animation on the content: it would form a compositing
+   group that disables backdrop-filter on the glass fields inside (they'd flicker
+   "catching up" the blur on every tab switch). Instant swap = clean, no jitter. */
 .ds-tabs__content { outline: none; }
-.ds-tabs__content[data-state='active'] { animation: ds-fade-in var(--dur-mid) var(--ease-out-quint); }
 
 /* ---- native checkbox (table selection) ------------------------------------ */
 .ds-check {
