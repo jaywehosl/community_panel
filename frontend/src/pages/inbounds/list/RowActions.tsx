@@ -1,5 +1,6 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Dropdown, type MenuProps } from 'antd';
+import { Button, DropdownMenu, type MenuEntry } from '@/components/ds';
 import {
   MoreOutlined,
   EditOutlined,
@@ -26,42 +27,53 @@ interface RowActionsMenuProps {
   isMobile?: boolean;
 }
 
-export function buildRowActionsMenu({ record, subEnable, t, isMobile, hasClients }: { record: DBInboundRecord; subEnable: boolean; t: (k: string) => string; isMobile?: boolean; hasClients?: boolean }): MenuProps['items'] {
-  const items: MenuProps['items'] = [];
-  if (isMobile) {
-    items.push({ key: 'edit', icon: <EditOutlined />, label: t('edit') });
-  }
-  if (showQrCodeMenu(record)) {
-    items.push({ key: 'qrcode', icon: <QrcodeOutlined />, label: t('qrCode') });
-  }
+/**
+ * Build the row-action menu as DS MenuEntry[]. Each entry's onSelect dispatches
+ * the corresponding RowAction through the supplied handler.
+ */
+export function buildRowActionsMenu({
+  record,
+  subEnable,
+  t,
+  isMobile,
+  hasClients,
+  onClick,
+}: {
+  record: DBInboundRecord;
+  subEnable: boolean;
+  t: (k: string) => string;
+  isMobile?: boolean;
+  hasClients?: boolean;
+  onClick: (key: RowAction) => void;
+}): MenuEntry[] {
+  const items: MenuEntry[] = [];
+  const add = (key: RowAction, icon: ReactNode, label: string, danger?: boolean) =>
+    items.push({ key, icon, label, danger, onSelect: () => onClick(key) });
+
+  if (isMobile) add('edit', <EditOutlined />, t('edit'));
+  if (showQrCodeMenu(record)) add('qrcode', <QrcodeOutlined />, t('qrCode'));
   if (isInboundMultiUser(record)) {
-    items.push({ key: 'export', icon: <ExportOutlined />, label: t('pages.inbounds.export') });
-    if (subEnable) {
-      items.push({
-        key: 'subs',
-        icon: <ExportOutlined />,
-        label: `${t('pages.inbounds.export')} — ${t('pages.settings.subSettings')}`,
-      });
-    }
+    add('export', <ExportOutlined />, t('pages.inbounds.export'));
+    if (subEnable) add('subs', <ExportOutlined />, `${t('pages.inbounds.export')} — ${t('pages.settings.subSettings')}`);
   } else {
-    items.push({ key: 'showInfo', icon: <InfoCircleOutlined />, label: t('pages.inbounds.inboundInfo') });
+    add('showInfo', <InfoCircleOutlined />, t('pages.inbounds.inboundInfo'));
   }
-  items.push({ key: 'clipboard', icon: <CopyOutlined />, label: t('pages.inbounds.exportInbound') });
-  items.push({ key: 'resetTraffic', icon: <RetweetOutlined />, label: t('pages.inbounds.resetTraffic') });
-  items.push({ key: 'clone', icon: <BlockOutlined />, label: t('pages.inbounds.clone') });
+  add('clipboard', <CopyOutlined />, t('pages.inbounds.exportInbound'));
+  add('resetTraffic', <RetweetOutlined />, t('pages.inbounds.resetTraffic'));
+  add('clone', <BlockOutlined />, t('pages.inbounds.clone'));
   if (isInboundMultiUser(record)) {
-    items.push({ key: 'attachExisting', icon: <UsergroupAddOutlined />, label: t('pages.inbounds.attachExistingClients') });
+    add('attachExisting', <UsergroupAddOutlined />, t('pages.inbounds.attachExistingClients'));
   }
   if (isInboundMultiUser(record) && hasClients) {
-    items.push({ key: 'attachClients', icon: <UsergroupAddOutlined />, label: t('pages.inbounds.attachClients') });
-    items.push({ key: 'detachClients', icon: <UsergroupDeleteOutlined />, label: t('pages.inbounds.detachClients') });
-    items.push({ key: 'addToGroup', icon: <TagsOutlined />, label: t('pages.inbounds.addClientsToGroup') });
+    add('attachClients', <UsergroupAddOutlined />, t('pages.inbounds.attachClients'));
+    add('detachClients', <UsergroupDeleteOutlined />, t('pages.inbounds.detachClients'));
+    add('addToGroup', <TagsOutlined />, t('pages.inbounds.addClientsToGroup'));
     items.push({ type: 'divider' });
-    items.push({ key: 'delAllClients', icon: <UsergroupDeleteOutlined />, danger: true, label: t('pages.inbounds.delAllClients') });
+    add('delAllClients', <UsergroupDeleteOutlined />, t('pages.inbounds.delAllClients'), true);
   } else {
     items.push({ type: 'divider' });
   }
-  items.push({ key: 'delete', icon: <DeleteOutlined />, danger: true, label: t('delete') });
+  add('delete', <DeleteOutlined />, t('delete'), true);
   return items;
 }
 
@@ -69,16 +81,11 @@ export function RowActionsCell({ record, subEnable, hasClients, onClick }: RowAc
   const { t } = useTranslation();
   return (
     <div className="action-buttons">
-      <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onClick('edit')} />
-      <Dropdown
-        trigger={['click']}
-        menu={{
-          items: buildRowActionsMenu({ record, subEnable, t, hasClients }),
-          onClick: ({ key }) => onClick(key as RowAction),
-        }}
-      >
-        <Button type="text" size="small" icon={<MoreOutlined />} />
-      </Dropdown>
+      <Button variant="text" size="sm" icon={<EditOutlined />} onClick={() => onClick('edit')} />
+      <DropdownMenu
+        items={buildRowActionsMenu({ record, subEnable, t, hasClients, onClick })}
+        trigger={<Button variant="text" size="sm" icon={<MoreOutlined />} />}
+      />
     </div>
   );
 }

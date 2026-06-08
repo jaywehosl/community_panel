@@ -1,19 +1,16 @@
-import { useCallback, useMemo, useState, type Key } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
   Card,
-  Space,
+  DataTable,
+  DropdownMenu,
+  Switch,
   Tag,
   Tooltip,
-} from '@/components/ui';
-import {
-  Checkbox,
-  Dropdown,
-  Switch,
-  Table,
-  type MenuProps,
-} from 'antd';
+  TooltipProvider,
+  type MenuEntry,
+} from '@/components/ds';
 import {
   PlusOutlined,
   MenuOutlined,
@@ -30,7 +27,7 @@ import { HttpUtil } from '@/utils';
 import { buildRowActionsMenu } from './RowActions';
 import { useInboundColumns } from './useInboundColumns';
 import InboundStatsModal from './InboundStatsModal';
-import type { DBInboundRecord, GeneralAction, InboundListProps, RowAction } from './types';
+import type { DBInboundRecord, InboundListProps } from './types';
 import './InboundList.css';
 
 export default function InboundList({
@@ -52,6 +49,7 @@ export default function InboundList({
   const { t } = useTranslation();
   const [statsRecord, setStatsRecord] = useState<DBInboundRecord | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const onSwitchEnable = useCallback(async (dbInbound: DBInboundRecord, next: boolean) => {
     const previous = dbInbound.enable;
@@ -103,52 +101,57 @@ export default function InboundList({
     onSwitchEnable,
   });
 
-  const paginationFor = (rows: DBInboundRecord[]) => {
-    const size = pageSize > 0 ? pageSize : rows.length || 1;
-    return { pageSize: size, showSizeChanger: false, hideOnSinglePage: true };
-  };
+  const effectivePageSize = pageSize > 0 ? pageSize : 0;
+  const paged = useMemo(() => {
+    if (effectivePageSize <= 0) return dbInbounds;
+    const start = (currentPage - 1) * effectivePageSize;
+    return dbInbounds.slice(start, start + effectivePageSize);
+  }, [dbInbounds, currentPage, effectivePageSize]);
 
-  const generalActionsMenu: MenuProps = {
-    items: [
-      { key: 'import', icon: <ImportOutlined />, label: t('pages.inbounds.importInbound') },
-      { key: 'export', icon: <ExportOutlined />, label: t('pages.inbounds.export') },
-      ...(subEnable
-        ? [{ key: 'subs', icon: <ExportOutlined />, label: `${t('pages.inbounds.export')} — ${t('pages.settings.subSettings')}` }]
-        : []),
-      { key: 'resetInbounds', icon: <ReloadOutlined />, label: t('pages.inbounds.resetAllTraffic') },
-    ],
-    onClick: ({ key }) => onGeneralAction(key as GeneralAction),
-  };
+  const pagination = effectivePageSize > 0 && dbInbounds.length > effectivePageSize
+    ? {
+      page: currentPage,
+      pageSize: effectivePageSize,
+      total: dbInbounds.length,
+      onChange: (p: number) => setCurrentPage(p),
+    }
+    : undefined;
+
+  const generalActionsMenu: MenuEntry[] = [
+    { key: 'import', icon: <ImportOutlined />, label: t('pages.inbounds.importInbound'), onSelect: () => onGeneralAction('import') },
+    { key: 'export', icon: <ExportOutlined />, label: t('pages.inbounds.export'), onSelect: () => onGeneralAction('export') },
+    ...(subEnable
+      ? [{ key: 'subs', icon: <ExportOutlined />, label: `${t('pages.inbounds.export')} — ${t('pages.settings.subSettings')}`, onSelect: () => onGeneralAction('subs') } as MenuEntry]
+      : []),
+    { key: 'resetInbounds', icon: <ReloadOutlined />, label: t('pages.inbounds.resetAllTraffic'), onSelect: () => onGeneralAction('resetInbounds') },
+  ];
 
   return (
-    <Card
-      hoverable
-      title={(
-        <Space>
-          <Button type="primary" onClick={onAddInbound} icon={<PlusOutlined />}>
+    <TooltipProvider>
+      <Card flush>
+        <div className="card-toolbar" style={{ padding: 12 }}>
+          <Button variant="primary" onClick={onAddInbound} icon={<PlusOutlined />}>
             {!isMobile && t('pages.inbounds.addInbound')}
           </Button>
-          <Dropdown trigger={['click']} menu={generalActionsMenu}>
-            <Button type="primary" icon={<MenuOutlined />}>
-              {!isMobile && t('pages.inbounds.generalActions')}
-            </Button>
-          </Dropdown>
+          <DropdownMenu
+            items={generalActionsMenu}
+            trigger={<Button variant="primary" icon={<MenuOutlined />}>{!isMobile && t('pages.inbounds.generalActions')}</Button>}
+          />
           {selectedRowKeys.length > 0 && (
             <>
-              <Tag color="blue" closable onClose={() => setSelectedRowKeys([])} style={{ marginInlineEnd: 0 }}>
+              <Tag tone="primary">
                 {t('pages.inbounds.selectedCount', { count: selectedRowKeys.length })}
+                <span style={{ cursor: 'pointer', marginLeft: 6, fontWeight: 700 }} onClick={() => setSelectedRowKeys([])}>×</span>
               </Tag>
-              <Button danger icon={<DeleteOutlined />} onClick={handleBulkDelete}>
+              <Button danger icon={<DeleteOutlined />} onClick={handleBulkDelete} style={{ marginInlineStart: 'auto' }}>
                 {!isMobile && t('delete')}
               </Button>
             </>
           )}
-        </Space>
-      )}
-    >
-      <Space orientation="vertical" style={{ width: '100%' }}>
+        </div>
+
         {isMobile ? (
-          <div className="inbound-cards">
+          <div className="inbound-cards" style={{ padding: '0 12px 12px' }}>
             {dbInbounds.length === 0 ? (
               <div className="card-empty">
                 <ImportOutlined style={{ fontSize: 28, opacity: 0.5 }} />
@@ -157,21 +160,24 @@ export default function InboundList({
             ) : (
               <>
                 <div className="card-bulk-bar">
-                  <Checkbox
-                    checked={allSelected}
-                    indeterminate={someSelected}
-                    onChange={(e) => selectAll(e.target.checked)}
-                  >
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="checkbox"
+                      className="ds-check"
+                      checked={allSelected}
+                      ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                      onChange={(e) => selectAll(e.target.checked)}
+                    />
                     {t('pages.inbounds.selectAll')}
-                  </Checkbox>
-                  {selectedRowKeys.length > 0 && (
-                    <span className="bulk-count">{selectedRowKeys.length}</span>
-                  )}
+                  </label>
+                  {selectedRowKeys.length > 0 && <span className="bulk-count">{selectedRowKeys.length}</span>}
                 </div>
                 {dbInbounds.map((record) => (
                   <div key={record.id} className={`inbound-card${selectedRowKeys.includes(record.id) ? ' is-selected' : ''}`}>
                     <div className="card-head">
-                      <Checkbox
+                      <input
+                        type="checkbox"
+                        className="ds-check"
                         checked={selectedRowKeys.includes(record.id)}
                         onChange={(e) => toggleSelect(record.id, e.target.checked)}
                       />
@@ -181,21 +187,19 @@ export default function InboundList({
                         <Tooltip title={t('pages.inbounds.inboundInfo')}>
                           <InfoCircleOutlined className="row-action-trigger" onClick={() => setStatsRecord(record)} />
                         </Tooltip>
-                        <Switch
-                          checked={record.enable}
-                          size="small"
-                          onChange={(next) => onSwitchEnable(record, next)}
+                        <Switch checked={record.enable} onChange={(next) => onSwitchEnable(record, next)} />
+                        <DropdownMenu
+                          align="end"
+                          items={buildRowActionsMenu({
+                            record,
+                            subEnable,
+                            t,
+                            isMobile: true,
+                            hasClients: (clientCount[record.id]?.clients || 0) > 0,
+                            onClick: (key) => onRowAction({ key, dbInbound: record }),
+                          })}
+                          trigger={<MoreOutlined className="row-action-trigger" />}
                         />
-                        <Dropdown
-                          trigger={['click']}
-                          placement="bottomRight"
-                          menu={{
-                            items: buildRowActionsMenu({ record, subEnable, t, isMobile: true, hasClients: (clientCount[record.id]?.clients || 0) > 0 }),
-                            onClick: ({ key }) => onRowAction({ key: key as RowAction, dbInbound: record }),
-                          }}
-                        >
-                          <MoreOutlined className="row-action-trigger" onClick={(e) => e.preventDefault()} />
-                        </Dropdown>
                       </div>
                     </div>
                   </div>
@@ -204,29 +208,27 @@ export default function InboundList({
             )}
           </div>
         ) : (
-          <Table
-            columns={columns}
-            dataSource={dbInbounds}
-            rowKey={(r) => r.id}
-            rowSelection={{
-              selectedRowKeys,
-              onChange: (keys: Key[]) => setSelectedRowKeys(keys as number[]),
-            }}
-            pagination={paginationFor(dbInbounds)}
-            scroll={{ x: 1000 }}
-            style={{ marginTop: 10 }}
-            size="small"
-            locale={{
-              emptyText: (
-                <div className="card-empty">
+          <div style={{ padding: '0 4px 4px' }}>
+            <DataTable<DBInboundRecord>
+              data={paged}
+              columns={columns}
+              getRowId={(r) => String(r.id)}
+              sortable={false}
+              rowSelection={{
+                selectedIds: selectedRowKeys.map(String),
+                onChange: (ids) => setSelectedRowKeys(ids.map(Number)),
+              }}
+              pagination={pagination}
+              empty={
+                <>
                   <ImportOutlined style={{ fontSize: 32, marginBottom: 8 }} />
                   <div>{t('noData')}</div>
-                </div>
-              ),
-            }}
-          />
+                </>
+              }
+            />
+          </div>
         )}
-      </Space>
+      </Card>
 
       <InboundStatsModal
         open={isMobile && !!statsRecord}
@@ -238,6 +240,6 @@ export default function InboundList({
         expireDiff={expireDiff}
         onClose={() => setStatsRecord(null)}
       />
-    </Card>
+    </TooltipProvider>
   );
 }
