@@ -24,6 +24,12 @@ Fixed bugs (all verified): modal-open ~2px jump ✅, switch track drift ✅, hor
 page shift ✅, switch thumb first-paint position (animate `left`, not transform) ✅,
 asymmetric/flickering open-close ✅.
 
+## Polish pass (after migration) — deferred
+- Client modals have layering/z-index glitches (e.g. a Tooltip rendering under the
+  QR Popover panel). Audit DS overlay z-indexes (dialog 1001 / popover 1100 /
+  tooltip 1200) + nested portals inside Dialog; fix stacking order. Reported by user.
+- General "more organic" spacing/composition pass across migrated pages.
+
 ## NEXT: continue page migration
 - ✅ nodes (full), ✅ groups (pilot), ✅ Panel Settings (full).
 - **clients** next, then **inbounds** / **xray** (the monsters).
