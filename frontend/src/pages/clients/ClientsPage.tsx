@@ -1,34 +1,6 @@
 import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Badge,
-  Button,
-  Card,
-  Col,
-  ConfigProvider,
-  Layout,
-  Modal,
-  Popover,
-  Result,
-  Row,
-  Space,
-  Spin,
-  Statistic,
-  Tag,
-  Tooltip,
-  message,
-} from '@/components/ui';
-import {
-  Checkbox,
-  Dropdown,
-  Input,
-  Pagination,
-  Select,
-  Switch,
-  Table,
-} from 'antd';
-import type { ColumnsType, TableProps } from 'antd/es/table';
-import {
   ClockCircleOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -41,13 +13,32 @@ import {
   RestOutlined,
   RetweetOutlined,
   SearchOutlined,
-  SortAscendingOutlined,
   TagsOutlined,
   TeamOutlined,
   UsergroupAddOutlined,
   UsergroupDeleteOutlined,
 } from '@ant-design/icons';
 
+import {
+  Button,
+  Card,
+  DataTable,
+  Dialog,
+  DropdownMenu,
+  Input,
+  Pagination,
+  Popover,
+  Select,
+  Stat,
+  Switch,
+  Tag,
+  Tooltip,
+  TooltipProvider,
+  type ColumnDef,
+  type MenuEntry,
+  type TagTone,
+} from '@/components/ds';
+import { Spin } from '@/components/ui';
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -55,7 +46,7 @@ import { useClients } from '@/hooks/useClients';
 import { useDatepicker } from '@/hooks/useDatepicker';
 import type { ClientRecord, InboundOption } from '@/hooks/useClients';
 import { IntlUtil, SizeFormatter } from '@/utils';
-import { setMessageInstance } from '@/utils/messageBus';
+import { getMessage } from '@/utils/messageBus';
 import { LazyMount } from '@/components/utility';
 const ClientFormModal = lazy(() => import('./ClientFormModal'));
 const ClientInfoModal = lazy(() => import('./ClientInfoModal'));
@@ -74,40 +65,22 @@ import './ClientsPage.css';
 const FILTER_STATE_KEY = 'clientsFilterState';
 const DISABLED_PAGE_SIZE = 200;
 
+function tone(c?: string): TagTone {
+  switch (c) {
+    case 'green': case 'lime': return 'success';
+    case 'red': case 'magenta': case 'volcano': return 'danger';
+    case 'gold': case 'orange': return 'warning';
+    case 'blue': case 'geekblue': case 'cyan': case 'purple': return 'primary';
+    default: return 'neutral';
+  }
+}
+
 function UngroupIcon() {
   return (
-    <span
-      style={{
-        position: 'relative',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '1em',
-        height: '1em',
-      }}
-    >
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '1em', height: '1em' }}>
       <TagsOutlined />
-      <span
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-        }}
-      >
-        <span
-          style={{
-            display: 'block',
-            width: '125%',
-            height: '1.5px',
-            background: 'currentColor',
-            transform: 'rotate(-45deg)',
-            borderRadius: '1px',
-          }}
-        />
+      <span aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+        <span style={{ display: 'block', width: '125%', height: '1.5px', background: 'currentColor', transform: 'rotate(-45deg)', borderRadius: '1px' }} />
       </span>
     </span>
   );
@@ -122,16 +95,8 @@ interface PersistedFilterState {
 }
 
 const INBOUND_PROTOCOL_COLORS: Record<string, string> = {
-  vless: 'blue',
-  vmess: 'geekblue',
-  trojan: 'volcano',
-  shadowsocks: 'magenta',
-  hysteria: 'cyan',
-  hysteria2: 'green',
-  wireguard: 'gold',
-  http: 'purple',
-  mixed: 'lime',
-  tunnel: 'orange',
+  vless: 'blue', vmess: 'geekblue', trojan: 'volcano', shadowsocks: 'magenta',
+  hysteria: 'cyan', hysteria2: 'green', wireguard: 'gold', http: 'purple', mixed: 'lime', tunnel: 'orange',
 };
 const INBOUND_CHIP_LIMIT = 1;
 
@@ -162,17 +127,16 @@ function gbToBytes(gb: number | undefined): number {
 }
 
 const SORT_OPTIONS: { value: string; column: string; order: 'ascend' | 'descend'; labelKey: string }[] = [
-  { value: 'createdAt:ascend',    column: 'createdAt',  order: 'ascend',   labelKey: 'pages.clients.sortOldest' },
-  { value: 'createdAt:descend',   column: 'createdAt',  order: 'descend',  labelKey: 'pages.clients.sortNewest' },
-  { value: 'updatedAt:descend',   column: 'updatedAt',  order: 'descend',  labelKey: 'pages.clients.sortRecentlyUpdated' },
-  { value: 'lastOnline:descend',  column: 'lastOnline', order: 'descend',  labelKey: 'pages.clients.sortRecentlyOnline' },
-  { value: 'email:ascend',        column: 'email',      order: 'ascend',   labelKey: 'pages.clients.sortEmailAZ' },
-  { value: 'email:descend',       column: 'email',      order: 'descend',  labelKey: 'pages.clients.sortEmailZA' },
-  { value: 'traffic:descend',     column: 'traffic',    order: 'descend',  labelKey: 'pages.clients.sortMostTraffic' },
-  { value: 'remaining:descend',   column: 'remaining',  order: 'descend',  labelKey: 'pages.clients.sortHighestRemaining' },
-  { value: 'expiryTime:ascend',   column: 'expiryTime', order: 'ascend',   labelKey: 'pages.clients.sortExpiringSoonest' },
+  { value: 'createdAt:ascend', column: 'createdAt', order: 'ascend', labelKey: 'pages.clients.sortOldest' },
+  { value: 'createdAt:descend', column: 'createdAt', order: 'descend', labelKey: 'pages.clients.sortNewest' },
+  { value: 'updatedAt:descend', column: 'updatedAt', order: 'descend', labelKey: 'pages.clients.sortRecentlyUpdated' },
+  { value: 'lastOnline:descend', column: 'lastOnline', order: 'descend', labelKey: 'pages.clients.sortRecentlyOnline' },
+  { value: 'email:ascend', column: 'email', order: 'ascend', labelKey: 'pages.clients.sortEmailAZ' },
+  { value: 'email:descend', column: 'email', order: 'descend', labelKey: 'pages.clients.sortEmailZA' },
+  { value: 'traffic:descend', column: 'traffic', order: 'descend', labelKey: 'pages.clients.sortMostTraffic' },
+  { value: 'remaining:descend', column: 'remaining', order: 'descend', labelKey: 'pages.clients.sortHighestRemaining' },
+  { value: 'expiryTime:ascend', column: 'expiryTime', order: 'ascend', labelKey: 'pages.clients.sortExpiringSoonest' },
 ];
-
 const DEFAULT_SORT = SORT_OPTIONS[0];
 
 function sortValueFor(column: string | null, order: 'ascend' | 'descend' | null): string {
@@ -180,14 +144,30 @@ function sortValueFor(column: string | null, order: 'ascend' | 'descend' | null)
   return `${column}:${order}`;
 }
 
+function bucketChipLabel(b: string, t: (k: string) => string): string {
+  switch (b) {
+    case 'active': return t('subscription.active');
+    case 'expiring': return t('depletingSoon');
+    case 'depleted': return t('depleted');
+    case 'deactive': return t('disabled');
+    case 'online': return t('online');
+    default: return b;
+  }
+}
+
+interface ConfirmState {
+  title: string;
+  content: string;
+  okText: string;
+  onOk: () => void | Promise<void>;
+}
+
 export default function ClientsPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra } = useTheme();
   const { datepicker } = useDatepicker();
   const { isMobile } = useMediaQuery();
-  const [modal, modalContextHolder] = Modal.useModal();
-  const [messageApi, messageContextHolder] = message.useMessage();
-  useEffect(() => { setMessageInstance(messageApi); }, [messageApi]);
+  const message = getMessage();
 
   const {
     clients, total, filtered,
@@ -203,10 +183,7 @@ export default function ClientsPage() {
     hydrate,
   } = useClients();
 
-  useWebSocket({
-    traffic: applyTrafficEvent,
-    client_stats: applyClientStatsEvent,
-  });
+  useWebSocket({ traffic: applyTrafficEvent, client_stats: applyClientStatsEvent });
 
   const [togglingEmail, setTogglingEmail] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -235,9 +212,15 @@ export default function ClientsPage() {
   const [sortOrder, setSortOrder] = useState<'ascend' | 'descend' | null>(initialSort.order);
   const [currentPage, setCurrentPage] = useState(1);
   const [tablePageSize, setTablePageSize] = useState(25);
-  // debouncedSearch lags behind the input so we don't spam the server on every
-  // keystroke; the search box still feels instant locally.
   const [debouncedSearch, setDebouncedSearch] = useState(searchKey);
+
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  function runConfirm() {
+    if (!confirm) return;
+    setConfirmBusy(true);
+    Promise.resolve(confirm.onOk()).finally(() => { setConfirmBusy(false); setConfirm(null); });
+  }
 
   useEffect(() => {
     localStorage.setItem(FILTER_STATE_KEY, JSON.stringify({ searchKey, filters, sort: sortValueFor(sortColumn, sortOrder) }));
@@ -248,11 +231,7 @@ export default function ClientsPage() {
     return () => window.clearTimeout(handle);
   }, [searchKey]);
 
-  useEffect(() => {
-    // Reset to page 1 whenever a filter or sort changes — otherwise an empty
-    // result set on a high page number leaves the user staring at "no clients".
-    setCurrentPage(1);
-  }, [debouncedSearch, filters, sortColumn, sortOrder]);
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, filters, sortColumn, sortOrder]);
 
   useEffect(() => {
     setQuery({
@@ -277,9 +256,7 @@ export default function ClientsPage() {
 
   const activeCount = activeFilterCount(filters);
 
-  useEffect(() => {
-    setTablePageSize(pageSize > 0 ? pageSize : DISABLED_PAGE_SIZE);
-  }, [pageSize]);
+  useEffect(() => { setTablePageSize(pageSize > 0 ? pageSize : DISABLED_PAGE_SIZE); }, [pageSize]);
 
   const onlineSet = useMemo(() => new Set(onlines || []), [onlines]);
   const inboundsById = useMemo(() => {
@@ -310,85 +287,65 @@ export default function ClientsPage() {
     if (!row) return null;
     const traffic = row.traffic || {};
     const used = (traffic.up || 0) + (traffic.down || 0);
-    const total = row.totalGB || 0;
+    const total0 = row.totalGB || 0;
     const now = Date.now();
     const expired = (row.expiryTime ?? 0) > 0 && (row.expiryTime ?? 0) <= now;
-    const exhausted = total > 0 && used >= total;
+    const exhausted = total0 > 0 && used >= total0;
     if (expired || exhausted) return 'depleted';
     if (!row.enable) return 'deactive';
     const nearExpiry = (row.expiryTime ?? 0) > 0 && (row.expiryTime ?? 0) - now < (expireDiff || 0);
-    const nearLimit = total > 0 && total - used < (trafficDiff || 0);
+    const nearLimit = total0 > 0 && total0 - used < (trafficDiff || 0);
     if (nearExpiry || nearLimit) return 'expiring';
     return 'active';
   }, [expireDiff, trafficDiff]);
 
-  function bucketBadgeStatus(bucket: Bucket | null): 'success' | 'warning' | 'error' | 'default' {
+  function bucketDotClass(bucket: Bucket | null): string {
     switch (bucket) {
-      case 'depleted': return 'error';
-      case 'expiring': return 'warning';
-      case 'active': return 'success';
-      default: return 'default';
+      case 'depleted': return 'dot dot-red';
+      case 'expiring': return 'dot dot-orange';
+      case 'active': return 'dot dot-green';
+      default: return 'dot dot-gray';
     }
   }
 
-  // The list page renders rows the server already sorted, filtered, and
-  // paginated. Local filtering is gone — keep the variable name so the rest
-  // of the file (table dataSource, mobile cards, select-all) doesn't need
-  // a rename.
   const filteredClients = clients;
-
-  // Server-computed counts that stay stable as the user paginates/filters.
   const summary = serverSummary;
-
-  // Sort is server-side now; the page already arrives in the requested
-  // order, so we just hand it through.
   const sortedClients = filteredClients;
 
   function trafficLabel(row: ClientRecord) {
     const t0 = row.traffic;
     if (!t0) return '-';
     const used = (t0.up || 0) + (t0.down || 0);
-    const total = row.totalGB || 0;
-    if (total <= 0) return `${SizeFormatter.sizeFormat(used)} / ∞`;
-    return `${SizeFormatter.sizeFormat(used)} / ${SizeFormatter.sizeFormat(total)}`;
+    const total0 = row.totalGB || 0;
+    if (total0 <= 0) return `${SizeFormatter.sizeFormat(used)} / ∞`;
+    return `${SizeFormatter.sizeFormat(used)} / ${SizeFormatter.sizeFormat(total0)}`;
   }
-
   function remainingLabel(row: ClientRecord) {
-    const total = row.totalGB || 0;
-    if (total <= 0) return '∞';
+    const total0 = row.totalGB || 0;
+    if (total0 <= 0) return '∞';
     const used = (row.traffic?.up || 0) + (row.traffic?.down || 0);
-    const r = total - used;
+    const r = total0 - used;
     return r > 0 ? SizeFormatter.sizeFormat(r) : '0';
   }
-
   function remainingColor(row: ClientRecord): string {
-    const total = row.totalGB || 0;
-    if (total <= 0) return 'purple';
+    const total0 = row.totalGB || 0;
+    if (total0 <= 0) return 'purple';
     const used = (row.traffic?.up || 0) + (row.traffic?.down || 0);
-    const ratio = used / total;
+    const ratio = used / total0;
     if (ratio >= 1) return 'red';
     if (ratio >= 0.85) return 'orange';
     return 'green';
   }
-
   function expiryLabel(row: ClientRecord) {
     if (!row.expiryTime) return '∞';
-    if (row.expiryTime < 0) {
-      const days = Math.round(row.expiryTime / -86400000);
-      return `${t('pages.clients.delayedStart')}: ${days}d`;
-    }
+    if (row.expiryTime < 0) { const days = Math.round(row.expiryTime / -86400000); return `${t('pages.clients.delayedStart')}: ${days}d`; }
     return IntlUtil.formatDate(row.expiryTime, datepicker);
   }
-
   function expiryRelative(row: ClientRecord) {
     if (!row.expiryTime) return '';
-    if (row.expiryTime < 0) {
-      const days = Math.round(row.expiryTime / -86400000);
-      return `${days}d`;
-    }
+    if (row.expiryTime < 0) { const days = Math.round(row.expiryTime / -86400000); return `${days}d`; }
     return IntlUtil.formatRelativeTime(row.expiryTime);
   }
-
   function expiryColor(row: ClientRecord): string {
     if (!row.expiryTime) return 'purple';
     if (row.expiryTime < 0) return 'blue';
@@ -402,25 +359,16 @@ export default function ClientsPage() {
     setTogglingEmail(row.email);
     try {
       const msg = await setEnable(row, next);
-      if (!msg?.success) {
-        messageApi.error(msg?.msg || t('somethingWentWrong'));
-      }
+      if (!msg?.success) message.error(msg?.msg || t('somethingWentWrong'));
     } finally {
       setTogglingEmail(null);
     }
   }
 
-  function onAdd() {
-    setFormMode('add');
-    setEditingClient(null);
-    setEditingAttachedIds([]);
-    setFormOpen(true);
-  }
+  function onAdd() { setFormMode('add'); setEditingClient(null); setEditingAttachedIds([]); setFormOpen(true); }
 
   async function onEdit(row: ClientRecord) {
     setFormMode('edit');
-    // Paged list omits per-client secrets to keep the row payload tiny;
-    // edit needs them, so fetch the full record first.
     const full = await hydrate(row.email);
     const merged: ClientRecord = full ? { ...row, ...full.client } : { ...row };
     setEditingClient(merged);
@@ -430,33 +378,21 @@ export default function ClientsPage() {
   }
 
   function onDelete(row: ClientRecord) {
-    modal.confirm({
+    setConfirm({
       title: t('pages.clients.deleteConfirmTitle', { email: row.email }),
       content: t('pages.clients.deleteConfirmContent'),
       okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
-      onOk: async () => {
-        const msg = await remove(row.email);
-        if (msg?.success) messageApi.success(t('pages.clients.toasts.deleted'));
-      },
+      onOk: async () => { const msg = await remove(row.email); if (msg?.success) message.success(t('pages.clients.toasts.deleted')); },
     });
   }
 
   function onResetTraffic(row: ClientRecord) {
-    if (!row?.email) {
-      messageApi.warning(t('pages.clients.resetNotPossible'));
-      return;
-    }
-    modal.confirm({
+    if (!row?.email) { message.warning(t('pages.clients.resetNotPossible')); return; }
+    setConfirm({
       title: `${t('pages.inbounds.resetTraffic')} — ${row.email}`,
       content: t('pages.inbounds.resetTrafficContent'),
       okText: t('reset'),
-      cancelText: t('cancel'),
-      onOk: async () => {
-        const msg = await resetTraffic(row);
-        if (msg?.success) messageApi.success(t('pages.clients.toasts.trafficReset'));
-      },
+      onOk: async () => { const msg = await resetTraffic(row); if (msg?.success) message.success(t('pages.clients.toasts.trafficReset')); },
     });
   }
 
@@ -465,7 +401,6 @@ export default function ClientsPage() {
     setInfoClient(full ? { ...row, ...full.client, inboundIds: full.inboundIds } : row);
     setInfoOpen(true);
   }
-
   async function onShowQr(row: ClientRecord) {
     const full = await hydrate(row.email);
     setQrClient(full ? { ...row, ...full.client, inboundIds: full.inboundIds } : row);
@@ -473,65 +408,41 @@ export default function ClientsPage() {
   }
 
   function onResetAllTraffics() {
-    modal.confirm({
+    setConfirm({
       title: t('pages.clients.resetAllTrafficsTitle'),
       content: t('pages.clients.resetAllTrafficsContent'),
       okText: t('reset'),
-      okType: 'danger',
-      cancelText: t('cancel'),
-      onOk: async () => {
-        const msg = await resetAllTraffics();
-        if (msg?.success) messageApi.success(t('pages.clients.toasts.allTrafficsReset'));
-      },
+      onOk: async () => { const msg = await resetAllTraffics(); if (msg?.success) message.success(t('pages.clients.toasts.allTrafficsReset')); },
     });
   }
-
   function onDelDepleted() {
-    modal.confirm({
+    setConfirm({
       title: t('pages.clients.delDepletedConfirmTitle'),
       content: t('pages.clients.delDepletedConfirmContent'),
       okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
-      onOk: async () => {
-        const msg = await delDepleted();
-        if (msg?.success) {
-          const deleted = msg.obj?.deleted ?? 0;
-          messageApi.success(t('pages.clients.toasts.delDepleted', { count: deleted }));
-        }
-      },
+      onOk: async () => { const msg = await delDepleted(); if (msg?.success) { const d = msg.obj?.deleted ?? 0; message.success(t('pages.clients.toasts.delDepleted', { count: d })); } },
     });
   }
-
   function onBulkUngroup() {
     const emails = [...selectedRowKeys];
     if (emails.length === 0) return;
-    modal.confirm({
+    setConfirm({
       title: t('pages.clients.ungroupConfirmTitle', { count: emails.length }),
       content: t('pages.clients.ungroupConfirmContent'),
       okText: t('confirm'),
-      okType: 'danger',
-      cancelText: t('cancel'),
       onOk: async () => {
         const msg = await bulkRemoveFromGroup(emails);
-        if (msg?.success) {
-          setSelectedRowKeys([]);
-          const affected = (msg.obj as { affected?: number } | undefined)?.affected ?? emails.length;
-          messageApi.success(t('pages.clients.ungroupSuccessToast', { count: affected }));
-        }
+        if (msg?.success) { setSelectedRowKeys([]); const affected = (msg.obj as { affected?: number } | undefined)?.affected ?? emails.length; message.success(t('pages.clients.ungroupSuccessToast', { count: affected })); }
       },
     });
   }
-
   function onBulkDelete() {
     const emails = [...selectedRowKeys];
     if (emails.length === 0) return;
-    modal.confirm({
+    setConfirm({
       title: t('pages.clients.bulkDeleteConfirmTitle', { count: emails.length }),
       content: t('pages.clients.bulkDeleteConfirmContent'),
       okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
       onOk: async () => {
         const msg = await bulkDelete(emails);
         setSelectedRowKeys([]);
@@ -539,13 +450,8 @@ export default function ClientsPage() {
         const skipped = msg?.obj?.skipped ?? [];
         const failed = skipped.length;
         const firstError = skipped[0]?.reason ?? msg?.msg ?? '';
-        if (failed === 0 && msg?.success) {
-          messageApi.success(t('pages.clients.toasts.bulkDeleted', { count: ok }));
-        } else {
-          messageApi.warning(firstError
-            ? `${t('pages.clients.toasts.bulkDeletedMixed', { ok, failed })} — ${firstError}`
-            : t('pages.clients.toasts.bulkDeletedMixed', { ok, failed }));
-        }
+        if (failed === 0 && msg?.success) message.success(t('pages.clients.toasts.bulkDeleted', { count: ok }));
+        else message.warning(firstError ? `${t('pages.clients.toasts.bulkDeletedMixed', { ok, failed })} — ${firstError}` : t('pages.clients.toasts.bulkDeletedMixed', { ok, failed }));
       },
     });
   }
@@ -554,784 +460,386 @@ export default function ClientsPage() {
     payload: Record<string, unknown> | { client: Record<string, unknown>; inboundIds: number[] },
     meta: { isEdit: false } | { isEdit: true; email: string; attach: number[]; detach: number[] },
   ) => {
-    if (!meta.isEdit) {
-      return create(payload);
-    }
+    if (!meta.isEdit) return create(payload);
     const updateMsg = await update(meta.email, payload);
     if (!updateMsg?.success) return updateMsg;
-    if (Array.isArray(meta.attach) && meta.attach.length > 0) {
-      const r = await attach(meta.email, meta.attach);
-      if (!r?.success) return r;
-    }
-    if (Array.isArray(meta.detach) && meta.detach.length > 0) {
-      const r = await detach(meta.email, meta.detach);
-      if (!r?.success) return r;
-    }
+    if (Array.isArray(meta.attach) && meta.attach.length > 0) { const r = await attach(meta.email, meta.attach); if (!r?.success) return r; }
+    if (Array.isArray(meta.detach) && meta.detach.length > 0) { const r = await detach(meta.email, meta.detach); if (!r?.success) return r; }
     return updateMsg;
   }, [create, update, attach, detach]);
 
-  const pageClass = useMemo(() => {
-    const classes = ['clients-page'];
-    if (isDark) classes.push('is-dark');
-    if (isUltra) classes.push('is-ultra');
-    return classes.join(' ');
-  }, [isDark, isUltra]);
+  const pageClass = useMemo(() => ['clients-page', isDark && 'is-dark', isUltra && 'is-ultra'].filter(Boolean).join(' '), [isDark, isUltra]);
 
-  const onTableChange: NonNullable<TableProps<ClientRecord>['onChange']> = (pag) => {
-    if (pag?.current) setCurrentPage(pag.current);
-    if (pag?.pageSize) setTablePageSize(pag.pageSize);
-  };
+  function inboundChip(id: number, compact: boolean) {
+    const ib = inboundsById[id];
+    const proto = (ib?.protocol || '').toLowerCase();
+    const compactLabel = ib?.remark?.trim() || ib?.tag || '';
+    return (
+      <Tooltip key={id} title={inboundLabel(id)}>
+        <Tag tone={tone(INBOUND_PROTOCOL_COLORS[proto] ?? 'default')} style={{ margin: 2 }}>
+          {compact ? compactLabel : inboundLabel(id)}
+        </Tag>
+      </Tooltip>
+    );
+  }
 
-  const columns = useMemo<ColumnsType<ClientRecord>>(() => [
-    {
-      title: t('pages.clients.actions'),
-      key: 'actions',
-      width: 200,
-      render: (_v, record) => (
-        <Space size={4}>
-          <Tooltip title={t('pages.clients.qrCode')}>
-            <Button size="small" type="text" icon={<QrcodeOutlined />} onClick={() => onShowQr(record)} />
-          </Tooltip>
-          <Tooltip title={t('pages.clients.clientInfo')}>
-            <Button size="small" type="text" icon={<InfoCircleOutlined />} onClick={() => onShowInfo(record)} />
-          </Tooltip>
-          <Tooltip title={t('pages.inbounds.resetTraffic')}>
-            <Button size="small" type="text" icon={<RetweetOutlined />} onClick={() => onResetTraffic(record)} />
-          </Tooltip>
-          <Tooltip title={t('edit')}>
-            <Button size="small" type="text" icon={<EditOutlined />} onClick={() => onEdit(record)} />
-          </Tooltip>
-          <Tooltip title={t('delete')}>
-            <Button size="small" type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(record)} />
-          </Tooltip>
-        </Space>
-      ),
-    },
-    {
-      title: t('pages.clients.enabled'),
-      key: 'enable',
-      width: 80,
-      render: (_v, record) => (
-        <Switch
-          checked={!!record.enable}
-          size="small"
-          loading={togglingEmail === record.email}
-          onChange={(next) => onToggleEnable(record, next)}
-        />
-      ),
-    },
-    {
-      title: t('pages.clients.online'),
-      key: 'online',
-      width: 90,
-      render: (_v, record) => {
-        const bucket = clientBucket(record);
-        const lastOnline = record.traffic?.lastOnline ?? 0;
-        const lastOnlineTitle = `${t('lastOnline')}: ${lastOnline > 0 ? IntlUtil.formatDate(lastOnline, datepicker) : '-'}`;
-        if (bucket === 'depleted') return (
-          <Tooltip title={lastOnlineTitle}>
-            <Tag color="red">{t('depleted')}</Tag>
-          </Tooltip>
-        );
-        if (record.enable && isOnline(record.email)) return (
-          <Tag color="green"><span className="online-dot" />{t('pages.clients.online')}</Tag>
-        );
-        if (!record.enable) return <Tag>{t('disabled')}</Tag>;
-        if (bucket === 'expiring') return <Tag color="orange">{t('depletingSoon')}</Tag>;
-        return (
-          <Tooltip title={lastOnlineTitle}>
-            <Tag>{t('pages.clients.offline')}</Tag>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      title: t('pages.clients.client'),
-      key: 'email',
-      render: (_v, record) => (
-        <div className="email-cell">
-          <span className="email">{record.email}</span>
-          {record.subId && <span className="sub" title={record.subId}>{record.subId}</span>}
-          {record.comment && <span className="sub" title={record.comment}>{record.comment}</span>}
-        </div>
-      ),
-    },
-    {
-      title: t('pages.clients.group'),
-      key: 'group',
-      width: 130,
-      hidden: allGroups.length === 0,
-      render: (_v, record) => {
-        if (!record.group) return <span style={{ color: 'rgba(0,0,0,0.45)' }}>—</span>;
-        const isActive = filters.groups.includes(record.group);
-        return (
-          <Tag
-            color="geekblue"
-            style={{ margin: 0, cursor: 'pointer', opacity: isActive ? 0.6 : 1 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isActive) {
-                setFilters({ ...filters, groups: [...filters.groups, record.group!] });
-              }
-            }}
-          >
-            {record.group}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: t('pages.clients.attachedInbounds'),
-      key: 'inboundIds',
-      width: 170,
-      render: (_v, record) => {
-        const ids = record.inboundIds || [];
-        if (ids.length === 0) return <span style={{ color: 'rgba(0,0,0,0.45)' }}>—</span>;
-        const visible = ids.slice(0, INBOUND_CHIP_LIMIT);
-        const overflow = ids.slice(INBOUND_CHIP_LIMIT);
-        const chip = (id: number, compact: boolean) => {
-          const ib = inboundsById[id];
-          const proto = (ib?.protocol || '').toLowerCase();
-          const color = INBOUND_PROTOCOL_COLORS[proto] ?? 'default';
-          const compactLabel = ib?.remark?.trim() || ib?.tag || '';
+  const columns = useMemo<ColumnDef<ClientRecord, unknown>[]>(() => {
+    const cols: ColumnDef<ClientRecord, unknown>[] = [
+      {
+        id: 'actions', size: 200, header: () => t('pages.clients.actions'),
+        cell: ({ row }) => {
+          const record = row.original;
           return (
-            <Tooltip key={id} title={inboundLabel(id)}>
-              <Tag color={color} style={{ margin: 2 }}>
-                {compact ? compactLabel : inboundLabel(id)}
-              </Tag>
-            </Tooltip>
+            <div style={{ display: 'flex', gap: 2 }}>
+              <Tooltip title={t('pages.clients.qrCode')}><Button size="sm" variant="text" icon={<QrcodeOutlined />} onClick={() => onShowQr(record)} /></Tooltip>
+              <Tooltip title={t('pages.clients.clientInfo')}><Button size="sm" variant="text" icon={<InfoCircleOutlined />} onClick={() => onShowInfo(record)} /></Tooltip>
+              <Tooltip title={t('pages.inbounds.resetTraffic')}><Button size="sm" variant="text" icon={<RetweetOutlined />} onClick={() => onResetTraffic(record)} /></Tooltip>
+              <Tooltip title={t('edit')}><Button size="sm" variant="text" icon={<EditOutlined />} onClick={() => onEdit(record)} /></Tooltip>
+              <Tooltip title={t('delete')}><Button size="sm" variant="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(record)} /></Tooltip>
+            </div>
           );
-        };
-        return (
-          <>
-            {visible.map((id) => chip(id, true))}
-            {overflow.length > 0 && (
-              <Popover
-                trigger="click"
-                placement="bottomRight"
-                content={
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 280, maxHeight: 280, overflowY: 'auto' }}>
-                    {overflow.map((id) => chip(id, false))}
-                  </div>
-                }
-              >
-                <Tag color="default" style={{ margin: 2, cursor: 'pointer' }}>
-                  +{overflow.length}
-                </Tag>
-              </Popover>
-            )}
-          </>
-        );
+        },
       },
-    },
-    {
-      title: t('pages.clients.traffic'),
-      key: 'traffic',
-      render: (_v, record) => trafficLabel(record),
-    },
-    {
-      title: t('pages.clients.remaining'),
-      key: 'remaining',
-      width: 130,
-      render: (_v, record) => <Tag color={remainingColor(record)}>{remainingLabel(record)}</Tag>,
-    },
-    {
-      title: t('pages.clients.duration'),
-      key: 'expiryTime',
-      render: (_v, record) => (
-        <Tooltip title={expiryLabel(record)}>
-          <Tag color={expiryColor(record)}>{record.expiryTime ? expiryRelative(record) : '∞'}</Tag>
-        </Tooltip>
-      ),
-    },
+      {
+        id: 'enable', size: 80, header: () => t('pages.clients.enabled'),
+        cell: ({ row }) => <Switch checked={!!row.original.enable} onChange={(next) => onToggleEnable(row.original, next)} />,
+      },
+      {
+        id: 'online', size: 100, header: () => t('pages.clients.online'),
+        cell: ({ row }) => {
+          const record = row.original;
+          const bucket = clientBucket(record);
+          const lastOnline = record.traffic?.lastOnline ?? 0;
+          const title = `${t('lastOnline')}: ${lastOnline > 0 ? IntlUtil.formatDate(lastOnline, datepicker) : '-'}`;
+          if (bucket === 'depleted') return <Tooltip title={title}><Tag tone="danger">{t('depleted')}</Tag></Tooltip>;
+          if (record.enable && isOnline(record.email)) return <Tag tone="success"><span className="online-dot" />{t('pages.clients.online')}</Tag>;
+          if (!record.enable) return <Tag>{t('disabled')}</Tag>;
+          if (bucket === 'expiring') return <Tag tone="warning">{t('depletingSoon')}</Tag>;
+          return <Tooltip title={title}><Tag>{t('pages.clients.offline')}</Tag></Tooltip>;
+        },
+      },
+      {
+        id: 'email', header: () => t('pages.clients.client'),
+        cell: ({ row }) => (
+          <div className="email-cell">
+            <span className="email">{row.original.email}</span>
+            {row.original.subId && <span className="sub" title={row.original.subId}>{row.original.subId}</span>}
+            {row.original.comment && <span className="sub" title={row.original.comment}>{row.original.comment}</span>}
+          </div>
+        ),
+      },
+    ];
+    if (allGroups.length > 0) {
+      cols.push({
+        id: 'group', size: 130, header: () => t('pages.clients.group'),
+        cell: ({ row }) => {
+          const record = row.original;
+          if (!record.group) return <span className="ds-muted">—</span>;
+          const isActive = filters.groups.includes(record.group);
+          return (
+            <Tag tone="primary" style={{ cursor: 'pointer', opacity: isActive ? 0.6 : 1 }} onClick={() => { if (!isActive) setFilters({ ...filters, groups: [...filters.groups, record.group!] }); }}>
+              {record.group}
+            </Tag>
+          );
+        },
+      });
+    }
+    cols.push(
+      {
+        id: 'inboundIds', size: 170, header: () => t('pages.clients.attachedInbounds'),
+        cell: ({ row }) => {
+          const ids = row.original.inboundIds || [];
+          if (ids.length === 0) return <span className="ds-muted">—</span>;
+          const visible = ids.slice(0, INBOUND_CHIP_LIMIT);
+          const overflow = ids.slice(INBOUND_CHIP_LIMIT);
+          return (
+            <>
+              {visible.map((id) => inboundChip(id, true))}
+              {overflow.length > 0 && (
+                <Popover
+                  side="bottom" align="end"
+                  trigger={<button type="button" className="ds-tag chip-more" style={{ margin: 2, cursor: 'pointer' }}>+{overflow.length}</button>}
+                  content={<div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 280, maxHeight: 280, overflowY: 'auto' }}>{overflow.map((id) => inboundChip(id, false))}</div>}
+                />
+              )}
+            </>
+          );
+        },
+      },
+      { id: 'traffic', header: () => t('pages.clients.traffic'), cell: ({ row }) => trafficLabel(row.original) },
+      { id: 'remaining', size: 130, header: () => t('pages.clients.remaining'), cell: ({ row }) => <Tag tone={tone(remainingColor(row.original))}>{remainingLabel(row.original)}</Tag> },
+      {
+        id: 'expiryTime', header: () => t('pages.clients.duration'),
+        cell: ({ row }) => <Tooltip title={expiryLabel(row.original)}><Tag tone={tone(expiryColor(row.original))}>{row.original.expiryTime ? expiryRelative(row.original) : '∞'}</Tag></Tooltip>,
+      },
+    );
+    return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [t, togglingEmail, clientBucket, isOnline, inboundsById, filters, allGroups, datepicker]);
+  }, [t, togglingEmail, clientBucket, isOnline, inboundsById, filters, allGroups, datepicker]);
 
-  const tablePagination = {
-    current: currentPage,
-    pageSize: tablePageSize,
-    total: filtered,
-    showSizeChanger: filtered > 10,
-    pageSizeOptions: ['10', '25', '50', '100', '200'],
-    hideOnSinglePage: filtered <= tablePageSize,
-    showTotal: (n: number) => `${n}`,
-  };
+  const moreItems = useMemo<MenuEntry[]>(() => (
+    selectedRowKeys.length > 0
+      ? [
+          { key: 'adjust', icon: <ClockCircleOutlined />, label: t('pages.clients.adjust'), onSelect: () => setBulkAdjustOpen(true) },
+          { key: 'subLinks', icon: <LinkOutlined />, label: t('pages.clients.subLinks'), onSelect: () => setSubLinksOpen(true) },
+        ]
+      : [
+          { key: 'bulk', icon: <UsergroupAddOutlined />, label: t('pages.clients.bulk'), onSelect: () => setBulkAddOpen(true) },
+          { key: 'resetAll', icon: <RetweetOutlined />, label: t('pages.clients.resetAllTraffics'), onSelect: onResetAllTraffics },
+          { key: 'delDepleted', icon: <RestOutlined />, label: t('pages.clients.delDepleted'), danger: true, onSelect: onDelDepleted },
+        ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [selectedRowKeys.length, t]);
 
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (keys: React.Key[]) => setSelectedRowKeys(keys as string[]),
-  };
-
+  function selectAll(checked: boolean) { setSelectedRowKeys(checked ? filteredClients.map((c) => c.email) : []); }
   function toggleSelect(email: string, checked: boolean) {
-    setSelectedRowKeys((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(email); else next.delete(email);
-      return Array.from(next);
-    });
+    setSelectedRowKeys((prev) => { const next = new Set(prev); if (checked) next.add(email); else next.delete(email); return Array.from(next); });
   }
-
-  function selectAll(checked: boolean) {
-    setSelectedRowKeys(checked ? filteredClients.map((c) => c.email) : []);
-  }
-
   const allSelected = filteredClients.length > 0 && selectedRowKeys.length === filteredClients.length;
-  const someSelected = selectedRowKeys.length > 0 && selectedRowKeys.length < filteredClients.length;
 
   function clearOneFilter<K extends keyof ClientFilters>(key: K) {
-    if (key === 'expiryFrom' || key === 'expiryTo') {
-      setFilters({ ...filters, expiryFrom: undefined, expiryTo: undefined });
-      return;
-    }
-    if (key === 'usageFromGB' || key === 'usageToGB') {
-      setFilters({ ...filters, usageFromGB: undefined, usageToGB: undefined });
-      return;
-    }
+    if (key === 'expiryFrom' || key === 'expiryTo') { setFilters({ ...filters, expiryFrom: undefined, expiryTo: undefined }); return; }
+    if (key === 'usageFromGB' || key === 'usageToGB') { setFilters({ ...filters, usageFromGB: undefined, usageToGB: undefined }); return; }
     setFilters({ ...filters, [key]: emptyFilters()[key] });
   }
 
+  function closableChip(key: string, t0: TagTone, label: React.ReactNode, onClose: () => void) {
+    return (
+      <Tag key={key} tone={t0}>
+        {label}
+        <span style={{ cursor: 'pointer', marginLeft: 6, fontWeight: 700 }} onClick={onClose}>×</span>
+      </Tag>
+    );
+  }
+
+  const pagination = {
+    page: currentPage,
+    pageSize: tablePageSize,
+    total: filtered,
+    pageSizeOptions: [10, 25, 50, 100, 200],
+    onChange: (p: number, s: number) => { setCurrentPage(p); if (s !== tablePageSize) setTablePageSize(s); },
+    showTotal: () => `${filtered}`,
+  };
+
+  function statWithList(title: string, value: number, dotClass: string, emails: string[]) {
+    const stat = <Stat title={title} value={String(value)} prefix={<span className={dotClass} />} />;
+    if (emails.length === 0) return stat;
+    return (
+      <Popover
+        side="bottom"
+        trigger={<button type="button" style={{ all: 'unset', cursor: 'pointer', display: 'block' }}>{stat}</button>}
+        content={<div className="client-email-list">{emails.map((e) => <div key={e}>{e}</div>)}</div>}
+      />
+    );
+  }
+
   return (
-    <ConfigProvider theme={antdThemeConfig}>
-      {messageContextHolder}
-      {modalContextHolder}
-      <div className="section-content-wrapper clients-section-wrapper">
-        <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
-              {!fetched ? (
-                <div className="loading-spacer" />
-              ) : fetchError ? (
-                <Result
-                  status="error"
-                  title={t('somethingWentWrong')}
-                  subTitle={fetchError}
-                  extra={<Button type="primary" loading={loading} onClick={refresh}>{t('refresh')}</Button>}
-                />
-              ) : (
-                <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
-                  <Col span={24}>
-                    <Card size="small" hoverable className="summary-card">
-                      <Row gutter={[16, 12]}>
-                        <Col xs={12} sm={8} md={4}>
-                          <Statistic title={t('clients')} value={String(summary.total)} prefix={<TeamOutlined />} />
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <Popover
-                            title={t('online')}
-                            open={summary.online.length ? undefined : false}
-                            content={<div className="client-email-list">{summary.online.map((e) => <div key={e}>{e}</div>)}</div>}
-                          >
-                            <Statistic title={t('online')} value={String(summary.online.length)} prefix={<span className="dot dot-blue" />} />
-                          </Popover>
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <Popover
-                            title={t('depleted')}
-                            open={summary.depleted.length ? undefined : false}
-                            content={<div className="client-email-list">{summary.depleted.map((e) => <div key={e}>{e}</div>)}</div>}
-                          >
-                            <Statistic title={t('depleted')} value={String(summary.depleted.length)} prefix={<span className="dot dot-red" />} />
-                          </Popover>
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <Popover
-                            title={t('depletingSoon')}
-                            open={summary.expiring.length ? undefined : false}
-                            content={<div className="client-email-list">{summary.expiring.map((e) => <div key={e}>{e}</div>)}</div>}
-                          >
-                            <Statistic title={t('depletingSoon')} value={String(summary.expiring.length)} prefix={<span className="dot dot-orange" />} />
-                          </Popover>
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <Popover
-                            title={t('disabled')}
-                            open={summary.deactive.length ? undefined : false}
-                            content={<div className="client-email-list">{summary.deactive.map((e) => <div key={e}>{e}</div>)}</div>}
-                          >
-                            <Statistic title={t('disabled')} value={String(summary.deactive.length)} prefix={<span className="dot dot-gray" />} />
-                          </Popover>
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <Statistic title={t('subscription.active')} value={String(summary.active)} prefix={<span className="dot dot-green" />} />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
+    <TooltipProvider>
+      <div className={`section-content-wrapper clients-section-wrapper ${pageClass}`}>
+        {!fetched ? (
+          <div className="ds-table__empty">{t('loading')}</div>
+        ) : fetchError ? (
+          <Card>
+            <div style={{ textAlign: 'center', padding: 24 }}>
+              <h3>{t('somethingWentWrong')}</h3>
+              <p className="ds-muted">{fetchError}</p>
+              <Button variant="primary" loading={loading} onClick={refresh}>{t('refresh')}</Button>
+            </div>
+          </Card>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 8 : 12 }}>
+            <Card>
+              <div className="ds-stats-grid">
+                <Stat title={t('clients')} value={String(summary.total)} prefix={<TeamOutlined />} />
+                {statWithList(t('online'), summary.online.length, 'dot dot-blue', summary.online)}
+                {statWithList(t('depleted'), summary.depleted.length, 'dot dot-red', summary.depleted)}
+                {statWithList(t('depletingSoon'), summary.expiring.length, 'dot dot-orange', summary.expiring)}
+                {statWithList(t('disabled'), summary.deactive.length, 'dot dot-gray', summary.deactive)}
+                <Stat title={t('subscription.active')} value={String(summary.active)} prefix={<span className="dot dot-green" />} />
+              </div>
+            </Card>
 
-                  <Col span={24}>
-                    <Card
-                      size="small"
-                      hoverable
-                      title={
-                        <div className="card-toolbar">
-                          {selectedRowKeys.length === 0 ? (
-                            <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
-                              {!isMobile && t('pages.clients.addClients')}
-                            </Button>
-                          ) : (
-                            <>
-                              <Tag
-                                color="blue"
-                                closable
-                                onClose={() => setSelectedRowKeys([])}
-                                style={{ marginInlineEnd: 0, padding: '4px 8px', fontSize: 13 }}
-                              >
-                                {t('pages.clients.selectedCount', { count: selectedRowKeys.length })}
-                              </Tag>
-                              <Button icon={<UsergroupAddOutlined />} onClick={() => setBulkAttachOpen(true)}>
-                                {!isMobile && t('pages.clients.attach')}
-                              </Button>
-                              <Button danger icon={<UsergroupDeleteOutlined />} onClick={() => setBulkDetachOpen(true)}>
-                                {!isMobile && t('pages.clients.detach')}
-                              </Button>
-                              <Button icon={<TagsOutlined />} onClick={() => setBulkGroupOpen(true)}>
-                                {!isMobile && t('pages.clients.addToGroup')}
-                              </Button>
-                              <Button danger icon={<UngroupIcon />} onClick={onBulkUngroup}>
-                                {!isMobile && t('pages.clients.ungroup')}
-                              </Button>
-                            </>
-                          )}
-                          <Dropdown
-                            trigger={['click']}
-                            placement="bottomRight"
-                            menu={{
-                              items: selectedRowKeys.length > 0
-                                ? [
-                                    {
-                                      key: 'adjust',
-                                      icon: <ClockCircleOutlined />,
-                                      label: t('pages.clients.adjust'),
-                                      onClick: () => setBulkAdjustOpen(true),
-                                    },
-                                    {
-                                      key: 'subLinks',
-                                      icon: <LinkOutlined />,
-                                      label: t('pages.clients.subLinks'),
-                                      onClick: () => setSubLinksOpen(true),
-                                    },
-                                  ]
-                                : [
-                                    {
-                                      key: 'bulk',
-                                      icon: <UsergroupAddOutlined />,
-                                      label: t('pages.clients.bulk'),
-                                      onClick: () => setBulkAddOpen(true),
-                                    },
-                                    {
-                                      key: 'resetAll',
-                                      icon: <RetweetOutlined />,
-                                      label: t('pages.clients.resetAllTraffics'),
-                                      onClick: onResetAllTraffics,
-                                    },
-                                    {
-                                      key: 'delDepleted',
-                                      icon: <RestOutlined />,
-                                      label: t('pages.clients.delDepleted'),
-                                      danger: true,
-                                      onClick: onDelDepleted,
-                                    },
-                                  ],
-                            }}
-                          >
-                            <Button icon={<MoreOutlined />}>
-                              {!isMobile && t('more')}
-                            </Button>
-                          </Dropdown>
-                          {selectedRowKeys.length > 0 && (
-                            <Button
-                              danger
-                              icon={<DeleteOutlined />}
-                              onClick={onBulkDelete}
-                              style={{ marginInlineStart: 'auto' }}
-                            >
-                              {!isMobile && t('delete')}
-                            </Button>
-                          )}
-                        </div>
-                      }
-                    >
-                      <div className={isMobile ? 'filter-bar mobile' : 'filter-bar'}>
-                        <Input
-                          value={searchKey}
-                          onChange={(e) => setSearchKey(e.target.value)}
-                          placeholder={t('pages.clients.searchPlaceholder')}
-                          allowClear
-                          prefix={<SearchOutlined />}
-                          size={isMobile ? 'small' : 'middle'}
-                          style={{ maxWidth: 320 }}
-                        />
-                        <Badge count={activeCount} size="small" offset={[-4, 4]}>
-                          <Button
-                            icon={<FilterOutlined />}
-                            size={isMobile ? 'small' : 'middle'}
-                            onClick={() => setFilterDrawerOpen(true)}
-                            type={activeCount > 0 ? 'primary' : 'default'}
-                          >
-                            {!isMobile && t('filter')}
-                          </Button>
-                        </Badge>
-                        <Select
-                          value={sortValueFor(sortColumn, sortOrder)}
-                          size={isMobile ? 'small' : 'middle'}
-                          suffixIcon={<SortAscendingOutlined />}
-                          style={{ minWidth: isMobile ? 130 : 200 }}
-                          onChange={(value) => {
-                            const opt = SORT_OPTIONS.find((o) => o.value === value);
-                            setSortColumn(opt?.column ?? null);
-                            setSortOrder(opt?.order ?? null);
-                          }}
-                          options={SORT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
-                        />
-                        {activeCount > 0 && (
-                          <Button
-                            size={isMobile ? 'small' : 'middle'}
-                            onClick={() => setFilters(emptyFilters())}
-                          >
-                            {t('pages.clients.clearAllFilters')}
-                          </Button>
-                        )}
-                        {(activeCount > 0 || debouncedSearch.trim().length > 0) && (
-                          <span className="filter-count">
-                            {t('pages.clients.showingCount', { shown: filtered, total })}
-                          </span>
-                        )}
-                      </div>
+            <Card flush>
+              <div className="card-toolbar" style={{ padding: 12 }}>
+                {selectedRowKeys.length === 0 ? (
+                  <Button variant="primary" icon={<PlusOutlined />} onClick={onAdd}>{!isMobile && t('pages.clients.addClients')}</Button>
+                ) : (
+                  <>
+                    {closableChip('sel', 'primary', t('pages.clients.selectedCount', { count: selectedRowKeys.length }), () => setSelectedRowKeys([]))}
+                    <Button icon={<UsergroupAddOutlined />} onClick={() => setBulkAttachOpen(true)}>{!isMobile && t('pages.clients.attach')}</Button>
+                    <Button danger icon={<UsergroupDeleteOutlined />} onClick={() => setBulkDetachOpen(true)}>{!isMobile && t('pages.clients.detach')}</Button>
+                    <Button icon={<TagsOutlined />} onClick={() => setBulkGroupOpen(true)}>{!isMobile && t('pages.clients.addToGroup')}</Button>
+                    <Button danger icon={<UngroupIcon />} onClick={onBulkUngroup}>{!isMobile && t('pages.clients.ungroup')}</Button>
+                  </>
+                )}
+                <DropdownMenu items={moreItems} trigger={<Button icon={<MoreOutlined />}>{!isMobile && t('more')}</Button>} />
+                {selectedRowKeys.length > 0 && (
+                  <Button danger icon={<DeleteOutlined />} onClick={onBulkDelete} style={{ marginInlineStart: 'auto' }}>{!isMobile && t('delete')}</Button>
+                )}
+              </div>
 
-                      {activeCount > 0 && (
-                        <div className="filter-chips">
-                          {filters.buckets.map((b) => (
-                            <Tag
-                              key={`b-${b}`}
-                              closable
-                              onClose={() => setFilters({ ...filters, buckets: filters.buckets.filter((x) => x !== b) })}
-                            >
-                              {bucketChipLabel(b, t)}
-                            </Tag>
-                          ))}
-                          {filters.protocols.map((p) => (
-                            <Tag
-                              key={`p-${p}`}
-                              closable
-                              color="blue"
-                              onClose={() => setFilters({ ...filters, protocols: filters.protocols.filter((x) => x !== p) })}
-                            >
-                              {p}
-                            </Tag>
-                          ))}
-                          {filters.inboundIds.map((id) => (
-                            <Tag
-                              key={`i-${id}`}
-                              closable
-                              color="cyan"
-                              onClose={() => setFilters({ ...filters, inboundIds: filters.inboundIds.filter((x) => x !== id) })}
-                            >
-                              {inboundLabel(id)}
-                            </Tag>
-                          ))}
-                          {filters.groups.map((g) => (
-                            <Tag
-                              key={`g-${g}`}
-                              closable
-                              color="geekblue"
-                              onClose={() => setFilters({ ...filters, groups: filters.groups.filter((x) => x !== g) })}
-                            >
-                              {t('pages.clients.group')}: {g}
-                            </Tag>
-                          ))}
-                          {(filters.expiryFrom || filters.expiryTo) && (
-                            <Tag closable color="purple" onClose={() => clearOneFilter('expiryFrom')}>
-                              {t('pages.clients.expiryTime')}: {filters.expiryFrom ? IntlUtil.formatDate(filters.expiryFrom, datepicker) : '…'}
-                              {' → '}
-                              {filters.expiryTo ? IntlUtil.formatDate(filters.expiryTo, datepicker) : '…'}
-                            </Tag>
-                          )}
-                          {(filters.usageFromGB || filters.usageToGB) && (
-                            <Tag closable color="orange" onClose={() => clearOneFilter('usageFromGB')}>
-                              {t('pages.clients.traffic')}: {filters.usageFromGB ?? 0}{filters.usageToGB ? `–${filters.usageToGB}` : '+'} GB
-                            </Tag>
-                          )}
-                          {filters.autoRenew && (
-                            <Tag closable color="gold" onClose={() => clearOneFilter('autoRenew')}>
-                              {t('pages.clients.renew')}: {filters.autoRenew === 'on' ? t('enabled') : t('disabled')}
-                            </Tag>
-                          )}
-                          {filters.hasTgId && (
-                            <Tag closable onClose={() => clearOneFilter('hasTgId')}>
-                              {t('pages.clients.telegramId')}: {filters.hasTgId === 'yes' ? t('pages.clients.has') : t('pages.clients.hasNot')}
-                            </Tag>
-                          )}
-                          {filters.hasComment && (
-                            <Tag closable onClose={() => clearOneFilter('hasComment')}>
-                              {t('pages.clients.comment')}: {filters.hasComment === 'yes' ? t('pages.clients.has') : t('pages.clients.hasNot')}
-                            </Tag>
-                          )}
-                        </div>
-                      )}
+              <div className={isMobile ? 'filter-bar mobile' : 'filter-bar'} style={{ padding: '0 12px 12px' }}>
+                <div style={{ position: 'relative', maxWidth: 320, flex: 1 }}>
+                  <SearchOutlined style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', opacity: 0.45 }} />
+                  <Input value={searchKey} onChange={(e) => setSearchKey(e.target.value)} placeholder={t('pages.clients.searchPlaceholder')} style={{ paddingLeft: 32 }} />
+                </div>
+                <Button icon={<FilterOutlined />} variant={activeCount > 0 ? 'primary' : 'default'} onClick={() => setFilterDrawerOpen(true)}>
+                  {!isMobile && t('filter')}{activeCount > 0 ? ` (${activeCount})` : ''}
+                </Button>
+                <div style={{ minWidth: isMobile ? 140 : 210 }}>
+                  <Select
+                    value={sortValueFor(sortColumn, sortOrder)}
+                    onChange={(value) => { const opt = SORT_OPTIONS.find((o) => o.value === value); setSortColumn(opt?.column ?? null); setSortOrder(opt?.order ?? null); }}
+                    options={SORT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+                  />
+                </div>
+                {activeCount > 0 && <Button onClick={() => setFilters(emptyFilters())}>{t('pages.clients.clearAllFilters')}</Button>}
+                {(activeCount > 0 || debouncedSearch.trim().length > 0) && (
+                  <span className="filter-count">{t('pages.clients.showingCount', { shown: filtered, total })}</span>
+                )}
+              </div>
 
-                      {!isMobile ? (
-                        <Table<ClientRecord>
-                          columns={columns}
-                          dataSource={sortedClients}
-                          loading={loading}
-                          rowKey="email"
-                          rowSelection={rowSelection}
-                          pagination={tablePagination}
-                          size="small"
-                          scroll={{ x: 1200 }}
-                          onChange={onTableChange}
-                          locale={{
-                            emptyText: (
-                              <div className="clients-empty">
-                                <TeamOutlined style={{ fontSize: 32, marginBottom: 8 }} />
-                                <div>{t('noData')}</div>
-                              </div>
-                            ),
-                          }}
-                        />
-                      ) : (
-                        <Spin spinning={loading}>
-                          <div className="client-cards">
-                            {filteredClients.length > 0 && (
-                              <div className="card-bulk-bar">
-                                <Checkbox
-                                  checked={allSelected}
-                                  indeterminate={someSelected}
-                                  onChange={(e) => selectAll(e.target.checked)}
-                                >
-                                  {t('pages.clients.selectAll')}
-                                </Checkbox>
-                                {selectedRowKeys.length > 0 && (
-                                  <span className="bulk-count">{selectedRowKeys.length}</span>
-                                )}
-                              </div>
-                            )}
-                            {filteredClients.length === 0 && (
-                              <div className="card-empty">
-                                <TeamOutlined style={{ fontSize: 28, opacity: 0.5 }} />
-                                <div>{t('noData')}</div>
-                              </div>
-                            )}
-                            {filteredClients.length > 0 && (
-                              <div className="card-pagination">
-                                <Pagination
-                                  current={currentPage}
-                                  pageSize={tablePageSize}
-                                  total={filtered}
-                                  showSizeChanger={filtered > 10}
-                                  pageSizeOptions={['10', '25', '50', '100', '200']}
-                                  hideOnSinglePage={filtered <= tablePageSize}
-                                  size="small"
-                                  showTotal={(n) => `${n}`}
-                                  onChange={(p, s) => {
-                                    setCurrentPage(p);
-                                    if (s && s !== tablePageSize) setTablePageSize(s);
-                                  }}
-                                />
-                              </div>
-                            )}
-                            {filteredClients.map((row) => {
-                              const bucket = clientBucket(row);
-                              return (
-                                <div key={row.email} className={`client-card${selectedRowKeys.includes(row.email) ? ' is-selected' : ''}`}>
-                                  <div className="card-head">
-                                    <Checkbox
-                                      checked={selectedRowKeys.includes(row.email)}
-                                      onChange={(e) => toggleSelect(row.email, e.target.checked)}
-                                    />
-                                    <Badge status={bucketBadgeStatus(bucket)} />
-                                    <span className="tag-name">{row.email}</span>
-                                    {bucket === 'depleted' && <Tag color="red" className="status-tag">{t('depleted')}</Tag>}
-                                    {bucket === 'expiring' && <Tag color="orange" className="status-tag">{t('depletingSoon')}</Tag>}
-                                    <div className="card-actions" onClick={(e) => e.stopPropagation()}>
-                                      <Tooltip title={t('pages.clients.clientInfo')}>
-                                        <InfoCircleOutlined className="row-action-trigger" onClick={() => onShowInfo(row)} />
-                                      </Tooltip>
-                                      <Switch
-                                        checked={!!row.enable}
-                                        size="small"
-                                        loading={togglingEmail === row.email}
-                                        onChange={(next) => onToggleEnable(row, next)}
-                                      />
-                                      <Dropdown
-                                        trigger={['click']}
-                                        placement="bottomRight"
-                                        menu={{
-                                          items: [
-                                            {
-                                              key: 'qr',
-                                              label: <><QrcodeOutlined /> {t('pages.clients.qrCode')}</>,
-                                              onClick: () => onShowQr(row),
-                                            },
-                                            {
-                                              key: 'reset',
-                                              label: <><RetweetOutlined /> {t('pages.inbounds.resetTraffic')}</>,
-                                              onClick: () => onResetTraffic(row),
-                                            },
-                                            {
-                                              key: 'edit',
-                                              label: <><EditOutlined /> {t('edit')}</>,
-                                              onClick: () => onEdit(row),
-                                            },
-                                            {
-                                              key: 'delete',
-                                              danger: true,
-                                              label: <><DeleteOutlined /> {t('delete')}</>,
-                                              onClick: () => onDelete(row),
-                                            },
-                                          ],
-                                        }}
-                                      >
-                                        <MoreOutlined className="row-action-trigger" />
-                                      </Dropdown>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </Spin>
-                      )}
-                    </Card>
-                  </Col>
-                </Row>
+              {activeCount > 0 && (
+                <div className="filter-chips" style={{ padding: '0 12px 12px' }}>
+                  {filters.buckets.map((b) => closableChip(`b-${b}`, 'neutral', bucketChipLabel(b, t), () => setFilters({ ...filters, buckets: filters.buckets.filter((x) => x !== b) })))}
+                  {filters.protocols.map((p) => closableChip(`p-${p}`, 'primary', p, () => setFilters({ ...filters, protocols: filters.protocols.filter((x) => x !== p) })))}
+                  {filters.inboundIds.map((id) => closableChip(`i-${id}`, 'primary', inboundLabel(id), () => setFilters({ ...filters, inboundIds: filters.inboundIds.filter((x) => x !== id) })))}
+                  {filters.groups.map((g) => closableChip(`g-${g}`, 'primary', `${t('pages.clients.group')}: ${g}`, () => setFilters({ ...filters, groups: filters.groups.filter((x) => x !== g) })))}
+                  {(filters.expiryFrom || filters.expiryTo) && closableChip('exp', 'primary', `${t('pages.clients.expiryTime')}: ${filters.expiryFrom ? IntlUtil.formatDate(filters.expiryFrom, datepicker) : '…'} → ${filters.expiryTo ? IntlUtil.formatDate(filters.expiryTo, datepicker) : '…'}`, () => clearOneFilter('expiryFrom'))}
+                  {(filters.usageFromGB || filters.usageToGB) && closableChip('usage', 'warning', `${t('pages.clients.traffic')}: ${filters.usageFromGB ?? 0}${filters.usageToGB ? `–${filters.usageToGB}` : '+'} GB`, () => clearOneFilter('usageFromGB'))}
+                  {filters.autoRenew && closableChip('renew', 'warning', `${t('pages.clients.renew')}: ${filters.autoRenew === 'on' ? t('enabled') : t('disabled')}`, () => clearOneFilter('autoRenew'))}
+                  {filters.hasTgId && closableChip('tg', 'neutral', `${t('pages.clients.telegramId')}: ${filters.hasTgId === 'yes' ? t('pages.clients.has') : t('pages.clients.hasNot')}`, () => clearOneFilter('hasTgId'))}
+                  {filters.hasComment && closableChip('cm', 'neutral', `${t('pages.clients.comment')}: ${filters.hasComment === 'yes' ? t('pages.clients.has') : t('pages.clients.hasNot')}`, () => clearOneFilter('hasComment'))}
+                </div>
               )}
-            </Spin>
+
+              {!isMobile ? (
+                <div style={{ padding: '0 4px 4px' }}>
+                  <Spin spinning={loading}>
+                    <DataTable
+                      data={sortedClients}
+                      columns={columns}
+                      getRowId={(c) => c.email}
+                      sortable={false}
+                      rowSelection={{ selectedIds: selectedRowKeys, onChange: setSelectedRowKeys }}
+                      pagination={pagination}
+                      empty={<><TeamOutlined style={{ fontSize: 32, marginBottom: 8 }} /><div>{t('noData')}</div></>}
+                    />
+                  </Spin>
+                </div>
+              ) : (
+                <Spin spinning={loading}>
+                  <div className="client-cards" style={{ padding: '0 12px 12px' }}>
+                    {filteredClients.length > 0 && (
+                      <div className="card-bulk-bar">
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input type="checkbox" className="ds-check" checked={allSelected} onChange={(e) => selectAll(e.target.checked)} />
+                          {t('pages.clients.selectAll')}
+                        </label>
+                        {selectedRowKeys.length > 0 && <span className="bulk-count">{selectedRowKeys.length}</span>}
+                      </div>
+                    )}
+                    {filteredClients.length === 0 && (
+                      <div className="card-empty"><TeamOutlined style={{ fontSize: 28, opacity: 0.5 }} /><div>{t('noData')}</div></div>
+                    )}
+                    {filteredClients.length > 0 && (
+                      <div className="card-pagination"><Pagination {...pagination} /></div>
+                    )}
+                    {filteredClients.map((row) => {
+                      const bucket = clientBucket(row);
+                      return (
+                        <div key={row.email} className={`client-card${selectedRowKeys.includes(row.email) ? ' is-selected' : ''}`}>
+                          <div className="card-head">
+                            <input type="checkbox" className="ds-check" checked={selectedRowKeys.includes(row.email)} onChange={(e) => toggleSelect(row.email, e.target.checked)} />
+                            <span className={bucketDotClass(bucket)} />
+                            <span className="tag-name">{row.email}</span>
+                            {bucket === 'depleted' && <Tag tone="danger" className="status-tag">{t('depleted')}</Tag>}
+                            {bucket === 'expiring' && <Tag tone="warning" className="status-tag">{t('depletingSoon')}</Tag>}
+                            <div className="card-actions" onClick={(e) => e.stopPropagation()}>
+                              <Tooltip title={t('pages.clients.clientInfo')}>
+                                <button type="button" className="row-action-trigger" onClick={() => onShowInfo(row)}><InfoCircleOutlined /></button>
+                              </Tooltip>
+                              <Switch checked={!!row.enable} onChange={(next) => onToggleEnable(row, next)} />
+                              <DropdownMenu
+                                items={[
+                                  { key: 'qr', icon: <QrcodeOutlined />, label: t('pages.clients.qrCode'), onSelect: () => onShowQr(row) },
+                                  { key: 'reset', icon: <RetweetOutlined />, label: t('pages.inbounds.resetTraffic'), onSelect: () => onResetTraffic(row) },
+                                  { key: 'edit', icon: <EditOutlined />, label: t('edit'), onSelect: () => onEdit(row) },
+                                  { key: 'delete', icon: <DeleteOutlined />, label: t('delete'), danger: true, onSelect: () => onDelete(row) },
+                                ]}
+                                trigger={<button type="button" className="row-action-trigger"><MoreOutlined /></button>}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Spin>
+              )}
+            </Card>
+          </div>
+        )}
+
+        <Dialog
+          open={confirm !== null}
+          onOpenChange={(o) => !o && setConfirm(null)}
+          title={confirm?.title ?? ''}
+          okText={confirm?.okText ?? t('confirm')}
+          okDanger
+          confirmLoading={confirmBusy}
+          onOk={runConfirm}
+        >
+          <p style={{ margin: 0 }}>{confirm?.content}</p>
+        </Dialog>
 
         <LazyMount when={formOpen}>
-          <ClientFormModal
-            open={formOpen}
-            mode={formMode}
-            client={editingClient}
-            attachedIds={editingAttachedIds}
-            inbounds={inbounds}
-            ipLimitEnable={ipLimitEnable}
-            tgBotEnable={tgBotEnable}
-            groups={allGroups}
-            save={onSave}
-            onOpenChange={setFormOpen}
-          />
+          <ClientFormModal open={formOpen} mode={formMode} client={editingClient} attachedIds={editingAttachedIds} inbounds={inbounds} ipLimitEnable={ipLimitEnable} tgBotEnable={tgBotEnable} groups={allGroups} save={onSave} onOpenChange={setFormOpen} />
         </LazyMount>
         <LazyMount when={infoOpen}>
-          <ClientInfoModal
-            open={infoOpen}
-            client={infoClient}
-            inboundsById={inboundsById}
-            isOnline={infoClient ? isOnline(infoClient.email) : false}
-            subSettings={subSettings}
-            onOpenChange={setInfoOpen}
-          />
+          <ClientInfoModal open={infoOpen} client={infoClient} inboundsById={inboundsById} isOnline={infoClient ? isOnline(infoClient.email) : false} subSettings={subSettings} onOpenChange={setInfoOpen} />
         </LazyMount>
         <LazyMount when={qrOpen}>
-          <ClientQrModal
-            open={qrOpen}
-            client={qrClient}
-            subSettings={subSettings}
-            onOpenChange={setQrOpen}
-          />
+          <ClientQrModal open={qrOpen} client={qrClient} subSettings={subSettings} onOpenChange={setQrOpen} />
         </LazyMount>
         <LazyMount when={bulkAddOpen}>
-          <ClientBulkAddModal
-            open={bulkAddOpen}
-            inbounds={inbounds}
-            ipLimitEnable={ipLimitEnable}
-            groups={allGroups}
-            onOpenChange={setBulkAddOpen}
-            onSaved={() => setBulkAddOpen(false)}
-          />
+          <ClientBulkAddModal open={bulkAddOpen} inbounds={inbounds} ipLimitEnable={ipLimitEnable} groups={allGroups} onOpenChange={setBulkAddOpen} onSaved={() => setBulkAddOpen(false)} />
         </LazyMount>
         <LazyMount when={bulkAdjustOpen}>
-          <ClientBulkAdjustModal
-            open={bulkAdjustOpen}
-            count={selectedRowKeys.length}
-            onOpenChange={setBulkAdjustOpen}
-            onSubmit={async (addDays, addBytes) => {
-              const msg = await bulkAdjust([...selectedRowKeys], addDays, addBytes);
-              if (msg?.success) {
-                setSelectedRowKeys([]);
-                return msg.obj ?? { adjusted: 0 };
-              }
-              return null;
-            }}
-          />
+          <ClientBulkAdjustModal open={bulkAdjustOpen} count={selectedRowKeys.length} onOpenChange={setBulkAdjustOpen} onSubmit={async (addDays, addBytes) => {
+            const msg = await bulkAdjust([...selectedRowKeys], addDays, addBytes);
+            if (msg?.success) { setSelectedRowKeys([]); return msg.obj ?? { adjusted: 0 }; }
+            return null;
+          }} />
         </LazyMount>
         <LazyMount when={subLinksOpen}>
-          <SubLinksModal
-            open={subLinksOpen}
-            emails={selectedRowKeys}
-            clients={clients}
-            subSettings={subSettings}
-            onOpenChange={setSubLinksOpen}
-          />
+          <SubLinksModal open={subLinksOpen} emails={selectedRowKeys} clients={clients} subSettings={subSettings} onOpenChange={setSubLinksOpen} />
         </LazyMount>
         <LazyMount when={bulkGroupOpen}>
-          <BulkAddToGroupModal
-            open={bulkGroupOpen}
-            count={selectedRowKeys.length}
-            groups={allGroups}
-            onOpenChange={setBulkGroupOpen}
-            onSubmit={async (group) => {
-              const msg = await bulkAddToGroup([...selectedRowKeys], group);
-              if (msg?.success) {
-                setSelectedRowKeys([]);
-                return (msg.obj as { affected?: number } | undefined) ?? { affected: 0 };
-              }
-              return null;
-            }}
-          />
+          <BulkAddToGroupModal open={bulkGroupOpen} count={selectedRowKeys.length} groups={allGroups} onOpenChange={setBulkGroupOpen} onSubmit={async (group) => {
+            const msg = await bulkAddToGroup([...selectedRowKeys], group);
+            if (msg?.success) { setSelectedRowKeys([]); return (msg.obj as { affected?: number } | undefined) ?? { affected: 0 }; }
+            return null;
+          }} />
         </LazyMount>
         <LazyMount when={bulkAttachOpen}>
-          <BulkAttachInboundsModal
-            open={bulkAttachOpen}
-            count={selectedRowKeys.length}
-            inbounds={inbounds}
-            onOpenChange={setBulkAttachOpen}
-            onSubmit={async (inboundIds) => {
-              const msg = await bulkAttach([...selectedRowKeys], inboundIds);
-              if (msg?.success) {
-                setSelectedRowKeys([]);
-                return msg.obj ?? { attached: [], skipped: [], errors: [] };
-              }
-              return null;
-            }}
-          />
+          <BulkAttachInboundsModal open={bulkAttachOpen} count={selectedRowKeys.length} inbounds={inbounds} onOpenChange={setBulkAttachOpen} onSubmit={async (inboundIds) => {
+            const msg = await bulkAttach([...selectedRowKeys], inboundIds);
+            if (msg?.success) { setSelectedRowKeys([]); return msg.obj ?? { attached: [], skipped: [], errors: [] }; }
+            return null;
+          }} />
         </LazyMount>
         <LazyMount when={bulkDetachOpen}>
-          <BulkDetachInboundsModal
-            open={bulkDetachOpen}
-            count={selectedRowKeys.length}
-            inbounds={inbounds}
-            onOpenChange={setBulkDetachOpen}
-            onSubmit={async (inboundIds) => {
-              const msg = await bulkDetach([...selectedRowKeys], inboundIds);
-              if (msg?.success) {
-                setSelectedRowKeys([]);
-                return msg.obj ?? { detached: [], skipped: [], errors: [] };
-              }
-              return null;
-            }}
-          />
+          <BulkDetachInboundsModal open={bulkDetachOpen} count={selectedRowKeys.length} inbounds={inbounds} onOpenChange={setBulkDetachOpen} onSubmit={async (inboundIds) => {
+            const msg = await bulkDetach([...selectedRowKeys], inboundIds);
+            if (msg?.success) { setSelectedRowKeys([]); return msg.obj ?? { detached: [], skipped: [], errors: [] }; }
+            return null;
+          }} />
         </LazyMount>
         <LazyMount when={filterDrawerOpen}>
-          <FilterDrawer
-            open={filterDrawerOpen}
-            onOpenChange={setFilterDrawerOpen}
-            filters={filters}
-            onChange={setFilters}
-            inbounds={inbounds}
-            protocols={protocolOptions}
-            groups={groupOptions}
-          />
+          <FilterDrawer open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen} filters={filters} onChange={setFilters} inbounds={inbounds} protocols={protocolOptions} groups={groupOptions} />
         </LazyMount>
       </div>
-    </ConfigProvider>
+    </TooltipProvider>
   );
-}
-
-function bucketChipLabel(b: string, t: (k: string) => string): string {
-  switch (b) {
-    case 'active': return t('subscription.active');
-    case 'expiring': return t('depletingSoon');
-    case 'depleted': return t('depleted');
-    case 'deactive': return t('disabled');
-    case 'online': return t('online');
-    default: return b;
-  }
 }
