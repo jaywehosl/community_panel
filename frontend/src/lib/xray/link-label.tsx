@@ -1,4 +1,4 @@
-import { Tag } from 'antd';
+import { Tag, type TagTone } from '@/components/ds';
 import { Base64 } from '@/utils';
 
 /* Shared parsing + rendering for the "protocol / transport / security"
@@ -27,23 +27,23 @@ const PROTOCOL_LABELS: Record<string, string> = {
   wg: 'WireGuard',
 };
 
-const PROTOCOL_COLORS: Record<string, string> = {
-  Vless: 'geekblue',
-  Vmess: 'blue',
-  Trojan: 'volcano',
-  Shadowsocks: 'purple',
-  Hysteria: 'magenta',
-  Hysteria2: 'magenta',
-  WireGuard: 'cyan',
+const PROTOCOL_TONES: Record<string, TagTone> = {
+  Vless: 'primary',
+  Vmess: 'primary',
+  Trojan: 'warning',
+  Shadowsocks: 'primary',
+  Hysteria: 'danger',
+  Hysteria2: 'danger',
+  WireGuard: 'primary',
 };
 
-const SECURITY_COLORS: Record<string, string> = {
-  TLS: 'green',
-  XTLS: 'green',
-  REALITY: 'purple',
+const SECURITY_TONES: Record<string, TagTone> = {
+  TLS: 'success',
+  XTLS: 'success',
+  REALITY: 'primary',
 };
 
-const TRANSPORT_COLOR = 'gold';
+const TRANSPORT_TONE: TagTone = 'warning';
 
 const TAG_STYLE = { marginInlineEnd: 0, fontWeight: 600, letterSpacing: '0.3px' };
 
@@ -120,10 +120,10 @@ export function linkMetaText(parts: LinkParts): string {
 export function LinkTags({ parts }: { parts: LinkParts }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-      <Tag color={PROTOCOL_COLORS[parts.protocol]} style={TAG_STYLE}>{parts.protocol}</Tag>
-      {parts.network && <Tag color={TRANSPORT_COLOR} style={TAG_STYLE}>{parts.network}</Tag>}
+      <Tag tone={PROTOCOL_TONES[parts.protocol] ?? 'neutral'} style={TAG_STYLE}>{parts.protocol}</Tag>
+      {parts.network && <Tag tone={TRANSPORT_TONE} style={TAG_STYLE}>{parts.network}</Tag>}
       {parts.security && (
-        <Tag color={SECURITY_COLORS[parts.security]} style={TAG_STYLE}>{parts.security}</Tag>
+        <Tag tone={SECURITY_TONES[parts.security] ?? 'neutral'} style={TAG_STYLE}>{parts.security}</Tag>
       )}
     </span>
   );
