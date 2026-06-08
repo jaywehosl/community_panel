@@ -1,3 +1,18 @@
 .hint-alert {
   text-align: center;
 }
+
+/* Number input + trailing unit (replaces antd InputNumber addonAfter). */
+.basics-num-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.basics-num-field > .ds-input {
+  flex: 1;
+}
+.basics-num-unit {
+  color: var(--text-3);
+  font-size: 12px;
+  white-space: nowrap;
+}

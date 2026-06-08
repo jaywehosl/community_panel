@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Divider, Dropdown, Empty, Modal, Radio, Space, Table, Tag } from 'antd';
+import { Button, DataTable, Dialog, Divider, DropdownMenu, Segmented, Tag, type ColumnDef, type MenuEntry } from '@/components/ds';
 import { PlusOutlined, MoreOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
 
 import BalancerFormModal from './BalancerFormModal';
 import type { BalancerFormValue } from './BalancerFormModal';
@@ -93,7 +92,7 @@ export default function BalancersTab({
   isMobile,
 }: BalancersTabProps) {
   const { t } = useTranslation();
-  const [modal, modalContextHolder] = Modal.useModal();
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBalancer, setEditingBalancer] = useState<BalancerFormValue | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -183,93 +182,65 @@ export default function BalancersTab({
   }
 
   function confirmDelete(idx: number) {
-    modal.confirm({
-      title: `${t('delete')} ${t('pages.xray.Balancers')} #${idx + 1}?`,
-      okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
-      onOk: () => mutate((tt) => {
-        if (tt.routing?.balancers) {
-          tt.routing.balancers.splice(idx, 1);
-          syncObservatories(tt);
-        }
-      }),
+    setDeleteIndex(idx);
+  }
+  function runDelete() {
+    if (deleteIndex == null) return;
+    const idx = deleteIndex;
+    mutate((tt) => {
+      if (tt.routing?.balancers) {
+        tt.routing.balancers.splice(idx, 1);
+        syncObservatories(tt);
+      }
     });
+    setDeleteIndex(null);
   }
 
-  const columns: ColumnsType<BalancerRow> = [
+  const columns: ColumnDef<BalancerRow, unknown>[] = [
     {
-      title: '#',
-      key: 'action',
-      align: 'center',
-      width: 100,
-      render: (_v, _record, index) => (
-        <div className="action-cell">
-          <span className="row-index">{index + 1}</span>
-          <div className={!isMobile ? 'action-buttons' : ''}>
-            {!isMobile && (
-              <Button shape="circle" size="small" icon={<EditOutlined />} onClick={() => openEdit(index)} />
-            )}
-            <Dropdown
-              trigger={['click']}
-              menu={{
-                items: [
-                  ...(isMobile
-                    ? [
-                        {
-                          key: 'edit',
-                          label: (
-                            <>
-                              <EditOutlined /> {t('edit')}
-                            </>
-                          ),
-                          onClick: () => openEdit(index),
-                        },
-                      ]
-                    : []),
-                  {
-                    key: 'del',
-                    danger: true,
-                    label: (
-                      <>
-                        <DeleteOutlined /> {t('delete')}
-                      </>
-                    ),
-                    onClick: () => confirmDelete(index),
-                  },
-                ],
-              }}
-            >
-              <Button shape="circle" size="small" icon={<MoreOutlined />} />
-            </Dropdown>
+      id: 'action',
+      size: 100,
+      header: () => '#',
+      cell: ({ row }) => {
+        const index = row.index;
+        const menu: MenuEntry[] = [
+          ...(isMobile
+            ? [{ key: 'edit', icon: <EditOutlined />, label: t('edit'), onSelect: () => openEdit(index) } as MenuEntry]
+            : []),
+          { key: 'del', icon: <DeleteOutlined />, label: t('delete'), danger: true, onSelect: () => confirmDelete(index) },
+        ];
+        return (
+          <div className="action-cell">
+            <span className="row-index">{index + 1}</span>
+            <div className={!isMobile ? 'action-buttons' : ''}>
+              {!isMobile && (
+                <Button variant="text" size="sm" icon={<EditOutlined />} onClick={() => openEdit(index)} />
+              )}
+              <DropdownMenu items={menu} trigger={<Button variant="text" size="sm" icon={<MoreOutlined />} />} />
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
-    { title: 'Tag', dataIndex: 'tag', key: 'tag', align: 'center', width: 160 },
+    { id: 'tag', size: 160, header: () => 'Tag', cell: ({ row }) => row.original.tag },
     {
-      title: 'Strategy',
-      key: 'strategy',
-      align: 'center',
-      width: 140,
-      render: (_v, record) => (
-        <Tag color={record.strategy === 'random' ? 'purple' : 'green'}>
-          {STRATEGY_LABELS[record.strategy] || record.strategy}
+      id: 'strategy',
+      size: 140,
+      header: () => 'Strategy',
+      cell: ({ row }) => (
+        <Tag tone={row.original.strategy === 'random' ? 'primary' : 'success'}>
+          {STRATEGY_LABELS[row.original.strategy] || row.original.strategy}
         </Tag>
       ),
     },
     {
-      title: 'Selector',
-      key: 'selector',
-      align: 'center',
-      render: (_v, record) =>
-        (record.selector || []).map((sel) => (
-          <Tag key={sel} className="info-large-tag">
-            {sel}
-          </Tag>
-        )),
+      id: 'selector',
+      header: () => 'Selector',
+      cell: ({ row }) => (row.original.selector || []).map((sel) => (
+        <Tag key={sel} className="info-large-tag">{sel}</Tag>
+      )),
     },
-    { title: 'Fallback', dataIndex: 'fallbackTag', key: 'fallbackTag', align: 'center', width: 160 },
+    { id: 'fallbackTag', size: 160, header: () => 'Fallback', cell: ({ row }) => row.original.fallbackTag },
   ];
 
   const hasObservatory = !!templateSettings?.observatory;
@@ -306,42 +277,38 @@ export default function BalancersTab({
 
   return (
     <>
-      {modalContextHolder}
-      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
         {rows.length === 0 ? (
-          <Empty description={t('emptyBalancersDesc')}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '28px 0' }}>
+            <div style={{ color: 'var(--text-3)' }}>{t('emptyBalancersDesc')}</div>
+            <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd}>
               {t('pages.xray.Balancers')}
             </Button>
-          </Empty>
+          </div>
         ) : (
           <>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
+            <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd} style={{ alignSelf: 'flex-start' }}>
               {t('pages.xray.Balancers')}
             </Button>
 
-            <Table
+            <DataTable<BalancerRow>
+              data={rows}
               columns={columns}
-              dataSource={rows}
-              rowKey={(r) => r.key}
-              pagination={false}
-              size="small"
-              scroll={{ x: 400 }}
+              getRowId={(r) => String(r.key)}
+              sortable={false}
             />
 
             {showObsEditor && (
               <>
-                <Divider style={{ margin: '8px 0' }} />
-                <Radio.Group
+                <Divider />
+                <Segmented
                   value={obsView}
-                  onChange={(e) => setObsView(e.target.value)}
-                  optionType="button"
-                  buttonStyle="solid"
-                  size="small"
-                >
-                  {hasObservatory && <Radio.Button value="observatory">Observatory</Radio.Button>}
-                  {hasBurstObservatory && <Radio.Button value="burstObservatory">Burst Observatory</Radio.Button>}
-                </Radio.Group>
+                  onChange={(v) => setObsView(v as 'observatory' | 'burstObservatory')}
+                  options={[
+                    ...(hasObservatory ? [{ value: 'observatory', label: 'Observatory' }] : []),
+                    ...(hasBurstObservatory ? [{ value: 'burstObservatory', label: 'Burst Observatory' }] : []),
+                  ]}
+                />
                 <JsonEditor
                   value={obsText}
                   onChange={onObsTextChange}
@@ -352,7 +319,18 @@ export default function BalancersTab({
             )}
           </>
         )}
-      </Space>
+      </div>
+
+      <Dialog
+        open={deleteIndex != null}
+        onOpenChange={(o) => { if (!o) setDeleteIndex(null); }}
+        title={deleteIndex != null ? `${t('delete')} ${t('pages.xray.Balancers')} #${deleteIndex + 1}?` : ''}
+        okText={t('delete')}
+        cancelText={t('cancel')}
+        okDanger
+        onOk={runDelete}
+        width={420}
+      />
 
       <BalancerFormModal
         key={modalOpen ? `${editingIndex ?? 'new'}-${editingBalancer?.tag ?? ''}` : 'closed'}

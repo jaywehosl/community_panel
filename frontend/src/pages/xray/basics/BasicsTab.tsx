@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Input, InputNumber, Modal, Select, Space, Switch, Tabs } from 'antd';
+import { Alert, Button, Dialog, Input, Select, Switch, Tabs } from '@/components/ds';
 import {
   BarChartOutlined,
   ClockCircleOutlined,
@@ -41,7 +41,7 @@ export default function BasicsTab({
 }: BasicsTabProps) {
   const { t } = useTranslation();
   const { isMobile } = useMediaQuery();
-  const [modal, modalContextHolder] = Modal.useModal();
+  const [resetOpen, setResetOpen] = useState(false);
 
   const mutate = useCallback(
     (mutator: (next: XraySettingsValue) => void) => {
@@ -70,13 +70,7 @@ export default function BasicsTab({
   );
 
   function confirmResetDefault() {
-    modal.confirm({
-      title: t('pages.settings.resetDefaultConfig'),
-      okText: t('reset'),
-      okType: 'danger',
-      cancelText: t('cancel'),
-      onOk: () => onResetDefault(),
-    });
+    setResetOpen(true);
   }
 
   const freedomStrategy =
@@ -96,8 +90,7 @@ export default function BasicsTab({
       children: (
         <>
           <Alert
-            type="warning"
-            showIcon
+            tone="warning"
             className="mb-12 hint-alert"
             title={t('pages.xray.generalConfigsDesc')}
           />
@@ -108,7 +101,6 @@ export default function BasicsTab({
             control={
               <Select
                 value={freedomStrategy}
-                style={{ width: '100%' }}
                 options={OutboundDomainStrategies.map((s) => ({ value: s, label: s }))}
                 onChange={(next) => mutate((tt) => {
                   if (!tt.outbounds) tt.outbounds = [];
@@ -131,7 +123,6 @@ export default function BasicsTab({
             control={
               <Select
                 value={routingStrategy}
-                style={{ width: '100%' }}
                 options={ROUTING_DOMAIN_STRATEGIES.map((s) => ({ value: s, label: s }))}
                 onChange={(next) => mutate((tt) => {
                   if (tt.routing) tt.routing.domainStrategy = next;
@@ -190,8 +181,7 @@ export default function BasicsTab({
       children: (
         <>
           <Alert
-            type="warning"
-            showIcon
+            tone="warning"
             className="mb-12 hint-alert"
             title={t('pages.xray.connectionLimitsDesc')}
           />
@@ -200,14 +190,16 @@ export default function BasicsTab({
             description={t('pages.xray.connIdleDesc')}
             paddings="small"
             control={
-              <InputNumber
-                value={typeof level0.connIdle === 'number' ? level0.connIdle : undefined}
-                min={0}
-                style={{ width: '100%' }}
-                placeholder="300"
-                addonAfter={t('pages.xray.seconds')}
-                onChange={(v) => setLevel0('connIdle', v as number | null)}
-              />
+              <div className="basics-num-field">
+                <Input
+                  type="number"
+                  value={typeof level0.connIdle === 'number' ? level0.connIdle : ''}
+                  min={0}
+                  placeholder="300"
+                  onChange={(e) => setLevel0('connIdle', e.target.value === '' ? null : Number(e.target.value) || 0)}
+                />
+                <span className="basics-num-unit">{t('pages.xray.seconds')}</span>
+              </div>
             }
           />
           <SettingListItem
@@ -215,14 +207,16 @@ export default function BasicsTab({
             description={t('pages.xray.bufferSizeDesc')}
             paddings="small"
             control={
-              <InputNumber
-                value={typeof level0.bufferSize === 'number' ? level0.bufferSize : undefined}
-                min={0}
-                style={{ width: '100%' }}
-                placeholder={t('pages.xray.bufferSizePlaceholder')}
-                addonAfter="KB"
-                onChange={(v) => setLevel0('bufferSize', v as number | null)}
-              />
+              <div className="basics-num-field">
+                <Input
+                  type="number"
+                  value={typeof level0.bufferSize === 'number' ? level0.bufferSize : ''}
+                  min={0}
+                  placeholder={t('pages.xray.bufferSizePlaceholder')}
+                  onChange={(e) => setLevel0('bufferSize', e.target.value === '' ? null : Number(e.target.value) || 0)}
+                />
+                <span className="basics-num-unit">KB</span>
+              </div>
             }
           />
         </>
@@ -234,8 +228,7 @@ export default function BasicsTab({
       children: (
         <>
           <Alert
-            type="warning"
-            showIcon
+            tone="warning"
             className="mb-12 hint-alert"
             title={t('pages.xray.logConfigsDesc')}
           />
@@ -246,7 +239,6 @@ export default function BasicsTab({
             control={
               <Select
                 value={(log.loglevel as string) || 'warning'}
-                style={{ width: '100%' }}
                 options={LOG_LEVELS.map((s) => ({ value: s, label: s }))}
                 onChange={(v) => mutate((tt) => { if (tt.log) tt.log.loglevel = v; })}
               />
@@ -259,7 +251,6 @@ export default function BasicsTab({
             control={
               <Select
                 value={(log.access as string) || ''}
-                style={{ width: '100%' }}
                 options={ACCESS_LOG.map((s) => ({ value: s, label: s }))}
                 onChange={(v) => mutate((tt) => { if (tt.log) tt.log.access = v; })}
               />
@@ -272,7 +263,6 @@ export default function BasicsTab({
             control={
               <Select
                 value={(log.error as string) || ''}
-                style={{ width: '100%' }}
                 options={[{ value: '', label: t('empty') }, ...ERROR_LOG.map((s) => ({ value: s, label: s }))]}
                 onChange={(v) => mutate((tt) => { if (tt.log) tt.log.error = v; })}
               />
@@ -285,7 +275,6 @@ export default function BasicsTab({
             control={
               <Select
                 value={(log.maskAddress as string) || ''}
-                style={{ width: '100%' }}
                 options={[{ value: '', label: t('empty') }, ...MASK_ADDRESS.map((s) => ({ value: s, label: s }))]}
                 onChange={(v) => mutate((tt) => { if (tt.log) tt.log.maskAddress = v; })}
               />
@@ -309,19 +298,28 @@ export default function BasicsTab({
       key: 'reset',
       label: catTabLabel(<ReloadOutlined />, t('pages.settings.resetDefaultConfig'), isMobile),
       children: (
-        <Space style={{ padding: '0 20px' }}>
-          <Button type="primary" danger icon={<ReloadOutlined />} onClick={confirmResetDefault}>
+        <div style={{ padding: '0 20px' }}>
+          <Button variant="primary" danger icon={<ReloadOutlined />} onClick={confirmResetDefault}>
             {t('pages.settings.resetDefaultConfig')}
           </Button>
-        </Space>
+        </div>
       ),
     },
   ];
 
   return (
     <>
-      {modalContextHolder}
       <Tabs defaultActiveKey="1" items={items} />
+      <Dialog
+        open={resetOpen}
+        onOpenChange={(o) => { if (!o) setResetOpen(false); }}
+        title={t('pages.settings.resetDefaultConfig')}
+        okText={t('reset')}
+        cancelText={t('cancel')}
+        okDanger
+        onOk={() => { onResetDefault(); setResetOpen(false); }}
+        width={420}
+      />
     </>
   );
 }
