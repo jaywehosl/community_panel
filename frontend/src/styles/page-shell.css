@@ -17,7 +17,10 @@ html { scrollbar-gutter: stable; }
   transition: background var(--dur-slow) var(--ease-out-expo);
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  /* `clip` (not `hidden`) prevents a horizontal scrollbar WITHOUT turning this
+     wrapper into a scroll container — `hidden` forces overflow-y:auto and breaks
+     `position: sticky` on the header (it would scroll away). */
+  overflow-x: clip;
 }
 
 /* Aurora field — gives the frosted glass something to refract (the "air"). */

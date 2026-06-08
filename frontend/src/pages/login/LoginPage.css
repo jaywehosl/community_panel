@@ -131,12 +131,17 @@
   transition: background-color 0.2s, transform 0.15s, color 0.2s;
 }
 
-.toolbar-btn.ds-btn:hover {
-  background: rgba(50, 121, 249, 0.08);
-  border-color: transparent;
+/* hover: button lightens to a whiter frosted glass (matches the panel header
+   feel). High specificity + !important beats DS Button's base :hover glow. */
+.login-header-right .toolbar-btn.ds-btn:hover {
+  background: rgba(255, 255, 255, 0.55) !important;
+  border-color: transparent !important;
   color: #3279F9;
   transform: scale(1.05);
-  box-shadow: none;
+  box-shadow: 0 2px 10px rgba(18, 19, 23, 0.06) !important;
+}
+.login-app.is-dark .login-header-right .toolbar-btn.ds-btn:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
 }
 
 /* Hero Section */
