@@ -1,24 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Button,
-  Col,
-  Row,
-  Space,
-} from '@/components/ui';
-import {
-  Checkbox,
-  DatePicker,
-  Drawer,
-  Form,
-  InputNumber,
-  Radio,
-  Select,
-  Typography,
-} from 'antd';
 import dayjs from 'dayjs';
-import type { Dayjs } from 'dayjs';
 
+import { Button, Drawer, Field, Input, Segmented, Tag } from '@/components/ds';
 import type { InboundOption } from '@/hooks/useClients';
 import { emptyFilters, type ClientFilters } from './filters';
 
@@ -33,6 +17,17 @@ interface FilterDrawerProps {
 }
 
 const BUCKET_KEYS = ['active', 'expiring', 'depleted', 'deactive', 'online'] as const;
+
+function bucketLabel(key: string, t: (k: string) => string): string {
+  switch (key) {
+    case 'active': return t('subscription.active');
+    case 'expiring': return t('depletingSoon');
+    case 'depleted': return t('depleted');
+    case 'deactive': return t('disabled');
+    case 'online': return t('online');
+    default: return key;
+  }
+}
 
 export default function FilterDrawer({
   open,
@@ -49,196 +44,114 @@ export default function FilterDrawer({
     onChange({ ...filters, [key]: value });
   }
 
+  function toggleIn<T>(arr: T[], v: T): T[] {
+    return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+  }
+
   const inboundOptions = useMemo(
-    () => inbounds.map((ib) => ({
-      value: ib.id,
-      label: ib.remark?.trim() || ib.tag || '',
-    })),
+    () => inbounds.map((ib) => ({ value: ib.id, label: ib.remark?.trim() || ib.tag || '' })),
     [inbounds],
   );
 
-  const protocolOptions = useMemo(
-    () => protocols.map((p) => ({ value: p, label: p })),
-    [protocols],
-  );
+  const fromStr = filters.expiryFrom ? dayjs(filters.expiryFrom).format('YYYY-MM-DD') : '';
+  const toStr = filters.expiryTo ? dayjs(filters.expiryTo).format('YYYY-MM-DD') : '';
 
-  const groupOptions = useMemo(
-    () => groups.map((g) => ({ value: g, label: g })),
-    [groups],
-  );
-
-  const dateRange: [Dayjs | null, Dayjs | null] = [
-    filters.expiryFrom ? dayjs(filters.expiryFrom) : null,
-    filters.expiryTo ? dayjs(filters.expiryTo) : null,
+  const triState = [
+    { value: '', label: t('all') },
+    { value: 'yes', label: t('pages.clients.has') },
+    { value: 'no', label: t('pages.clients.hasNot') },
   ];
 
   return (
     <Drawer
-      title={t('pages.clients.filterTitle')}
       open={open}
-      onClose={() => onOpenChange(false)}
-      width={420}
-      destroyOnHidden
-      footer={
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Button onClick={() => onChange(emptyFilters())} danger>
-            {t('pages.clients.clearAllFilters')}
-          </Button>
-          <Button type="primary" onClick={() => onOpenChange(false)}>
-            {t('done')}
-          </Button>
+      onOpenChange={onOpenChange}
+      title={t('pages.clients.filterTitle')}
+      width={440}
+      footer={(
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+          <Button danger onClick={() => onChange(emptyFilters())}>{t('pages.clients.clearAllFilters')}</Button>
+          <Button variant="primary" onClick={() => onOpenChange(false)}>{t('done')}</Button>
         </div>
-      }
+      )}
     >
-      <Form layout="vertical">
-        <Form.Item label={<Typography.Text strong>{t('status')}</Typography.Text>}>
-          <Checkbox.Group
-            value={filters.buckets}
-            onChange={(v) => patch('buckets', v as string[])}
-          >
-            <Space direction="vertical">
-              {BUCKET_KEYS.map((k) => (
-                <Checkbox key={k} value={k}>
-                  {bucketLabel(k, t)}
-                </Checkbox>
-              ))}
-            </Space>
-          </Checkbox.Group>
-        </Form.Item>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Field label={t('status')}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {BUCKET_KEYS.map((k) => (
+              <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  className="ds-check"
+                  checked={filters.buckets.includes(k)}
+                  onChange={() => patch('buckets', toggleIn(filters.buckets, k))}
+                />
+                {bucketLabel(k, t)}
+              </label>
+            ))}
+          </div>
+        </Field>
 
-        <Form.Item label={t('pages.inbounds.protocol')}>
-          <Select
-            mode="multiple"
-            value={filters.protocols}
-            onChange={(v) => patch('protocols', v as string[])}
-            options={protocolOptions}
-            placeholder={t('pages.inbounds.protocol')}
-            maxTagCount="responsive"
-            allowClear
-          />
-        </Form.Item>
+        <Field label={t('pages.inbounds.protocol')}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {protocols.map((p) => (
+              <Tag key={p} tone={filters.protocols.includes(p) ? 'primary' : 'neutral'} onClick={() => patch('protocols', toggleIn(filters.protocols, p))} style={{ cursor: 'pointer' }}>
+                {p}
+              </Tag>
+            ))}
+          </div>
+        </Field>
 
-        <Form.Item label={t('inbounds')}>
-          <Select
-            mode="multiple"
-            value={filters.inboundIds}
-            onChange={(v) => patch('inboundIds', v as number[])}
-            options={inboundOptions}
-            placeholder={t('inbounds')}
-            maxTagCount="responsive"
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            listHeight={220}
-          />
-        </Form.Item>
+        <Field label={t('inbounds')}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
+            {inboundOptions.map((o) => (
+              <Tag key={o.value} tone={filters.inboundIds.includes(o.value) ? 'primary' : 'neutral'} onClick={() => patch('inboundIds', toggleIn(filters.inboundIds, o.value))} style={{ cursor: 'pointer' }}>
+                {o.label}
+              </Tag>
+            ))}
+          </div>
+        </Field>
 
-        <Form.Item label={t('pages.clients.group')}>
-          <Select
-            mode="multiple"
-            value={filters.groups}
-            onChange={(v) => patch('groups', v as string[])}
-            options={groupOptions}
-            placeholder={t('pages.clients.groupPlaceholder')}
-            maxTagCount="responsive"
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            listHeight={220}
-          />
-        </Form.Item>
+        <Field label={t('pages.clients.group')}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
+            {groups.map((g) => (
+              <Tag key={g} tone={filters.groups.includes(g) ? 'primary' : 'neutral'} onClick={() => patch('groups', toggleIn(filters.groups, g))} style={{ cursor: 'pointer' }}>
+                {g}
+              </Tag>
+            ))}
+          </div>
+        </Field>
 
-        <Form.Item label={t('pages.clients.expiryTime')}>
-          <DatePicker.RangePicker
-            value={dateRange}
-            onChange={(range) => {
-              const from = range?.[0]?.startOf('day').valueOf();
-              const to = range?.[1]?.endOf('day').valueOf();
-              onChange({ ...filters, expiryFrom: from || undefined, expiryTo: to || undefined });
-            }}
-            style={{ width: '100%' }}
-            allowEmpty={[true, true]}
-          />
-        </Form.Item>
+        <Field label={t('pages.clients.expiryTime')}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <Input type="date" value={fromStr} onChange={(e) => onChange({ ...filters, expiryFrom: e.target.value ? dayjs(e.target.value).startOf('day').valueOf() : undefined })} />
+            <Input type="date" value={toStr} onChange={(e) => onChange({ ...filters, expiryTo: e.target.value ? dayjs(e.target.value).endOf('day').valueOf() : undefined })} />
+          </div>
+        </Field>
 
-        <Form.Item label={`${t('pages.clients.traffic')} (GB)`}>
-          <Row gutter={8}>
-            <Col span={12}>
-              <InputNumber
-                value={filters.usageFromGB}
-                min={0}
-                step={1}
-                placeholder={t('from')}
-                style={{ width: '100%' }}
-                onChange={(v) => patch('usageFromGB', typeof v === 'number' ? v : undefined)}
-              />
-            </Col>
-            <Col span={12}>
-              <InputNumber
-                value={filters.usageToGB}
-                min={0}
-                step={1}
-                placeholder={t('to')}
-                style={{ width: '100%' }}
-                onChange={(v) => patch('usageToGB', typeof v === 'number' ? v : undefined)}
-              />
-            </Col>
-          </Row>
-        </Form.Item>
+        <Field label={`${t('pages.clients.traffic')} (GB)`}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <Input type="number" min={0} step={1} placeholder={t('from')} value={filters.usageFromGB ?? ''} onChange={(e) => patch('usageFromGB', e.target.value === '' ? undefined : Number(e.target.value))} />
+            <Input type="number" min={0} step={1} placeholder={t('to')} value={filters.usageToGB ?? ''} onChange={(e) => patch('usageToGB', e.target.value === '' ? undefined : Number(e.target.value))} />
+          </div>
+        </Field>
 
-        <Form.Item label={t('pages.clients.renew')}>
-          <Radio.Group
+        <Field label={t('pages.clients.renew')}>
+          <Segmented
             value={filters.autoRenew}
-            onChange={(e) => patch('autoRenew', e.target.value)}
-            optionType="button"
-            buttonStyle="solid"
-            options={[
-              { value: '', label: t('all') },
-              { value: 'on', label: t('enabled') },
-              { value: 'off', label: t('disabled') },
-            ]}
+            onChange={(v) => patch('autoRenew', v as ClientFilters['autoRenew'])}
+            options={[{ value: '', label: t('all') }, { value: 'on', label: t('enabled') }, { value: 'off', label: t('disabled') }]}
           />
-        </Form.Item>
+        </Field>
 
-        <Form.Item label={t('pages.clients.telegramId')}>
-          <Radio.Group
-            value={filters.hasTgId}
-            onChange={(e) => patch('hasTgId', e.target.value)}
-            optionType="button"
-            buttonStyle="solid"
-            options={[
-              { value: '', label: t('all') },
-              { value: 'yes', label: t('pages.clients.has') },
-              { value: 'no', label: t('pages.clients.hasNot') },
-            ]}
-          />
-        </Form.Item>
+        <Field label={t('pages.clients.telegramId')}>
+          <Segmented value={filters.hasTgId} onChange={(v) => patch('hasTgId', v as ClientFilters['hasTgId'])} options={triState} />
+        </Field>
 
-        <Form.Item label={t('pages.clients.comment')}>
-          <Radio.Group
-            value={filters.hasComment}
-            onChange={(e) => patch('hasComment', e.target.value)}
-            optionType="button"
-            buttonStyle="solid"
-            options={[
-              { value: '', label: t('all') },
-              { value: 'yes', label: t('pages.clients.has') },
-              { value: 'no', label: t('pages.clients.hasNot') },
-            ]}
-          />
-        </Form.Item>
-      </Form>
+        <Field label={t('pages.clients.comment')}>
+          <Segmented value={filters.hasComment} onChange={(v) => patch('hasComment', v as ClientFilters['hasComment'])} options={triState} />
+        </Field>
+      </div>
     </Drawer>
   );
-}
-
-function bucketLabel(key: string, t: (k: string) => string): string {
-  switch (key) {
-    case 'active': return t('subscription.active');
-    case 'expiring': return t('depletingSoon');
-    case 'depleted': return t('depleted');
-    case 'deactive': return t('disabled');
-    case 'online': return t('online');
-    default: return key;
-  }
 }

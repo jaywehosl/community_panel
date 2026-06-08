@@ -46,3 +46,9 @@ export type { TabsProps, TabItem } from './Tabs';
 
 export { Divider } from './Divider';
 export type { DividerProps } from './Divider';
+
+export { Drawer } from './Drawer';
+export type { DrawerProps } from './Drawer';
+
+export { Segmented } from './Segmented';
+export type { SegmentedProps, SegmentedOption } from './Segmented';

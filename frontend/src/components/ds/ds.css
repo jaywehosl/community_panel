@@ -252,6 +252,68 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   border-top: 1px solid var(--hairline-soft);
 }
 
+/* ---- Drawer (Radix Dialog, side panel) ------------------------------------ */
+.ds-drawer__content {
+  position: fixed;
+  top: 0; bottom: 0;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: var(--elev-4);
+  z-index: 1001;
+}
+.ds-drawer__content--right { right: 0; border-left: 1px solid var(--surface-border); }
+.ds-drawer__content--left { left: 0; border-right: 1px solid var(--surface-border); }
+.ds-drawer__content--right[data-state='open'] { animation: ds-slide-in-right var(--dur-mid) var(--ease-out-expo); }
+.ds-drawer__content--right[data-state='closed'] { animation: ds-slide-out-right var(--dur-mid) var(--ease-out-expo) forwards; }
+.ds-drawer__content--left[data-state='open'] { animation: ds-slide-in-left var(--dur-mid) var(--ease-out-expo); }
+.ds-drawer__content--left[data-state='closed'] { animation: ds-slide-out-left var(--dur-mid) var(--ease-out-expo) forwards; }
+.ds-drawer__header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.ds-drawer__body { padding: 22px; overflow-y: auto; flex: 1; }
+.ds-drawer__footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--hairline-soft);
+}
+@keyframes ds-slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes ds-slide-out-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes ds-slide-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes ds-slide-out-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+
+/* ---- Segmented (button single-select) ------------------------------------- */
+.ds-segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+}
+.ds-segmented__item {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out-quint), background var(--dur-fast) var(--ease-out-quint);
+}
+.ds-segmented__item:hover { color: var(--text-1); }
+.ds-segmented__item.is-active {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+}
+
 /* ---- Dropdown menu (Radix) ------------------------------------------------ */
 .ds-menu {
   min-width: 200px;
