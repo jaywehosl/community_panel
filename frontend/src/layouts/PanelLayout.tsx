@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import AppSidebar from '@/layouts/AppSidebar';
+import { MetricsPanelProvider } from '@/layouts/MetricsPanelContext';
 import { useWebSocketBridge } from '@/api/websocketBridge';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useTheme } from '@/hooks/useTheme';
@@ -20,10 +21,12 @@ export default function PanelLayout() {
         intensity={isDark ? 1.7 : 0.95}
         density={1}
       />
-      <AppSidebar />
-      <div className="panel-main-content">
-        <Outlet />
-      </div>
+      <MetricsPanelProvider>
+        <AppSidebar />
+        <div className="panel-main-content">
+          <Outlet />
+        </div>
+      </MetricsPanelProvider>
     </div>
   );
 }

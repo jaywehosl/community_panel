@@ -13,6 +13,7 @@ import {
 import { DropdownMenu } from '@/components/ds';
 import type { MenuEntry } from '@/components/ds';
 
+import { useMetricsPanel } from '@/layouts/MetricsPanelContext';
 import { HttpUtil, LanguageManager } from '@/utils';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import {
@@ -105,8 +106,20 @@ export default function AppSidebar() {
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
+  const { setOpen: setMetricsOpen, toggle: toggleMetrics } = useMetricsPanel();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // The brand logo doubles as the (slightly hidden) metrics-panel toggle:
+  // on home it toggles the panel; from another route it returns home and opens it.
+  const onLogoClick = useCallback(() => {
+    if (pathname !== '/') {
+      navigate('/');
+      setMetricsOpen(true);
+    } else {
+      toggleMetrics();
+    }
+  }, [pathname, navigate, toggleMetrics, setMetricsOpen]);
 
   const tabs = useMemo<{ key: string; icon: IconName; title: string }[]>(() => [
     { key: '/#dashboard', icon: 'dashboard', title: t('menu.dashboard') },
@@ -133,10 +146,13 @@ export default function AppSidebar() {
     if (key.startsWith('/#')) {
       const parts = key.substring(2).split('#'); // e.g. ["inbounds"] or ["xray", "basic"]
       const targetSectionId = parts[0];
-      
+      // "Overview" (#dashboard) also pops the metrics panel open.
+      const isOverview = targetSectionId === 'dashboard';
+
       if (pathname !== '/') {
         // Redirect to / with the hash
         navigate(`/#${key.substring(2)}`);
+        if (isOverview) setMetricsOpen(true);
       } else {
         // Smooth scroll to the section
         const el = document.getElementById(targetSectionId);
@@ -144,12 +160,13 @@ export default function AppSidebar() {
           el.scrollIntoView({ behavior: 'smooth' });
           window.history.pushState(null, '', `${window.location.pathname}#${key.substring(2)}`);
         }
+        if (isOverview) setMetricsOpen(true);
       }
       return;
     }
     
     navigate(key);
-  }, [navigate, pathname]);
+  }, [navigate, pathname, setMetricsOpen]);
 
   const cycleTheme = useCallback((id: string) => {
     pauseAnimationsUntilLeave(id);
@@ -168,7 +185,7 @@ export default function AppSidebar() {
     <header className="antigravity-header">
       <div className="header-container">
         <div className="header-left">
-          <div className="brand-block" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+          <div className="brand-block" onClick={onLogoClick} style={{ cursor: 'pointer' }} title={t('menu.dashboard')}>
             <svg className="antigravity-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24, marginRight: 8 }}>
               <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
               <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
