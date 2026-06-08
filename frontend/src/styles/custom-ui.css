@@ -663,7 +663,7 @@ body.dark .custom-modal-footer {
 .nav-menu-item.is-active {
   background: rgba(50, 121, 249, 0.12);
   color: #3279F9;
-  font-weight: 600;
+  /* keep weight constant — bolding shifts/reflows the centered label */
 }
 
 /* Custom Drawer mobile panel */

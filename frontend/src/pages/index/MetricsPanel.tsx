@@ -120,7 +120,7 @@ export default function MetricsPanel() {
           {/* ---- CENTER: control buttons (under the nav) ---- */}
           <div className="mb-center">
             <div className="mb-controls">
-              <span className="nav-menu-item mb-state" title={stateText}>
+              <span className="nav-menu-item mb-state">
                 <span className="mb-state-dot" style={{ background: status.xray.color }} />
                 <span>{stateText}</span>
               </span>
@@ -148,40 +148,40 @@ export default function MetricsPanel() {
             </div>
           </div>
 
-          {/* ---- RIGHT: 6 uniform pills (speed×2, conn×2, uptime×2) ---- */}
+          {/* ---- RIGHT: IP column (left) + 6 uniform pills (right, under the
+                 logout/theme/lang buttons). No tooltips on the data. ---- */}
           <div className="mb-right">
-            <div className="mb-pills">
-              <span className="mb-pill mb-pill--up" title={t('pages.index.networkSpeed') || 'Upload'}>
-                <ArrowUpOutlined /> {SizeFormatter.sizeFormat(status.netIO.up)}/s
-              </span>
-              <span className="mb-pill mb-pill--down" title={t('pages.index.networkSpeed') || 'Download'}>
-                <ArrowDownOutlined /> {SizeFormatter.sizeFormat(status.netIO.down)}/s
-              </span>
-              <span className="mb-pill mb-pill--conn" title="TCP">
-                <ApiOutlined /> TCP {status.tcpCount}
-              </span>
-              <span className="mb-pill mb-pill--conn" title="UDP">
-                <SwapOutlined /> UDP {status.udpCount}
-              </span>
-              <span className="mb-pill mb-pill--xray" title={`Xray ${t('pages.index.operationHours')}`}>
-                <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.appStats.uptime)}
-              </span>
-              <span className="mb-pill mb-pill--os" title={`OS ${t('pages.index.operationHours')}`}>
-                <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.uptime)}
-              </span>
-            </div>
             <div className={`mb-ipcol ${showIp ? '' : 'ip-hidden'}`}>
               <button
                 type="button"
                 className="mb-eye"
                 onClick={() => setShowIp((v) => !v)}
                 aria-label={t('pages.index.toggleIpVisibility')}
-                title={t('pages.index.toggleIpVisibility')}
               >
                 {showIp ? <EyeOutlined /> : <EyeInvisibleOutlined />}
               </button>
-              <span className="mb-ip" title="IPv4">{status.publicIP.ipv4}</span>
-              <span className="mb-ip" title="IPv6">{status.publicIP.ipv6}</span>
+              <span className="mb-ip">{status.publicIP.ipv4}</span>
+              <span className="mb-ip">{status.publicIP.ipv6}</span>
+            </div>
+            <div className="mb-pills">
+              <span className="mb-pill mb-pill--up">
+                <ArrowUpOutlined /> {SizeFormatter.sizeFormat(status.netIO.up)}/s
+              </span>
+              <span className="mb-pill mb-pill--down">
+                <ArrowDownOutlined /> {SizeFormatter.sizeFormat(status.netIO.down)}/s
+              </span>
+              <span className="mb-pill mb-pill--conn">
+                <ApiOutlined /> TCP {status.tcpCount}
+              </span>
+              <span className="mb-pill mb-pill--conn">
+                <SwapOutlined /> UDP {status.udpCount}
+              </span>
+              <span className="mb-pill mb-pill--xray">
+                <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.appStats.uptime)}
+              </span>
+              <span className="mb-pill mb-pill--os">
+                <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.uptime)}
+              </span>
             </div>
           </div>
         </div>

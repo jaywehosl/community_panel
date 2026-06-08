@@ -424,6 +424,9 @@ body.dark .drawer-utility-list {
   -webkit-backdrop-filter: blur(16px) saturate(170%);
   backdrop-filter: blur(16px) saturate(170%);
   border-bottom: 1px solid rgba(18, 19, 23, 0.05);
+  /* nothing in the topbar is selectable (matches the header) */
+  user-select: none;
+  -webkit-user-select: none;
 }
 body.dark .topbar-shell {
   background: rgba(21, 22, 29, 0.45);
