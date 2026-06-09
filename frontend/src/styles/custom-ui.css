@@ -3,8 +3,8 @@
 /* Glassmorphic Cards - Apple Vision OS / macOS 26 Style */
 .custom-card {
   background: var(--surface-1);
-  backdrop-filter: blur(var(--blur-lg)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--blur-lg)) saturate(var(--glass-saturate));
   border-radius: var(--radius-xl);
   border: 1px solid var(--surface-border);
   padding: var(--space-5);
@@ -105,8 +105,8 @@ body.dark .custom-btn {
 
 .custom-btn-primary {
   background: linear-gradient(135deg, rgba(66, 133, 244, 0.95) 0%, rgba(37, 96, 210, 0.95) 100%) !important;
-  backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #ffffff !important;
   box-shadow: 
@@ -196,8 +196,8 @@ body.dark .custom-btn {
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   z-index: 500;
   border-radius: inherit;
   gap: 12px;
@@ -351,8 +351,8 @@ body.dark .custom-btn {
   width: 100vw;
   height: 100vh;
   background: rgba(11, 12, 16, 0.65);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   z-index: 5000;
   display: flex;
   align-items: center;
@@ -364,8 +364,8 @@ body.dark .custom-btn {
   width: min(92vw, 680px);
   max-height: 90vh;
   background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(35px) saturate(190%);
   -webkit-backdrop-filter: blur(35px) saturate(190%);
+  backdrop-filter: blur(35px) saturate(190%);
   border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 28px;
   box-shadow: var(--elev-4), var(--specular);
@@ -377,8 +377,8 @@ body.dark .custom-btn {
 
 body.dark .custom-modal-container {
   background: rgba(21, 22, 29, 0.55);
-  backdrop-filter: blur(35px) saturate(190%);
   -webkit-backdrop-filter: blur(35px) saturate(190%);
+  backdrop-filter: blur(35px) saturate(190%);
   border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow: 
     0 24px 64px rgba(0, 0, 0, 0.4),
@@ -387,8 +387,8 @@ body.dark .custom-modal-container {
 
 html[data-theme="ultra-dark"] .custom-modal-container {
   background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(35px) saturate(190%);
   -webkit-backdrop-filter: blur(35px) saturate(190%);
+  backdrop-filter: blur(35px) saturate(190%);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -482,8 +482,8 @@ body.dark .custom-modal-footer {
   left: 50%;
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(18, 19, 23, 0.06);
   border-radius: 12px;
   padding: 12px;
@@ -552,8 +552,8 @@ body.dark .custom-modal-footer {
 
 .custom-toast {
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(18, 19, 23, 0.06);
   padding: 14px 20px;
   border-radius: 16px;
@@ -674,8 +674,8 @@ body.dark .custom-modal-footer {
   width: 100vw;
   height: 100vh;
   background: rgba(11, 12, 16, 0.55);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   z-index: 6000;
   display: flex;
   animation: fadeIn 0.25s ease;
@@ -685,8 +685,8 @@ body.dark .custom-modal-footer {
   width: min(80vw, 300px);
   height: 100%;
   background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border-right: 1px solid rgba(18, 19, 23, 0.05);
   display: flex;
   flex-direction: column;
@@ -734,8 +734,8 @@ body.dark .custom-modal-footer {
 .custom-tooltip-content {
   position: absolute;
   background: rgba(18, 19, 23, 0.9);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   color: #ffffff;
   padding: 6px 12px;
   border-radius: 8px;
@@ -801,8 +801,8 @@ body.dark .custom-modal-footer {
   top: 100%;
   left: 0;
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(18, 19, 23, 0.06);
   border-radius: 12px;
   padding: 8px;
@@ -1087,8 +1087,8 @@ body.dark .custom-modal-container .ant-switch {
 /* Custom Ant Select Dropdown Override - Translucent Dropdown */
 .ant-select-dropdown {
   background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(18, 19, 23, 0.08) !important;
   border-radius: 14px !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
@@ -1137,8 +1137,8 @@ body.dark .ant-select-dropdown .ant-select-item-option-active {
 /* Custom Ant DatePicker Dropdown Override */
 .ant-picker-dropdown {
   background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(18, 19, 23, 0.08) !important;
   border-radius: 16px !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;

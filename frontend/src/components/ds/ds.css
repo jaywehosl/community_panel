@@ -531,7 +531,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
 .ds-tabs__trigger[data-state='active'] {
   background: rgba(var(--color-primary-rgb), 0.12);
   color: var(--color-primary);
-  font-weight: 600;
+  /* highlight only (pill background + colour) — keep base weight, no bold */
 }
 .ds-tabs__trigger[disabled] { opacity: 0.45; cursor: not-allowed; }
 /* No opacity/transform animation on the content: it would form a compositing

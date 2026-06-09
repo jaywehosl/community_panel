@@ -18,7 +18,11 @@ func SecurityHeadersMiddleware(directHTTPS bool) gin.HandlerFunc {
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("Referrer-Policy", "no-referrer")
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'nonce-"+nonce+"'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+		// style-src/font-src must allow Google Fonts (Outfit + Plus Jakarta
+		// Sans) — the panel loads them via <link> in index/login/sub HTML.
+		// Without these, the browser blocks the font CSS and files and the UI
+		// silently falls back to serif.
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'nonce-"+nonce+"'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ws: wss:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
 		if directHTTPS {
 			c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}

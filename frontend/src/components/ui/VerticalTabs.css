@@ -26,7 +26,8 @@
 
 .vtab-btn.is-active {
   color: #3279f9;
-  font-weight: 600;
+  /* highlight only (the sliding pill + colour) — no bold, so the row doesn't
+     reflow/shift width when it becomes active */
 }
 
 .vtab-icon {

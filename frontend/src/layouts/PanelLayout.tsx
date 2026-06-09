@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import AppSidebar from '@/layouts/AppSidebar';
 import { MetricsPanelProvider } from '@/layouts/MetricsPanelContext';
 import { SettingsControllerProvider } from '@/layouts/SettingsController';
@@ -16,6 +17,20 @@ export default function PanelLayout() {
   useWebSocketBridge();
   usePageTitle();
   const { isDark, isUltra } = useTheme();
+  const { pathname } = useLocation();
+
+  // Global scroll reset on page navigation. Pages own a #content-layout scroll
+  // container (settings/xray/…); also reset the window. A second pass on the
+  // next frame catches pages whose scroll container mounts a tick late.
+  useEffect(() => {
+    const reset = () => {
+      document.getElementById('content-layout')?.scrollTo({ top: 0 });
+      window.scrollTo({ top: 0 });
+    };
+    reset();
+    const raf = requestAnimationFrame(reset);
+    return () => cancelAnimationFrame(raf);
+  }, [pathname]);
   
   const pageClass = `panel-app-wrapper ${isDark ? 'is-dark' : ''} ${isUltra ? 'is-ultra' : ''}`.trim();
 

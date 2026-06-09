@@ -18,7 +18,11 @@ body {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  scrollbar-gutter: stable;
+  /* NOTE: scrollbar-gutter:stable is intentionally NOT global — it reserves a
+     ~15px gutter that no page content (not even position:fixed/100vw) can paint
+     into, leaving a bare strip beside the particle field on pages that don't
+     scroll. It's only needed where scroll-locking modals exist (the panel), so
+     it lives in page-shell.css (panel-only). Login/sub have no such modals. */
 }
 
 /* Radix dialogs (react-remove-scroll) pad the body to compensate for the hidden

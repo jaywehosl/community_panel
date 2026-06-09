@@ -87,8 +87,8 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
 
 .ant-popover .ant-popover-container {
   background: rgba(255, 255, 255, 0.32) !important;
-  backdrop-filter: blur(30px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.5) !important;
   border-radius: 14px !important;
   box-shadow:
@@ -150,8 +150,8 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
   color: #121317 !important;
   border: 1px solid rgba(18, 19, 23, 0.1) !important;
   border-radius: 14px !important;
-  backdrop-filter: blur(10px) saturate(160%) !important;
   -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
+  backdrop-filter: blur(10px) saturate(160%) !important;
   box-shadow: none !important;
   text-shadow: none !important;
   transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease !important;
@@ -182,12 +182,22 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
   box-shadow: var(--elev-2), var(--hover-glow) !important;
 }
 
+/* Xray page content cards use the DS-card surface tokens too, so the tab
+   sidebar and the settings field read as one cohesive glass family (matches
+   the settings page, which uses .ds-card). */
+.xray-page .custom-card {
+  background: var(--surface-1) !important;
+  border-color: var(--surface-border) !important;
+}
+
 /* ===== Vertical settings/xray tab list = frosted glass + reverse-glow (login dropdown behaviour) ===== */
 .vertical-tabs-container {
-  background: rgba(255, 255, 255, 0.32) !important;
-  backdrop-filter: blur(30px) saturate(180%) !important;
+  /* match the adjacent content card (DS card) exactly — same surface tokens —
+     so the tab sidebar reads as the same glass, not a different shade */
+  background: var(--surface-1) !important;
   -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  border: 1px solid var(--surface-border) !important;
   border-radius: 16px !important;
   box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
@@ -226,8 +236,8 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
 /* ===== Modals & drawers = login-card frosted glass (shared selectors propagate) ===== */
 .ant-modal-content {
   background: rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(30px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.5) !important;
   border-radius: 24px !important;
   box-shadow: var(--elev-4), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
@@ -237,8 +247,8 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
 .ant-modal-body { background: transparent !important; }
 .ant-drawer-content {
   background: rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(30px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.5) !important;
 }
 .ant-drawer-header,
@@ -251,8 +261,8 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
      milky frost on large surfaces (the header gets away with blur16 only
      because it is a thin strip over the sparse top edge) */
   background: rgba(255, 255, 255, 0.34) !important;
-  backdrop-filter: blur(30px) saturate(170%) !important;
   -webkit-backdrop-filter: blur(30px) saturate(170%) !important;
+  backdrop-filter: blur(30px) saturate(170%) !important;
   border: 1px solid rgba(255, 255, 255, 0.5) !important;
   box-shadow:
     0 24px 70px rgba(18, 19, 23, 0.14),
@@ -273,13 +283,13 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
 /* light frosted modal/overlay backdrop so frosted windows read bright, not grey */
 .ant-modal-mask {
   background: rgba(232, 238, 251, 0.45) !important;
-  backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
 }
 .custom-modal-overlay {
   background: rgba(232, 238, 251, 0.45) !important;
-  backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
 }
 
 .panel-main-content {
@@ -551,8 +561,8 @@ body.dark .page-header h1 {
 }
 .ant-table-container {
   background: rgba(255, 255, 255, 0.4) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.45) !important;
   overflow: hidden;
@@ -594,8 +604,8 @@ body.dark .page-header h1 {
 /* Drawer & Modal Glassmorphism overrides */
 .ant-modal-content {
   background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
   border-radius: 24px !important;
   border: 1px solid rgba(255, 255, 255, 0.55) !important;
   box-shadow: var(--elev-4), var(--specular) !important;
@@ -621,8 +631,8 @@ html[data-theme="ultra-dark"] .ant-modal-content {
 
 .ant-drawer-content {
   background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
+  backdrop-filter: blur(24px) !important;
 }
 body.dark .ant-drawer-content {
   background: rgba(21, 22, 29, 0.8) !important;
@@ -637,8 +647,8 @@ html[data-theme="ultra-dark"] .ant-drawer-content {
 .ant-select-selector,
 .ant-input-password {
   background: rgba(255, 255, 255, 0.3) !important;
-  backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important;
   border-radius: 14px !important;
   border: 1px solid rgba(255, 255, 255, 0.5) !important;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.02) !important;
@@ -711,8 +721,8 @@ body.dark .ant-input-password:focus {
 }
 .ant-btn-primary {
   background: linear-gradient(135deg, rgba(66, 133, 244, 0.95) 0%, rgba(37, 96, 210, 0.95) 100%) !important;
-  backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #ffffff !important;
   box-shadow: 
@@ -888,8 +898,8 @@ body.dark .ant-tabs-tab {
 .ds-dialog__content,
 .ds-menu,
 .ds-tooltip {
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
 }
 
 /* --- Group B: form controls — add a translucent well so the frost reads --- */
@@ -900,8 +910,8 @@ body.dark .ant-tabs-tab {
 .ant-select:not(.ant-select-customize-input) .ant-select-selector,
 .ant-picker {
   background: rgba(255, 255, 255, 0.30) !important;
-  backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate)) !important;
   -webkit-backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate)) !important;
+  backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate)) !important;
 }
 .is-dark .ant-input,
 .is-dark .ant-input-affix-wrapper,

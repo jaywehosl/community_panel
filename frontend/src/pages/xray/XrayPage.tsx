@@ -4,13 +4,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Button,
   Card,
-  Col,
   ConfigProvider,
   Layout,
   message,
   Radio,
   Result,
-  Row,
   Spin,
 } from '@/components/ui';
 import BackToTop from '@/components/ui/BackToTop';
@@ -296,25 +294,24 @@ export default function XrayPage() {
                   extra={<Button type="primary" onClick={fetchAll}>{t('check')}</Button>}
                 />
               ) : (
-                <Row gutter={[isMobile ? 8 : 16, isMobile ? 0 : 12]}>
+                <>
                   {/* The "needs restart" alert now lives in the global
                       status-bar notification strip, not on-page. */}
                   <BackToTop target={scrollTarget} visibilityHeight={200} />
 
-                  <Col xs={24} md={6}>
+                  {/* Same grid as the settings page (240px sidebar + fluid
+                      content) so the tab list and content widths match 1:1. */}
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: isMobile ? 8 : 16, alignItems: 'start' }}>
                     <VerticalTabs
                       items={tabItems}
                       activeKey={activeSection}
                       onChange={(key) => navigate(`#${key}`)}
                     />
-                  </Col>
-
-                  <Col xs={24} md={18}>
                     <Card hoverable style={{ minHeight: '480px' }}>
                       {sectionBody}
                     </Card>
-                  </Col>
-                </Row>
+                  </div>
+                </>
               )}
             </Spin>
 

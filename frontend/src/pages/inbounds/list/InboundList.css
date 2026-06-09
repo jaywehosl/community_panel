@@ -4,8 +4,8 @@
 .inbounds-page .ant-card {
   /* header-glass DNA, more blur so the particle field reads as milky frost */
   background: rgba(255, 255, 255, 0.34) !important;
-  backdrop-filter: blur(30px) saturate(170%) !important;
   -webkit-backdrop-filter: blur(30px) saturate(170%) !important;
+  backdrop-filter: blur(30px) saturate(170%) !important;
   border: 1px solid rgba(255, 255, 255, 0.5) !important;
   border-radius: 24px !important;
   box-shadow:

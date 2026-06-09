@@ -88,8 +88,8 @@
   z-index: 3;
   /* light frosted bar — low blur tier, translucent so particles show through */
   background: rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(16px) saturate(170%);
   -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
 }
 
 .login-app.is-dark .login-header {
@@ -209,8 +209,8 @@
     0 24px 70px rgba(18, 19, 23, 0.14),
     0 4px 16px rgba(18, 19, 23, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
   transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
@@ -281,8 +281,8 @@ body.dark .login-card input:-webkit-autofill:focus {
   font-weight: 600 !important;
   font-size: 14.5px !important;
   letter-spacing: 0.2px;
-  backdrop-filter: blur(10px) saturate(160%) !important;
   -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
+  backdrop-filter: blur(10px) saturate(160%) !important;
   box-shadow: none !important;
   transition: box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease !important;
 }
@@ -319,8 +319,8 @@ body.dark .login-card input:-webkit-autofill:focus {
 .ant-popover .ant-popover-container {
   /* match the login card: same blur + bright glass kant + specular highlight */
   background: rgba(255, 255, 255, 0.32) !important;
-  backdrop-filter: blur(30px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.5) !important;
   border-radius: 14px !important;
   box-shadow:
