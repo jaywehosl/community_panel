@@ -160,12 +160,13 @@ export default function AppSidebar() {
       const parts = key.substring(2).split('#'); // e.g. ["inbounds"] or ["xray", "basic"]
       const targetSectionId = parts[0];
 
-      // "Overview" (#dashboard) goes to the very top of the page (not just the
-      // section — the fixed header would otherwise leave it ~80px short).
-      // It does NOT touch the metrics bar — only the logo toggles that.
+      // "Overview" goes to the very top of the home page. Always navigate('/')
+      // so the router CLEARS any #section hash — otherwise a stale #inbounds
+      // stays active and a reload bounces back to that section. Does NOT touch
+      // the metrics bar (only the logo toggles that).
       if (targetSectionId === 'dashboard') {
-        if (pathname !== '/') navigate('/');
-        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        navigate('/');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 

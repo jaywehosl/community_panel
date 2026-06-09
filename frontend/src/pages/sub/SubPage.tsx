@@ -19,6 +19,7 @@ import { isPostQuantumLink } from '@/lib/xray/inbound-link';
 import { LinkTags, parseLinkParts } from '@/lib/xray/link-label';
 import { getMessage } from '@/utils/messageBus';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
+import ParticleField from '@/components/ui/ParticleField';
 import SubUsageSummary from './SubUsageSummary';
 import './SubPage.css';
 
@@ -243,6 +244,7 @@ export default function SubPage() {
   return (
     <TooltipProvider>
       <div className={pageClass}>
+        <ParticleField className="sub-particle-canvas" additive={isDark} intensity={isDark ? 1.7 : 0.95} />
         <div className="content">
           <div className="sub-card-wrap">
             <Card className="subscription-card" title={cardTitle} extra={cardExtra}>

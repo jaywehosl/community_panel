@@ -2,7 +2,23 @@
   --bg-page: #e6e8ec;
   --bg-card: #ffffff;
   min-height: 100vh;
+  position: relative;
   background: var(--bg-page);
+}
+
+/* same drifting particle field as the panel / login, behind the content */
+.sub-particle-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.subscription-page .content {
+  position: relative;
+  z-index: 1;
 }
 
 .subscription-page.is-dark {

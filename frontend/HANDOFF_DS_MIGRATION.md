@@ -466,36 +466,37 @@ it bloated. We replaced it with:
   `9c7b6d7` (alignment + seam attempt + right-zone categories). tsc 0, suite
   397/25, `vite build` OK at each.
 
-### 10.4 OPEN requirements the user just gave (DO THESE NEXT)
+### 10.4 ✅ DONE (commits `89037bf`, `e9a5bf5`, + the particle commit)
 
-The user reviewed `9c7b6d7` and asked for the following (no code was written for
-these yet — this is the to-do):
+All four reviewed requirements are implemented and user-confirmed:
+1. **Fixed-size buttons + zones.** Header nav + bar controls share explicit CSS
+   vars `--nav-btn-w: 98px` / `--nav-gap: 8px` / `--nav-btn-h: 46px` (centered
+   8-col grids) so button N is pixel-aligned over bar control N; the logo zone +
+   gauge band share `--side-zone-w: 212px`.
+2. **Route-based active state.** `AppSidebar` tracks a `clickedKey` + route-derived
+   `routeKey` (hash-section clicks use `history.pushState`, which doesn't update
+   the router hash — hence the explicit click tracking). Plus **Overview now
+   `navigate('/')`** (clears any `#section` hash so a reload doesn't bounce back,
+   and Overview no longer toggles the metrics bar — only the logo does).
+3. **6 uniform pills.** Right zone = IP column (left) + a 2×88px grid of 6 pills
+   (speed×2, conn×2, uptime×2), sitting under — and no wider than — the
+   logout/theme/lang button zone. Topbar is `user-select:none`; redundant
+   tooltips dropped.
+4. **Blur seam fixed.** Header + bar share ONE fixed `.topbar-shell` carrying the
+   only `backdrop-filter` (both rows transparent); content offset by 72px. One
+   glass surface, no seam.
 
-1. **Fixed-size buttons + logo zone, regardless of text.** The 8-col grid still
-   doesn't line up and the gauges still don't span the logo width. The user wants
-   **every header/bar button to be a fixed identical size** (text centered
-   inside), with a **single uniform gap** between them; and the **logo zone /
-   gauge band to be a fixed width** too. Type the sizes explicitly rather than
-   relying on content width. Goal: header button N pixel-aligned over bar control
-   N, gauges exactly spanning the logo width.
-2. **Header active state is broken.** Clicking a real page button (Clients,
-   Groups, …) does NOT keep it highlighted. The `is-active` logic in
-   `AppSidebar.tsx` only matches hash routes on `/`; fix it so the active
-   route/page button stays selected (route-based `is-active`).
-3. **Right zone → 6 uniform pills.** Wrap the ↑ speed, ↓ speed, TCP, UDP into
-   pills as well (like the uptime pills), so there are **6 pills total** (speed×2,
-   conn×2, uptime×2), **all the same fixed size**, aligned in a tidy grid (under
-   each other). Give each pill a shared fixed size.
-4. **The blur seam is still visible (the real problem).** Even with the header
-   divider removed, screenshot shows a clear render boundary between the header
-   glass and the bar glass — "like a mirror made of two mirrors". Two separate
-   `backdrop-filter` layers composite independently, so the seam shows. The
-   border-bottom trick did NOT solve it. **Needs a real fix** — ideas to explore:
-   render header + bar as ONE element / one shared backdrop-filter surface (e.g.,
-   the bar is a child of the header, or a single wrapper carries the only
-   backdrop-filter and both rows are non-blurred children over it), or drop the
-   bar's own backdrop-filter and let it sit over a single continuous blurred
-   layer. This is the priority visual bug.
+### 10.4b Particle field — morph experiment ABANDONED (reverted)
+
+The user wanted the particle field to morph into a hovered button's icon
+(antigravity.google style). It was prototyped (a `stars` ParticleField variant +
+`particleMorph.ts` channel + `iconPoints.ts` rasterizer + a Stop-button hover),
+but the user dropped it: the real site's effect is proprietary/minified (can't be
+copied) and a from-scratch recreation wasn't worth it. **All of that was reverted.**
+The original air-hockey **puck** `ParticleField` is restored and now used
+identically on **panel + login + sub** (SubPage gained a `.sub-particle-canvas`).
+If revisited: the technique is just particles easing to shape-sampled target
+points — the feel is all in fast/staggered easing + nearest-particle assignment.
 
 ### 10.5 Phase 2 (notifications — NOT started)
 
@@ -506,6 +507,9 @@ The user wants the bar to also host actionable notifications (separate phase):
 - Xray-core crash errors (already available via `status.xray.errorMsg` — the bar
   already shows the state dot; a full error surface can live here too).
 
-> Next agent: tackle §10.4 (esp. #4 the seam, and #1/#3 the fixed-size grid +
-> pills) before phase 2. Keep the glass-rule max-height animation. tsc/suite/
-> build must stay green; never stage `vite.config.js`.
+> Next agent: §10.4 is fully done (header/bar polish + seam). The particle-morph
+> idea was abandoned (§10.4b) — field is back to the puck variant, unified across
+> panel/login/sub. **Open: §10.5 phase-2 notifications** (unsaved/restart banner,
+> security warnings, xray-error surface). Keep the glass-rule max-height
+> animation on the bar. tsc/suite/build must stay green; never stage
+> `vite.config.js`.
