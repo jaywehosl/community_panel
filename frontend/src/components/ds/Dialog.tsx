@@ -54,10 +54,13 @@ export function Dialog({
           )
         : null;
 
-  // Wide modals = form/content dialogs (inbound/outbound/rule/…). They get a
-  // fixed height so switching tabs never resizes/jumps the modal; the body is
-  // the single scroll region. Narrow ones (confirms ≤520) stay auto-height.
-  const isTall = typeof width === 'number' && width >= 600;
+  // Form/content dialogs (inbound/outbound/rule/…) are unified to one standard
+  // size — the "Add Inbound" reference (780 × fixed height) — so every form
+  // modal is identical and never resizes/jumps between tabs; the body is the
+  // single scroll region. Narrow confirms (<520) keep their own width + auto
+  // height.
+  const isTall = typeof width === 'number' && width >= 520;
+  const resolvedWidth = isTall ? 780 : width;
 
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -68,7 +71,7 @@ export function Dialog({
         <div className="ds-dialog__viewport">
           <RDialog.Content
             className={`ds-dialog__content${isTall ? ' ds-dialog__content--tall' : ''}`}
-            style={width ? { width: typeof width === 'number' ? `${width}px` : width } : undefined}
+            style={resolvedWidth ? { width: typeof resolvedWidth === 'number' ? `${resolvedWidth}px` : resolvedWidth } : undefined}
             aria-describedby={undefined}
           >
             <div className="ds-dialog__header">
