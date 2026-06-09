@@ -32,14 +32,117 @@
 }
 
 .subscription-page .content {
-  padding: 24px 12px;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 40px 24px 48px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .subscription-page .content { padding: 24px 16px 32px; }
+}
+
+/* ---- Panel-style header (mirrors .antigravity-header) ------------------- */
+.sub-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 72px;
+  background: rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  border-bottom: 1px solid rgba(18, 19, 23, 0.05);
+}
+body.dark .sub-topbar {
+  background: rgba(21, 22, 29, 0.45);
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+.sub-topbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 32px;
+}
+.sub-topbar .brand-block {
+  display: flex;
+  align-items: center;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: -0.3px;
+  color: #121317;
+  user-select: none;
+}
+body.dark .sub-topbar .brand-block { color: #fff; }
+.sub-topbar__actions { display: flex; align-items: center; gap: 12px; }
+.sub-topbar__btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(18, 19, 23, 0.05);
+  color: rgba(18, 19, 23, 0.55);
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+body.dark .sub-topbar__btn { color: rgba(255, 255, 255, 0.55); border-color: rgba(255, 255, 255, 0.06); }
+.sub-topbar__btn:hover,
+.sub-topbar__btn[data-state='open'] {
+  background: rgba(255, 255, 255, 0.5);
+  color: #3279f9;
+  border-color: rgba(50, 121, 249, 0.5);
+  box-shadow:
+    inset 0 1px 4px rgba(50, 121, 249, 0.22),
+    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+body.dark .sub-topbar__btn:hover,
+body.dark .sub-topbar__btn[data-state='open'] { background: rgba(255, 255, 255, 0.12); }
+
+/* ---- Hero tagline (same copy + style as the panel landing) -------------- */
+.sub-hero {
+  text-align: center;
+  max-width: 800px;
+  margin: 24px auto 36px;
+  padding: 0 24px;
+}
+.sub-hero-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -1.5px;
+  color: var(--color-text);
+  margin: 0 0 16px;
+}
+.sub-hero-subtitle {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--color-text-subtle);
+  line-height: 1.4;
+  margin: 0 auto;
+}
+@media (max-width: 768px) {
+  .sub-hero { margin: 12px auto 24px; }
+  .sub-hero-title { font-size: 32px; letter-spacing: -0.8px; }
+  .sub-hero-subtitle { font-size: 15px; }
 }
 
 .sub-card-wrap {
   width: 100%;
-  max-width: 680px;
+  max-width: 1380px;
 }
 
 .subscription-card {

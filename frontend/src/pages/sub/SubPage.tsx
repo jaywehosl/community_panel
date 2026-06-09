@@ -218,36 +218,51 @@ export default function SubPage() {
     </span>
   );
 
-  const cardExtra = (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <Button
-        className="toolbar-btn"
-        aria-label={t('menu.theme')}
-        title={t('menu.theme')}
-        icon={themeIcon}
-        onClick={cycleTheme}
-      />
-      <DropdownMenu
-        align="end"
-        trigger={(
-          <Button
-            className="toolbar-btn"
-            aria-label={t('pages.settings.language')}
-            icon={<TranslationOutlined />}
-          />
-        )}
-        items={langMenuItems}
-      />
-    </div>
-  );
-
   return (
     <TooltipProvider>
       <div className={pageClass}>
         <ParticleField className="sub-particle-canvas" additive={isDark} intensity={isDark ? 1.7 : 0.95} />
+
+        {/* Panel-style header: logo left, theme/language right (matches AppSidebar). */}
+        <header className="sub-topbar">
+          <div className="sub-topbar__inner">
+            <div className="brand-block">
+              <svg className="antigravity-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24, marginRight: 8 }}>
+                <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
+                <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
+              </svg>
+              <span className="brand-text">3X-UI Antigravity</span>
+            </div>
+            <div className="sub-topbar__actions">
+              <button type="button" className="sub-topbar__btn" aria-label={t('menu.theme')} title={t('menu.theme')} onClick={cycleTheme}>
+                {themeIcon}
+              </button>
+              <DropdownMenu
+                align="end"
+                trigger={(
+                  <button type="button" className="sub-topbar__btn" aria-label={t('pages.settings.language')} title={t('pages.settings.language')}>
+                    <TranslationOutlined />
+                  </button>
+                )}
+                items={langMenuItems}
+              />
+            </div>
+          </div>
+        </header>
+
         <div className="content">
+          {/* Hero tagline (same copy + place as the panel landing). */}
+          <div className="sub-hero">
+            <h1 className="sub-hero-title">
+              Experience liftoff with next-gen connection management
+            </h1>
+            <p className="sub-hero-subtitle">
+              A clean, spacious, and high-performance panel powered by Xray-core.
+            </p>
+          </div>
+
           <div className="sub-card-wrap">
-            <Card className="subscription-card" title={cardTitle} extra={cardExtra}>
+            <Card className="subscription-card" title={cardTitle}>
               <dl className="info-table">
                 {descriptionsItems.map((it) => (
                   <div className="info-row" key={it.key}>
