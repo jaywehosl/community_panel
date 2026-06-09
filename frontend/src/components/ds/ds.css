@@ -244,10 +244,24 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
 .ds-dialog__title { font-size: 16px; font-weight: 700; color: var(--text-1); }
 .ds-dialog__close {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: var(--radius-pill);
-  border: none; background: transparent; color: var(--text-3); cursor: pointer; font-size: 18px;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid rgba(18, 19, 23, 0.06);
+  background: transparent; color: var(--text-3); cursor: pointer;
+  font-size: 14px; line-height: 1; flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.ds-dialog__close:hover { background: var(--surface-hover); color: var(--text-1); }
+.is-dark .ds-dialog__close { border-color: rgba(255, 255, 255, 0.08); }
+/* hover mirrors the header theme/language pills */
+.ds-dialog__close:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--color-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+  box-shadow:
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 7px 16px rgba(var(--color-primary-rgb), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.is-dark .ds-dialog__close:hover { background: rgba(255, 255, 255, 0.12); }
 .ds-dialog__body { padding: 22px; overflow-y: auto; }
 .ds-dialog__footer {
   display: flex; align-items: center; justify-content: flex-end; gap: 10px;
@@ -293,12 +307,13 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
 /* ---- Segmented (button single-select) ------------------------------------- */
 .ds-segmented {
   display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--surface-border);
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--hairline-soft);
   border-radius: var(--radius-md);
-  background: var(--surface-inset);
+  background: rgba(18, 19, 23, 0.025);
 }
+.is-dark .ds-segmented { background: rgba(255, 255, 255, 0.03); }
 .ds-segmented__item {
   border: none;
   background: transparent;
@@ -309,12 +324,16 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out-quint), background var(--dur-fast) var(--ease-out-quint);
+  transition: color var(--dur-fast) var(--ease-out-quint), background var(--dur-fast) var(--ease-out-quint), box-shadow var(--dur-fast) var(--ease-out-quint);
 }
-.ds-segmented__item:hover { color: var(--text-1); }
+.ds-segmented__item:hover:not(.is-active) {
+  color: var(--text-1);
+  background: var(--surface-hover);
+}
 .ds-segmented__item.is-active {
   background: var(--color-primary);
   color: var(--text-on-primary);
+  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.28);
 }
 
 /* ---- Dropdown menu (Radix) ------------------------------------------------ */
@@ -337,9 +356,21 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   font-size: 13px; font-weight: 500; color: var(--text-1);
   cursor: pointer; user-select: none; outline: none;
 }
-.ds-menu__item[data-highlighted] { background: var(--surface-hover); }
+.ds-menu__item {
+  transition: background var(--dur-fast) var(--ease-out-quint), color var(--dur-fast) var(--ease-out-quint);
+}
+.ds-menu__item:hover,
+.ds-menu__item[data-highlighted] {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
 .ds-menu__item[data-disabled] { opacity: 0.45; pointer-events: none; }
 .ds-menu__item--danger { color: var(--color-error); }
+.ds-menu__item--danger:hover,
+.ds-menu__item--danger[data-highlighted] {
+  background: rgba(var(--color-error-rgb), 0.1);
+  color: var(--color-error);
+}
 .ds-menu__sep { height: 1px; margin: 6px 4px; background: var(--hairline-soft); }
 
 /* ---- Popover (Radix, arbitrary content) ----------------------------------- */

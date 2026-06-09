@@ -1,5 +1,6 @@
 import * as RDialog from '@radix-ui/react-dialog';
 import type { ReactNode } from 'react';
+import { CloseOutlined } from '@ant-design/icons';
 import { Button } from './Button';
 
 export interface DialogProps {
@@ -70,7 +71,7 @@ export function Dialog({
               {!hideClose && (
                 <RDialog.Close asChild>
                   <button className="ds-dialog__close" aria-label="Close">
-                    &times;
+                    <CloseOutlined />
                   </button>
                 </RDialog.Close>
               )}

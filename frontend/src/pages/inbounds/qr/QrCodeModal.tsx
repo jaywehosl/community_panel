@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal } from '@/components/ui';
+import { Dialog } from '@/components/ds';
 
 import { Protocols } from '@/schemas/primitives';
 import {
@@ -145,7 +145,7 @@ export default function QrCodeModal({
   }
 
   return (
-    <Modal open={open} onCancel={onClose} title={t('qrCode')} footer={null} width={420} destroyOnHidden>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }} title={t('qrCode')} footer={null} width={420}>
       {dbInbound && qrItems.length > 0 && (
         <div className="qr-collapse-list">
           {qrItems.map((item) => (
@@ -168,6 +168,6 @@ export default function QrCodeModal({
           ))}
         </div>
       )}
-    </Modal>
+    </Dialog>
   );
 }
