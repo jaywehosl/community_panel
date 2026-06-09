@@ -82,7 +82,10 @@ function themeExtension(isDark: boolean, isUltra: boolean) {
 }
 
 const JsonEditor = forwardRef<JsonEditorHandle, JsonEditorProps>(function JsonEditor(
-  { value, onChange, minHeight = '320px', maxHeight = '600px', readOnly = false },
+  // `maxHeight` is accepted for back-compat but no longer caps the editor: the
+  // editor grows to its content so the surrounding modal-body / page is the
+  // single scroll region (no double scrollbar).
+  { value, onChange, minHeight = '320px', readOnly = false },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -127,12 +130,12 @@ const JsonEditor = forwardRef<JsonEditorHandle, JsonEditorProps>(function JsonEd
           themeCompartmentRef.current.of(themeExtension(isDark, isUltra)),
           readonlyCompartmentRef.current.of(EditorState.readOnly.of(readOnly)),
           EditorView.theme({
-            '&': { height: '100%' },
+            '&': { height: 'auto' },
             '.cm-scroller': {
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
               fontSize: '12px',
               minHeight,
-              maxHeight,
+              /* no maxHeight: grow to content → single outer scrollbar */
             },
           }),
         ],

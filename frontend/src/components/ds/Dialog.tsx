@@ -54,6 +54,11 @@ export function Dialog({
           )
         : null;
 
+  // Wide modals = form/content dialogs (inbound/outbound/rule/…). They get a
+  // fixed height so switching tabs never resizes/jumps the modal; the body is
+  // the single scroll region. Narrow ones (confirms ≤520) stay auto-height.
+  const isTall = typeof width === 'number' && width >= 600;
+
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
@@ -62,7 +67,7 @@ export function Dialog({
             that settles and nudges text on open (see REDESIGN_TODO). */}
         <div className="ds-dialog__viewport">
           <RDialog.Content
-            className="ds-dialog__content"
+            className={`ds-dialog__content${isTall ? ' ds-dialog__content--tall' : ''}`}
             style={width ? { width: typeof width === 'number' ? `${width}px` : width } : undefined}
             aria-describedby={undefined}
           >

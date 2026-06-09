@@ -262,7 +262,10 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 .is-dark .ds-dialog__close:hover { background: rgba(255, 255, 255, 0.12); }
-.ds-dialog__body { padding: 22px; overflow-y: auto; }
+.ds-dialog__body { padding: 22px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+/* Form/content modals (≥600px): fixed height so tab switches never resize the
+   modal — the body is the single scroll region. */
+.ds-dialog__content--tall { height: min(82vh, 720px); }
 .ds-dialog__footer {
   display: flex; align-items: center; justify-content: flex-end; gap: 10px;
   padding: 16px 22px;
@@ -355,10 +358,13 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   border-radius: var(--radius-sm);
   font-size: 13px; font-weight: 500; color: var(--text-1);
   cursor: pointer; user-select: none; outline: none;
-}
-.ds-menu__item {
   transition: background var(--dur-fast) var(--ease-out-quint), color var(--dur-fast) var(--ease-out-quint);
 }
+.ds-menu__label { flex: 1; min-width: 0; }
+/* Radix focuses items on open/keyboard nav — show that as the SAME soft
+   highlight, never a hard focus ring (that was the "thick box" glitch). */
+.ds-menu__item:focus,
+.ds-menu__item:focus-visible { outline: none; box-shadow: none; }
 .ds-menu__item:hover,
 .ds-menu__item[data-highlighted] {
   background: var(--color-primary-soft);
@@ -371,6 +377,9 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   background: rgba(var(--color-error-rgb), 0.1);
   color: var(--color-error);
 }
+/* Previously-chosen entry — highlighted as soon as the menu opens. */
+.ds-menu__item--selected { color: var(--color-primary-strong); font-weight: 600; }
+.ds-menu__check { color: var(--color-primary); font-size: 12px; }
 .ds-menu__sep { height: 1px; margin: 6px 4px; background: var(--hairline-soft); }
 
 /* ---- Popover (Radix, arbitrary content) ----------------------------------- */

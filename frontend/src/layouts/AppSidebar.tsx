@@ -69,10 +69,11 @@ function ThemeCycleButton({ id, isDark, isUltra, onCycle, ariaLabel }: {
 
 function LanguageSelector() {
   const { t } = useTranslation();
-  const [, setLang] = useState<string>(() => LanguageManager.getLanguage());
+  const [lang, setLang] = useState<string>(() => LanguageManager.getLanguage());
   const items = useMemo<MenuEntry[]>(
     () => (LanguageManager.supportedLanguages as { value: string; name: string; icon: string }[]).map((l) => ({
       key: l.value,
+      selected: l.value === lang,
       label: (
         <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
           <span aria-hidden="true">{l.icon}</span>
@@ -81,7 +82,7 @@ function LanguageSelector() {
       ),
       onSelect: () => { setLang(l.value); LanguageManager.setLanguage(l.value); },
     })),
-    [],
+    [lang],
   );
   return (
     <DropdownMenu

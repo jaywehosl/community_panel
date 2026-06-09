@@ -7,6 +7,8 @@ export interface MenuItem {
   icon?: ReactNode;
   danger?: boolean;
   disabled?: boolean;
+  /** Marks the currently-chosen entry — highlighted when the menu opens. */
+  selected?: boolean;
   onSelect?: () => void;
 }
 
@@ -35,12 +37,17 @@ export function DropdownMenu({ trigger, items, align = 'end' }: DropdownMenuProp
             ) : (
               <RMenu.Item
                 key={entry.key}
-                className={['ds-menu__item', entry.danger && 'ds-menu__item--danger'].filter(Boolean).join(' ')}
+                className={[
+                  'ds-menu__item',
+                  entry.danger && 'ds-menu__item--danger',
+                  entry.selected && 'ds-menu__item--selected',
+                ].filter(Boolean).join(' ')}
                 disabled={entry.disabled}
                 onSelect={entry.onSelect}
               >
                 {entry.icon}
-                {entry.label}
+                <span className="ds-menu__label">{entry.label}</span>
+                {entry.selected && <span className="ds-menu__check" aria-hidden="true">✓</span>}
               </RMenu.Item>
             ),
           )}
