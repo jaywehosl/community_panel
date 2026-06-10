@@ -111,3 +111,31 @@ on its IP:port with the self-signed/LE-IP cert. No nginx, no sub-domain rewrite.
 - Confirm `/panel/csrf-token` response envelope (`obj` string) — adjust the sed/jq.
 - `updateSetting` partial vs full: we go full (GET all → merge → POST) to be safe;
   confirm it doesn't choke on read-only/derived fields in the round-trip.
+
+---
+
+## Live end-to-end validation (2026-06-10) — RESULTS + fixes
+
+Full mode-A turnkey was driven by hand on a fresh Ubuntu 24.04 VPS and works:
+panel / sub / decoy all serve over clean :443 on their own domains, each with
+its own LE cert; Xray Reality on :443 → unix socket → nginx SNI vhosts; panel
+bound to 127.0.0.1. Verified: panel login page, sub link, decoy page, client
+added to a real VPN app.
+
+Fixes baked back into the design:
+- **subURI MUST include the subPath.** `buildSingleURL` uses a non-empty subURI
+  VERBATIM + subId and IGNORES subPath. So set
+  `subURI = https://<SUB_DOMAIN>/<subPath>` e.g. `https://sub.x/sub/` — NOT
+  `https://sub.x/`. (Bug found: link showed `/turnkey` instead of `/sub/turnkey`.)
+- **VLESS share-link host** resolves to the server's public IP after the panel
+  restart (correct & connectable). Pinning it to the selfsteal domain is optional
+  polish, not required.
+- **Post-restart the panel is domain-pinned** (webDomain ⇒ DomainValidator 403s
+  any other Host). Our sequence writes everything BEFORE the final restart, so
+  this is a non-issue for the installer — but any LATER local API call must send
+  `Host: <PANEL_DOMAIN>`.
+- nginx: do NOT re-declare `ssl_protocols` / `ssl_prefer_server_ciphers` /
+  `ssl_session_*` in conf.d — Ubuntu's nginx.conf already sets them (duplicate
+  ⇒ `nginx -t` emerg). Keep only `set_real_ip_from` + `real_ip_header` + the
+  upstreams + server blocks. (http2 omitted for v1; nginx 1.24 needs the legacy
+  `listen ... http2` form, add later.)
