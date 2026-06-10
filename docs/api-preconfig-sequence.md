@@ -139,3 +139,21 @@ Fixes baked back into the design:
   ⇒ `nginx -t` emerg). Keep only `set_real_ip_from` + `real_ip_header` + the
   upstreams + server blocks. (http2 omitted for v1; nginx 1.24 needs the legacy
   `listen ... http2` form, add later.)
+
+### CRITICAL nginx fix — share-link host (found 2026-06-10)
+
+3x-ui's `ResolveRequest` derives the vless:// / sub host as
+`X-Forwarded-Host` → `X-Real-IP` → `Host`. Our proxy sends `X-Real-IP =
+$remote_addr` (the client IP) but originally NOT `X-Forwarded-Host`, so the
+panel used the REQUESTER's IP as the link address — every download produced a
+link pointing at whoever fetched it (home IP, upstream-proxy IP, etc.).
+
+Fix (in the nginx template, panel + sub vhosts): always
+`proxy_set_header X-Forwarded-Host $host;`. Proven on the live box: link host
+then = the request domain (e.g. subpagetest.largepenis.ru) instead of an IP.
+NB: apply with `systemctl restart nginx` if a plain reload doesn't take.
+
+Still OPEN (separate polish): the link host = the SUB request domain
+(subpagetest), not the selfsteal domain. For tidy Reality self-steal the link
+host ideally = the selfsteal domain (so connect-host and SNI align). Achieve via
+the inbound's external-address / a per-inbound override at preconfig time — TBD.

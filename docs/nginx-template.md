@@ -118,6 +118,11 @@ server {
     location / {
         proxy_pass http://xui_panel;
         proxy_set_header Host $host;            # = PANEL_DOMAIN → webDomain pin passes
+        # CRITICAL: the panel/sub derive the SHARE-LINK host as
+        # X-Forwarded-Host > X-Real-IP > Host. Without X-Forwarded-Host it falls
+        # to X-Real-IP = the requester's IP, so every fetched vless:// link
+        # carries whoever's IP downloaded it. Always send X-Forwarded-Host.
+        proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
@@ -139,6 +144,7 @@ server {
     location / {
         proxy_pass http://xui_sub;
         proxy_set_header Host $host;            # = SUB_DOMAIN → subDomain pin passes
+        proxy_set_header X-Forwarded-Host $host;   # CRITICAL — see panel vhost note
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
