@@ -282,3 +282,19 @@ Everything else (creds, basePath, x25519 keys, cookie secret, ports) generated.
 
 - **Caddy (wave 2):** ship a Caddy-flavoured reverse-proxy template alongside
   Hysteria2, mirroring eGames' nginx/caddy choice. nginx is v1-only.
+
+---
+
+## 8. Insurance spike — RESULTS (2026-06-10, live Ubuntu 24.04 VPS)
+
+All three mode-A runtime assumptions validated; turnkey is de-risked.
+1. **Reality `dest` = unix socket → ACCEPTED.** Xray 26.6.1 (shipped in v3.3.5):
+   `xray -test` returns `Configuration OK` for `dest:"/dev/shm/xui.sock"` AND
+   `dest:"unix:/dev/shm/xui.sock"` (and the `127.0.0.1:8443` control), with
+   `xver:1`. Use the unix socket as primary. (Config-parse confirmed; full
+   relay runtime test happens when we stand up the real turnkey install.)
+2. **getNewX25519Cert** → `obj:{privateKey,publicKey}` (source-confirmed).
+   `xray x25519` now prints `PrivateKey:` / `Password (PublicKey):` / `Hash32:`
+   — the panel's lines[0]/lines[1] split-on-":" parser still extracts correctly.
+3. **/panel/csrf-token** → `{"success":true,"obj":"<token>"}` (obj = token).
+   getNewUUID → `obj:{uuid}`.
