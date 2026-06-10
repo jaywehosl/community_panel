@@ -158,3 +158,28 @@ Share-link: same as A but `@${SERVER_IP}:${INBOUND_PORT}` and `sni=${BORROW_SNI}
   cert — its own preset, drafted when we build wave 2.
 - Mode A also writes panel/sub domain settings via `setting/update` BEFORE
   adding the inbound (deliverable #4 sequences this).
+
+---
+
+## CRITICAL (validated 2026-06-10): pin the share-link host to the selfsteal domain
+
+For DPI resistance the client's **connect host MUST equal the Reality SNI**
+(both = selfsteal domain). Otherwise DPI sees "TCP to subpagetest, TLS SNI
+selfsteal" — a flag. The sanctioned 3x-ui mechanism (resolveInboundAddress
+comment: "External Proxy remains the way to advertise an arbitrary endpoint") is
+an **externalProxy** entry on the inbound's streamSettings:
+
+```json
+"externalProxy": [ { "forceTls": "tls", "dest": "${SELFSTEAL_DOMAIN}", "port": 443, "remark": "" } ]
+```
+
+With it, the generated link is `vless://<uuid>@${SELFSTEAL_DOMAIN}:443?...&sni=${SELFSTEAL_DOMAIN}...`
+— connect host = SNI = selfsteal, and that host genuinely serves the decoy.
+Verified live: link host flipped from the request domain to selfsteal, decoy
+still served, :443 still Xray. Does NOT affect the xray runtime config (3x-ui
+strips externalProxy from the generated config — it's share-link metadata only).
+
+So the turnkey preset A is created in TWO API calls: `inbounds/add` (the Reality
+inbound) then `inbounds/update/:id` adding externalProxy — OR include
+externalProxy in the initial add payload. Note: in the inbounds/list payload
+`streamSettings` is a nested OBJECT (not a JSON string) — edit it directly.
