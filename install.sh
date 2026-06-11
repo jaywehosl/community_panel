@@ -1115,15 +1115,26 @@ _rp_preconfig() {
     local WBP="$BP"; [[ "$PANELPATH" == "/" ]] && WBP=""
     local ALL NEW
     ALL=$(api "$BASE/panel/setting/all" -X POST)
-    # subPath="/" → the sub is served at the clean domain root
+    # subPath="/" → the normal sub is served at the clean domain root
     # (https://SUB_DOMAIN/<subId>), no /sub/ segment. Each client still has a
     # unique subId, so a bare-domain request (no subId) returns 404 — still
     # probe-safe. Keeps clean-domain URLs symmetric with the panel/decoy.
-    NEW=$(echo "$ALL"|jq -c --arg pd "$PD" --arg sd "$SD" --arg su "https://$SD/" --argjson sp "$SP" --arg wbp "$WBP" \
+    #
+    # JSON sub: the sub server registers subPath and subJsonPath as TWO distinct
+    # Gin route groups — they CANNOT both live at "/" (duplicate-route panic →
+    # panel won't start). So subJsonPath stays "/json/". buildSingleURL uses a
+    # non-empty subJsonURI VERBATIM + subId (ignoring subJsonPath), so the URI
+    # must itself carry the /json/ segment, else the json link collapses onto
+    # the normal one. Empty subJsonURI would fall back to base+path and leak the
+    # internal :2096 port — so we pin it to the clean host. nginx needs no /json/
+    # block: "location /" already proxies /json/<id> to the sub upstream.
+    NEW=$(echo "$ALL"|jq -c --arg pd "$PD" --arg sd "$SD" --arg su "https://$SD/" \
+        --arg sju "https://$SD/json/" --argjson sp "$SP" --arg wbp "$WBP" \
         '.obj | .webDomain=$pd | .webListen="127.0.0.1" | .webCertFile="" | .webKeyFile=""
               | (if $wbp=="" then .webBasePath="/" else . end)
               | .subEnable=true | .subDomain=$sd | .subListen="127.0.0.1" | .subPort=$sp
-              | .subPath="/" | .subURI=$su | .subCertFile="" | .subKeyFile=""')
+              | .subPath="/" | .subURI=$su | .subJsonPath="/json/" | .subJsonURI=$sju
+              | .subCertFile="" | .subKeyFile=""')
     [[ "$(api "$BASE/panel/setting/update" -d "$NEW"|jq -r '.success')" == "true" ]] || { echo -e "  ${red}setting/update failed.${plain}"; rm -f "$JAR"; return 1; }
 
     local IB
