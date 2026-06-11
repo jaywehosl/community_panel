@@ -105,6 +105,38 @@ T_EN[rpr_confirm]="Remove reverse-proxy? The panel will be accessible by direct 
 T_EN[rpr_pins]="Domain pins removed";            T_RU[rpr_pins]="Привязка к доменам удалена"
 T_EN[rpr_done]="Reverse-proxy removed, to get the correct ip:port link run 'x-ui settings' in your terminal session"; T_RU[rpr_done]="Реверс-прокси удален, чтобы получить актуальную ссылку доступа, выполните 'x-ui settings' в терминале"
 
+# ── Batch 4: cert-cron self-check, confirms, reset/port, service happy-path ───
+T_EN[cc_notfound]="Certificate renewal cron policy not found";  T_RU[cc_notfound]="Политика автоматического обновления сертификатов в cron не найдена"
+T_EN[cc_changed]="Certificate renewal cron policy changed";     T_RU[cc_changed]="Политика автоматического обновления сертификатов в cron изменилась"
+T_EN[cc_without]="Without it, certificates will stop renewing and expire in 90 days"; T_RU[cc_without]="Без этого сертификаты не будут автоматически обновляться и истекут через 90 дней"
+T_EN[cc_repair]="Repair and restore the renewal rules? [Y/n]:"; T_RU[cc_repair]="Восстановить политики обновления? [Y/n]:"
+T_EN[cc_skipped]="Skipped! — certificates will not auto-renew";  T_RU[cc_skipped]="Действие отменено! — сертификаты не будут автоматически обновляться"
+T_EN[cc_restored]="Certificate auto-renewal policies restored"; T_RU[cc_restored]="Политики автоматического обновления сертификатов восстановлены"
+T_EN[cc_failed]="Failed to install the acme.sh cron policy — check that the cron daemon is running"; T_RU[cc_failed]="Не удалось установить политики автоматического обновления сертификатов в cron — проверьте что сервис cron запущен и работает в системе"
+T_EN[cf_default]="[Default %s]:";                T_RU[cf_default]="[По умолчанию %s]:"
+T_EN[cf_yn]="[y/n]:";                            T_RU[cf_yn]="[y/n]:"
+T_EN[cf_restart]="Restart Community Panel? Restarting the panel frontend also restarts backend core"; T_RU[cf_restart]="Перезапустить Community Panel? Перезапуск фронтенда также перезапустит и бэкенд ядро"
+T_EN[s_cancelled]="Cancelled";                   T_RU[s_cancelled]="Прервано"
+T_EN[rs_user]="Enter the login [or keep empty to generate a random username]:"; T_RU[rs_user]="Введите новый логин [или оставьте пустым для генерации случайным образом]:"
+T_EN[rs_pass]="Enter the password [or keep empty to generate a random password]:"; T_RU[rs_pass]="Введите новый пароль [или оставьте пустым для генерации случайным образом]:"
+T_EN[rs_2fa]="Disable the currently configured 2FA TOTP authorisation? [Y/n]:"; T_RU[rs_2fa]="Отключить активную авторизацию через 2FA TOTP? [Y/n]:"
+T_EN[rs_2fa_done]="Two-factor authentication has been disabled"; T_RU[rs_2fa_done]="Двухфакторная авторизация отключена"
+T_EN[rs_login_reset]="Community Panel login has been reset to: %s"; T_RU[rs_login_reset]="Логин для авторизации в Community Panel был сброшен на: %s"
+T_EN[rs_pass_reset]="Community Panel password has been reset to: %s"; T_RU[rs_pass_reset]="Пароль для авторизации в Community Panel был сброшен на: %s"
+T_EN[rs_save]="Be sure to save the new login/password for access to the Community Panel"; T_RU[rs_save]="Обязательно сохраните новые логин/пароль доступа в Community Panel"
+T_EN[rs_path_confirm]="Are you sure you want to reset the web base path for access to the Community Panel? [y/N]:"; T_RU[rs_path_confirm]="Вы уверены что хотите сбросить webBasePath для доступа в Community Panel? [y/N]:"
+T_EN[rs_path_reset]="Web base path has been reset to: %s"; T_RU[rs_path_reset]="WebBasePath был сброшен на: %s"
+T_EN[rs_config_done]="All settings have been reset to default"; T_RU[rs_config_done]="Все настройки были сброшены по умолчанию"
+T_EN[pt_enter]="Enter the new Community Panel access port [1-65535]:"; T_RU[pt_enter]="Введите новый порт для доступа в Community Panel [1-65535]:"
+T_EN[pt_changed]="Community Panel port changed successfully to: %s"; T_RU[pt_changed]="Порт для доступа в Community Panel был сброшен на: %s"
+T_EN[sv_started]="Community Panel is successfully started";      T_RU[sv_started]="Community Panel успешно запущена"
+T_EN[sv_already]="Community Panel is already running";           T_RU[sv_already]="Community Panel уже запущена"
+T_EN[sv_stopped]="Community Panel frontend and backend is successfully stopped"; T_RU[sv_stopped]="Фронтенд и бэкенд Community Panel успешно остановлен"
+T_EN[sv_restarted]="Community Panel frontend and backend is successfully restarted"; T_RU[sv_restarted]="Фронтенд и бэкенд Community Panel успешно перезапущен"
+T_EN[sv_xray_restart]="Backend restart signal is successfully sent"; T_RU[sv_xray_restart]="Команда на перезапуск бэкенда отправлена"
+T_EN[sv_enabled]="Service autostart on system boot is successfully enabled"; T_RU[sv_enabled]="Автозапуск сервисов при перезагрузке системы успешно включен"
+T_EN[sv_disabled]="Service autostart on system boot is successfully disabled"; T_RU[sv_disabled]="Автозапуск сервисов при перезагрузке системы успешно выключен"
+
 #Add some basic function here
 function LOGD() {
     echo -e "${yellow}[DEG] $* ${plain}"
@@ -241,12 +273,12 @@ RP_MARKER="/etc/x-ui/reverse-proxy.conf"
 
 confirm() {
     if [[ $# > 1 ]]; then
-        echo && read -rp "$1 [Default $2]: " temp
+        echo && read -rp "$1 $(printf "$(t cf_default)" "$2") " temp
         if [[ "${temp}" == "" ]]; then
             temp=$2
         fi
     else
-        read -rp "$1 [y/n]: " temp
+        read -rp "$1 $(t cf_yn) " temp
     fi
     if [[ "${temp}" == "y" || "${temp}" == "Y" ]]; then
         return 0
@@ -256,7 +288,7 @@ confirm() {
 }
 
 confirm_restart() {
-    confirm "Restart the panel, Attention: Restarting the panel will also restart xray" "y"
+    confirm "$(t cf_restart)" "y"
     if [[ $? == 0 ]]; then
         restart
     else
@@ -285,7 +317,7 @@ install() {
 update() {
     confirm "This function will update all x-ui components to the latest version, and the data will not be lost. Do you want to continue?" "y"
     if [[ $? != 0 ]]; then
-        LOGE "Cancelled"
+        LOGE "$(t s_cancelled)"
         if [[ $# == 0 ]]; then
             before_show_menu
         fi
@@ -302,7 +334,7 @@ update_menu() {
     echo -e "${yellow}Updating Menu${plain}"
     confirm "This function will update the menu to the latest changes." "y"
     if [[ $? != 0 ]]; then
-        LOGE "Cancelled"
+        LOGE "$(t s_cancelled)"
         if [[ $# == 0 ]]; then
             before_show_menu
         fi
@@ -402,22 +434,22 @@ reset_user() {
         return 0
     fi
 
-    read -rp "Please set the login username [default is a random username]: " config_account
+    read -rp " $(ask "$(t rs_user)") " config_account
     [[ -z $config_account ]] && config_account=$(gen_random_string 10)
-    read -rp "Please set the login password [default is a random password]: " config_password
+    read -rp " $(ask "$(t rs_pass)") " config_password
     [[ -z $config_password ]] && config_password=$(gen_random_string 18)
 
-    read -rp "Do you want to disable currently configured two-factor authentication? (y/n): " twoFactorConfirm
+    read -rp " $(ask "$(t rs_2fa)") " twoFactorConfirm
     if [[ $twoFactorConfirm != "y" && $twoFactorConfirm != "Y" ]]; then
         ${xui_folder}/x-ui setting -username "${config_account}" -password "${config_password}" > /dev/null 2>&1
     else
         ${xui_folder}/x-ui setting -username "${config_account}" -password "${config_password}" -resetTwoFactor=true > /dev/null 2>&1
-        echo -e "Two factor authentication has been disabled."
+        echo -e "${green}$(t rs_2fa_done)${plain}"
     fi
 
-    echo -e "Panel login username has been reset to: ${green} ${config_account} ${plain}"
-    echo -e "Panel login password has been reset to: ${green} ${config_password} ${plain}"
-    echo -e "${green} Please use the new login username and password to access the X-UI panel. Also remember them! ${plain}"
+    echo -e "$(printf "$(t rs_login_reset)" "${green}${config_account}${plain}")"
+    echo -e "$(printf "$(t rs_pass_reset)" "${green}${config_password}${plain}")"
+    echo -e "${green}$(t rs_save)${plain}"
     confirm_restart
 }
 
@@ -431,7 +463,7 @@ gen_random_string() {
 reset_webbasepath() {
     echo -e "${yellow}Resetting Web Base Path${plain}"
 
-    read -rp "Are you sure you want to reset the web base path? (y/n): " confirm
+    read -rp " $(ask "$(t rs_path_confirm)") " confirm
     if [[ $confirm != "y" && $confirm != "Y" ]]; then
         echo -e "${yellow}Operation canceled.${plain}"
         return
@@ -442,7 +474,7 @@ reset_webbasepath() {
     # Apply the new web base path setting
     ${xui_folder}/x-ui setting -webBasePath "${config_webBasePath}" > /dev/null 2>&1
 
-    echo -e "Web base path has been reset to: ${green}${config_webBasePath}${plain}"
+    echo -e "$(printf "$(t rs_path_reset)" "${green}${config_webBasePath}${plain}")"
     echo -e "${green}Please use the new web base path to access the panel.${plain}"
     restart
 }
@@ -456,7 +488,7 @@ reset_config() {
         return 0
     fi
     ${xui_folder}/x-ui setting -reset
-    echo -e "All panel settings have been reset to default."
+    echo -e "$(t rs_config_done)"
     restart
 }
 
@@ -548,14 +580,13 @@ check_config() {
 }
 
 set_port() {
-    echo -n "Enter port number[1-65535]: "
-    read -r port
+    read -rp " $(ask "$(t pt_enter)") " port
     if [[ -z "${port}" ]]; then
-        LOGD "Cancelled"
+        LOGD "$(t s_cancelled)"
         before_show_menu
     else
         ${xui_folder}/x-ui setting -port ${port}
-        echo -e "The port is set, Please restart the panel now, and use the new port ${green}${port}${plain} to access web panel"
+        echo -e "$(printf "$(t pt_changed)" "${green}${port}${plain}")"
         confirm_restart
     fi
 }
@@ -564,7 +595,7 @@ start() {
     check_status
     if [[ $? == 0 ]]; then
         echo ""
-        LOGI "Panel is running, No need to start again, If you need to restart, please select restart"
+        LOGI "$(t sv_already)"
     else
         if [[ "${running_in_docker}" == "true" ]]; then
             LOGE "Panel process is not running inside this container."
@@ -583,7 +614,7 @@ start() {
         sleep 2
         check_status
         if [[ $? == 0 ]]; then
-            LOGI "x-ui Started Successfully"
+            LOGI "$(t sv_started)"
         else
             LOGE "panel Failed to start, Probably because it takes longer than two seconds to start, Please check the log information later"
         fi
@@ -617,7 +648,7 @@ stop() {
         sleep 2
         check_status
         if [[ $? == 1 ]]; then
-            LOGI "x-ui and xray stopped successfully"
+            LOGI "$(t sv_stopped)"
         else
             LOGE "Panel stop failed, Probably because the stop time exceeds two seconds, Please check the log information later"
         fi
@@ -640,7 +671,7 @@ restart() {
         sleep 2
         check_status
         if [[ $? == 0 ]]; then
-            LOGI "x-ui and xray Restarted successfully"
+            LOGI "$(t sv_restarted)"
         else
             LOGE "Panel restart failed, Please check the log information later"
         fi
@@ -657,7 +688,7 @@ restart() {
     sleep 2
     check_status
     if [[ $? == 0 ]]; then
-        LOGI "x-ui and xray Restarted successfully"
+        LOGI "$(t sv_restarted)"
     else
         LOGE "Panel restart failed, Probably because it takes longer than two seconds to start, Please check the log information later"
     fi
@@ -669,7 +700,7 @@ restart() {
 restart_xray() {
     if [[ "${running_in_docker}" == "true" ]]; then
         if signal_xui USR1; then
-            LOGI "xray-core Restart signal sent successfully, Please check the log information to confirm whether xray restarted successfully"
+            LOGI "$(t sv_xray_restart)"
         else
             LOGE "Could not find the running panel process to signal."
         fi
@@ -685,7 +716,7 @@ restart_xray() {
     else
         systemctl reload x-ui
     fi
-    LOGI "xray-core Restart signal sent successfully, Please check the log information to confirm whether xray restarted successfully"
+    LOGI "$(t sv_xray_restart)"
     sleep 2
     show_xray_status
     if [[ $# == 0 ]]; then
@@ -726,7 +757,7 @@ enable() {
         systemctl enable x-ui
     fi
     if [[ $? == 0 ]]; then
-        LOGI "x-ui Set to boot automatically on startup successfully"
+        LOGI "$(t sv_enabled)"
     else
         LOGE "x-ui Failed to set Autostart"
     fi
@@ -751,7 +782,7 @@ disable() {
         systemctl disable x-ui
     fi
     if [[ $? == 0 ]]; then
-        LOGI "x-ui Autostart Cancelled successfully"
+        LOGI "$(t sv_disabled)"
     else
         LOGE "x-ui Failed to cancel autostart"
     fi
@@ -1706,13 +1737,13 @@ ensure_cert_cron() {
 
     echo
     if [[ "$cron_ok" == 0 ]]; then
-        msg_warn "Политика автообновления TLS-сертификатов не найдена (cron acme.sh отсутствует)."
+        msg_warn "$(t cc_notfound)"
     else
-        msg_warn "Политика автообновления TLS-сертификатов изменена (потерян reloadcmd для домена)."
+        msg_warn "$(t cc_changed)"
     fi
-    echo -e "  ${gray}Без неё сертификаты перестанут продлеваться и истекут (~90 дней).${plain}"
-    local yn; read -rp " $(ask 'Исправить и восстановить правила обновления? [Y/n]:') " yn
-    [[ "$yn" =~ ^[Nn]$ ]] && { msg_warn "Пропущено — сертификаты не будут автопродлеваться."; return 0; }
+    echo -e "  ${gray}$(t cc_without)${plain}"
+    local yn; read -rp " $(ask "$(t cc_repair)") " yn
+    [[ "$yn" =~ ^[Nn]$ ]] && { msg_warn "$(t cc_skipped)"; return 0; }
 
     "$acme" --install-cronjob > /dev/null 2>&1 || true
     for d in "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN"; do
@@ -1724,9 +1755,9 @@ ensure_cert_cron() {
     done
 
     if crontab -l 2> /dev/null | grep -q 'acme.sh --cron'; then
-        msg_ok "Автообновление сертификатов восстановлено (cron acme.sh + reloadcmd nginx)."
+        msg_ok "$(t cc_restored)"
     else
-        msg_err "Не удалось установить cron acme.sh — проверьте, запущен ли cron-демон (systemctl status cron)."
+        msg_err "$(t cc_failed)"
     fi
 }
 
