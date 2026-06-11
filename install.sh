@@ -1128,29 +1128,33 @@ _rp_preconfig() {
       settings:{clients:[{id:$u,email:"admin",flow:"xtls-rprx-vision",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"turnkey",comment:"",reset:0}],decryption:"none",encryption:"none",fallbacks:[]},
       streamSettings:{network:"tcp",tcpSettings:{header:{type:"none"}},security:"reality",
         externalProxy:[{forceTls:"same",dest:$sni,port:443,remark:""}],
-        realitySettings:{show:false,xver:1,target:$sock,serverNames:[$sni],privateKey:$pv,minClientVer:"",maxClientVer:"",maxTimediff:0,shortIds:[$sid],mldsa65Seed:"",settings:{publicKey:$pb,fingerprint:"chrome",serverName:"",spiderX:"/",mldsa65Verify:""}}},
+        realitySettings:{show:false,xver:1,target:$sock,serverNames:[$sni],privateKey:$pv,minClientVer:"",maxClientVer:"",maxTimediff:0,shortIds:[$sid],mldsa65Seed:"",settings:{publicKey:$pb,fingerprint:"firefox",serverName:"",spiderX:"/",mldsa65Verify:""}}},
       sniffing:{enabled:true,destOverride:["http","tls","quic"],metadataOnly:false,routeOnly:false,ipsExcluded:[],domainsExcluded:[]}}')
     [[ "$(api "$BASE/panel/api/inbounds/add" -d "$IB"|jq -r '.success')" == "true" ]] || { echo -e "  ${red}inbound add failed.${plain}"; rm -f "$JAR"; return 1; }
 
-    # Hysteria2 (UDP/443) — terminates its own TLS with the selfsteal cert (no
-    # nginx). Same subId so it joins the 'turnkey' subscription as a 2nd key;
-    # externalProxy pins the link host to the selfsteal domain. Modelled on a
-    # known-working Theta inbound (force-brutal QUIC, h3 ALPN, no obfs).
-    local HYAUTH; HYAUTH=$(gen_random_string 16)
+    # Hysteria2 (UDP/27015) — terminates its own TLS with the selfsteal cert (no
+    # nginx). SAME email ("admin") + subId ("turnkey") as the Reality client, so
+    # the panel treats it as ONE client spanning both inbounds (two clients with
+    # the same subId is rejected by the panel UI; matching the email makes it a
+    # single identity). It becomes the 2nd key in the 'turnkey' subscription.
+    # Port 27015, not 443: UDP/443 gets throttled by DPI (ja4) — 27015 is clean.
+    # externalProxy pins the link host:port to the selfsteal domain:27015.
+    # Modelled on a known-working Theta inbound (force-brutal QUIC, h3, no obfs).
+    local HYAUTH HYPASS; HYAUTH=$(gen_random_string 16); HYPASS=$(gen_random_string 16)
     local HY
-    HY=$(jq -n --arg auth "$HYAUTH" --arg sni "$SS" \
+    HY=$(jq -n --arg auth "$HYAUTH" --arg pass "$HYPASS" --arg sni "$SS" \
         --arg cert "/etc/x-ui/ssl/$SS/fullchain.pem" --arg key "/etc/x-ui/ssl/$SS/privkey.pem" '{
-      enable:true,remark:"Hysteria2 443 (turnkey)",listen:"",port:443,protocol:"hysteria",expiryTime:0,total:0,
-      settings:{clients:[{auth:$auth,email:"admin-hy2",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"turnkey",comment:"",reset:0}],version:2},
+      enable:true,remark:"Hysteria2 27015 (turnkey)",listen:"",port:27015,protocol:"hysteria",expiryTime:0,total:0,
+      settings:{clients:[{auth:$auth,password:$pass,email:"admin",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"turnkey",comment:"",reset:0}],version:2},
       streamSettings:{network:"hysteria",hysteriaSettings:{version:2,udpIdleTimeout:60},security:"tls",
-        externalProxy:[{forceTls:"same",dest:$sni,port:443,remark:""}],
+        externalProxy:[{forceTls:"same",dest:$sni,port:27015,remark:""}],
         tlsSettings:{serverName:$sni,minVersion:"1.3",maxVersion:"1.3",cipherSuites:"",rejectUnknownSni:false,disableSystemRoot:false,enableSessionResumption:false,
           certificates:[{certificateFile:$cert,keyFile:$key,oneTimeLoading:false,usage:"encipherment",buildChain:false,useFile:true}],
           alpn:["h3"],echServerKeys:"",settings:{fingerprint:"chrome",echConfigList:"",pinnedPeerCertSha256:[]}},
         finalmask:{quicParams:{congestion:"force-brutal",brutalUp:"650000000",brutalDown:"850000000",initStreamReceiveWindow:8388608,maxStreamReceiveWindow:8388608,initConnectionReceiveWindow:20971520,maxConnectionReceiveWindow:20971520,keepAlivePeriod:5,maxIncomingStreams:1024}}},
       sniffing:{enabled:true,destOverride:["http","tls","quic"]}}')
     if [[ "$(api "$BASE/panel/api/inbounds/add" -d "$HY"|jq -r '.success')" == "true" ]]; then
-        echo -e "  ${green}✔${plain} Hysteria2 (UDP/443) added"
+        echo -e "  ${green}✔${plain} Hysteria2 (UDP/27015) added"
     else
         echo -e "  ${yellow}! Hysteria2 inbound add failed (Reality still works); add it manually if needed.${plain}"
     fi
