@@ -6,6 +6,7 @@ blue='\033[0;34m'
 yellow='\033[0;33m'
 cyan='\033[0;36m'
 gray='\033[0;90m'
+orange='\033[38;5;208m'
 bold='\033[1m'
 plain='\033[0m'
 
@@ -164,13 +165,15 @@ confirm_restart() {
     if [[ $? == 0 ]]; then
         restart
     else
-        show_menu
+        return
     fi
 }
 
 before_show_menu() {
-    echo && echo -n -e "${yellow}Press enter to return to the main menu: ${plain}" && read -r temp
-    show_menu
+    # Pause so the user can read an action's output, then return to the caller.
+    # The menu is a redraw loop (show_menu), so returning is all that's needed —
+    # NOT a recursive show_menu call (that stacked frames and ballooned output).
+    echo && echo -n -e "${gray}Press enter to return to the menu…${plain}" && read -r _
 }
 
 install() {
@@ -263,7 +266,7 @@ uninstall() {
     confirm "Are you sure you want to uninstall the panel? xray will also uninstalled!" "n"
     if [[ $? != 0 ]]; then
         if [[ $# == 0 ]]; then
-            show_menu
+            return
         fi
         return 0
     fi
@@ -298,7 +301,7 @@ reset_user() {
     confirm "Are you sure to reset the username and password of the panel?" "n"
     if [[ $? != 0 ]]; then
         if [[ $# == 0 ]]; then
-            show_menu
+            return
         fi
         return 0
     fi
@@ -352,7 +355,7 @@ reset_config() {
     confirm "Are you sure you want to reset all panel settings, Account data will not be lost, Username and password will not change" "n"
     if [[ $? != 0 ]]; then
         if [[ $# == 0 ]]; then
-            show_menu
+            return
         fi
         return 0
     fi
@@ -365,7 +368,7 @@ check_config() {
     local info=$(${xui_folder}/x-ui setting -show true)
     if [[ $? != 0 ]]; then
         LOGE "get current settings error, please check logs"
-        show_menu
+        return
         return
     fi
     LOGI "${info}"
@@ -669,7 +672,7 @@ show_log() {
 
         case "$choice" in
             0)
-                show_menu
+                return
                 ;;
             1)
                 grep -F 'x-ui[' /var/log/messages
@@ -690,7 +693,7 @@ show_log() {
 
         case "$choice" in
             0)
-                show_menu
+                return
                 ;;
             1)
                 journalctl -u x-ui -e --no-pager -f -p debug
@@ -1208,59 +1211,34 @@ migrate_to_postgres() {
 }
 
 postgresql_menu() {
-    echo && echo -e "  ${gray}PostgreSQL${plain}"
-    echo -e "   ${green}1${plain}. ${green}Install${plain} (server+client+db)   ${green}2${plain}. Migrate SQLite ${green}->${plain} PG"
-    echo -e "   ${green}3${plain}. Status                    ${green}9${plain}. Convert ${green}.db <-> .dump${plain}"
+  while true; do
+    clear
     echo
-    echo -e "   ${green}4${plain}. ${green}Start${plain}   ${green}5${plain}. ${red}Stop${plain}   ${green}6${plain}. Restart   ${green}7${plain}. ${green}Enable${plain} boot   ${green}8${plain}. Log"
-    echo -e "   ${green}0${plain}. Back"
+    echo -e "  ${bold}PostgreSQL${plain}"
     echo
-    read -rp " $(ask 'Choose an option:') " choice
+    echo -e "    ${orange} 1${plain}  Install ${gray}(server + client + db)${plain}    ${orange} 2${plain}  Migrate SQLite ${gray}->${plain} PG"
+    echo -e "    ${orange} 3${plain}  Status                          ${orange} 9${plain}  Convert ${gray}.db <-> .dump${plain}"
+    echo
+    echo -e "    ${orange} 4${plain}  Start     ${orange} 5${plain}  Stop     ${orange} 6${plain}  Restart     ${orange} 7${plain}  Enable on boot     ${orange} 8${plain}  Log"
+    echo
+    echo -e "    ${orange} 0${plain}  Back"
+    echo
+    read -rp " $(ask 'Select an option [0-9]:') " choice
     case "$choice" in
-        0)
-            show_menu
-            ;;
-        1)
-            pg_install_server_action
-            postgresql_menu
-            ;;
-        2)
-            migrate_to_postgres
-            postgresql_menu
-            ;;
-        3)
-            postgresql_status
-            postgresql_menu
-            ;;
-        4)
-            postgresql_start
-            postgresql_menu
-            ;;
-        5)
-            postgresql_stop
-            postgresql_menu
-            ;;
-        6)
-            postgresql_restart
-            postgresql_menu
-            ;;
-        7)
-            postgresql_enable
-            postgresql_menu
-            ;;
-        8)
-            postgresql_log
-            postgresql_menu
-            ;;
-        9)
-            migrate_db_prompt
-            postgresql_menu
-            ;;
-        *)
-            echo -e "${red}Invalid option. Please select a valid number.${plain}\n"
-            postgresql_menu
-            ;;
+        0) return ;;
+        1) pg_install_server_action ;;
+        2) migrate_to_postgres ;;
+        3) postgresql_status ;;
+        4) postgresql_start ;;
+        5) postgresql_stop ;;
+        6) postgresql_restart ;;
+        7) postgresql_enable ;;
+        8) postgresql_log ;;
+        9) migrate_db_prompt ;;
+        *) msg_err "Invalid option."; sleep 1; continue ;;
     esac
+    before_show_menu
+  done
 }
 
 # Convert between the panel's SQLite database and a portable .dump (SQL text)
@@ -1430,22 +1408,29 @@ rp_remove() {
 
 reverse_proxy_menu() {
     if [[ ! -f "$RP_MARKER" ]]; then
-        echo
-        msg_warn "Это не turnkey reverse-proxy установка (маркер ${RP_MARKER} отсутствует)."
+        clear; echo
+        msg_warn "This is not a turnkey reverse-proxy install (marker ${RP_MARKER} not found)."
+        before_show_menu
         return
     fi
     while true; do
+        clear
         echo
-        echo -e "  ${gray}Reverse proxy${plain}"
-        echo -e "   ${green}1${plain}. Status    ${green}2${plain}. Renew certs    ${green}3${plain}. Remove    ${green}0${plain}. Back"
-        local c; read -rp " $(ask 'Select [0-3]:') " c
+        echo -e "  ${bold}Reverse proxy${plain}"
+        echo
+        echo -e "    ${orange} 1${plain}  Status      ${orange} 2${plain}  Renew certs      ${orange} 3${plain}  Remove"
+        echo
+        echo -e "    ${orange} 0${plain}  Back"
+        echo
+        local c; read -rp " $(ask 'Select an option [0-3]:') " c
         case "$c" in
+            0) return ;;
             1) rp_status ;;
             2) rp_renew_certs ;;
-            3) rp_remove; break ;;
-            0) break ;;
-            *) msg_err "Введите число [0-3]" ;;
+            3) rp_remove; before_show_menu; return ;;
+            *) msg_err "Invalid option."; sleep 1; continue ;;
         esac
+        before_show_menu
     done
 }
 
@@ -1468,43 +1453,43 @@ show_usage() {
 }
 
 show_menu() {
-    local ver
-    ver=$(panel_version)
+  while true; do
+    clear
+    local ver; ver=$(panel_version)
     echo
-    echo -e "  ${bold}${green}3X-UI${plain} ${bold}Community${plain}  ${gray}·  reverse-proxy panel manager${plain}"
+    echo -e "  ${bold}${orange}3X-UI${plain} ${bold}Community${plain}   ${gray}reverse-proxy panel manager${plain}"
     echo -e "  ${gray}version ${ver:-unknown}${plain}"
-    hr
     echo
 
-    echo -e "  ${gray}Lifecycle${plain}"
-    echo -e "   ${green} 1${plain}. Install        ${green} 2${plain}. Update         ${green} 3${plain}. Update menu"
-    echo -e "   ${green} 4${plain}. Legacy version ${green} 5${plain}. Uninstall"
+    echo -e "  ${bold}Lifecycle${plain}"
+    echo -e "    ${orange} 1${plain}  Install         ${orange} 2${plain}  Update          ${orange} 3${plain}  Update menu"
+    echo -e "    ${orange} 4${plain}  Legacy version  ${orange} 5${plain}  Uninstall"
     echo
 
-    echo -e "  ${gray}Identity & access${plain}"
-    echo -e "   ${green} 6${plain}. Reset login    ${green} 7${plain}. Reset basePath ${green} 8${plain}. Reset settings"
-    echo -e "   ${green} 9${plain}. Change port    ${green}10${plain}. View settings"
+    echo -e "  ${bold}Identity & access${plain}"
+    echo -e "    ${orange} 6${plain}  Reset login     ${orange} 7${plain}  Reset base path  ${orange} 8${plain}  Reset settings"
+    echo -e "    ${orange} 9${plain}  Change port     ${orange}10${plain}  View settings"
     echo
 
-    echo -e "  ${gray}Service${plain}"
-    echo -e "   ${green}11${plain}. Start          ${green}12${plain}. Stop           ${green}13${plain}. Restart"
-    echo -e "   ${green}14${plain}. Restart Xray   ${green}15${plain}. Status         ${green}16${plain}. Logs"
-    echo -e "   ${green}17${plain}. Enable boot    ${green}18${plain}. Disable boot"
+    echo -e "  ${bold}Service${plain}"
+    echo -e "    ${orange}11${plain}  Start           ${orange}12${plain}  Stop            ${orange}13${plain}  Restart"
+    echo -e "    ${orange}14${plain}  Restart Xray    ${orange}15${plain}  Status          ${orange}16${plain}  Logs"
+    echo -e "    ${orange}17${plain}  Enable on boot  ${orange}18${plain}  Disable on boot"
     echo
 
-    echo -e "  ${gray}Database${plain}"
-    echo -e "   ${green}19${plain}. PostgreSQL"
+    echo -e "  ${bold}Database${plain}"
+    echo -e "    ${orange}19${plain}  PostgreSQL"
     echo
 
-    echo -e "  ${gray}Reverse proxy${plain}"
-    echo -e "   ${green}20${plain}. Manage (status / renew / remove)"
+    echo -e "  ${bold}Reverse proxy${plain}"
+    echo -e "    ${orange}20${plain}  Manage   ${gray}status / renew / remove${plain}"
     echo
-    echo -e "   ${green} 0${plain}. Exit"
+
+    echo -e "    ${orange} 0${plain}  Exit"
     echo
-    hr
     show_status
-    hr
-    echo && read -rp " $(ask 'Select [0-20]:') " num
+    echo
+    read -rp " $(ask 'Select an option [0-20]:') " num
 
     case "${num}" in
         0)
@@ -1572,8 +1557,10 @@ show_menu() {
             ;;
         *)
             LOGE "Please enter the correct number [0-20]"
+            sleep 1
             ;;
     esac
+  done
 }
 
 # ── TLS cert renewal policy self-check (turnkey reverse-proxy boxes) ──────────
