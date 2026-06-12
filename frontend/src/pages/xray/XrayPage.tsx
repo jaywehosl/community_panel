@@ -1,16 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  Button,
-  Card,
-  ConfigProvider,
-  Layout,
-  message,
-  Radio,
-  Result,
-  Spin,
-} from '@/components/ui';
+import { Button, Card, Spin, Segmented, Result } from '@/components/ds';
 import BackToTop from '@/components/ui/BackToTop';
 import {
   SettingOutlined,
@@ -27,7 +18,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useXrayController } from '@/layouts/xray-controller-context';
 import type { XraySettingsValue } from '@/hooks/useXraySetting';
 import { JsonEditor } from '@/components/form';
-import { setMessageInstance } from '@/utils/messageBus';
+
 
 import { BasicsTab } from './basics';
 import { RoutingTab } from './routing';
@@ -45,8 +36,6 @@ export default function XrayPage() {
   const { t } = useTranslation();
   const { isDark, isUltra } = useTheme();
   const { isMobile } = useMediaQuery();
-  const [messageApi, messageContextHolder] = message.useMessage();
-  useEffect(() => { setMessageInstance(messageApi); }, [messageApi]);
   const xs = useXrayController();
   const {
     fetched,
@@ -244,18 +233,18 @@ export default function XrayPage() {
               <h4>{t('pages.xray.Template')}</h4>
               <p>{t('pages.xray.TemplateDesc')}</p>
             </div>
-            <Radio.Group
-              value={advSettings}
-              buttonStyle="solid"
-              size={isMobile ? 'small' : 'middle'}
-              style={{ margin: '12px 0' }}
-              onChange={(e: { target: { value: string } }) => setAdvSettings(e.target.value as typeof advSettings)}
-            >
-              <Radio.Button value="xraySetting">{t('pages.xray.completeTemplate')}</Radio.Button>
-              <Radio.Button value="inboundSettings">{t('pages.xray.Inbounds')}</Radio.Button>
-              <Radio.Button value="outboundSettings">{t('pages.xray.Outbounds')}</Radio.Button>
-              <Radio.Button value="routingRuleSettings">{t('pages.xray.Routings')}</Radio.Button>
-            </Radio.Group>
+            <div style={{ margin: '12px 0' }}>
+              <Segmented
+                value={advSettings}
+                options={[
+                  { value: 'xraySetting', label: t('pages.xray.completeTemplate') },
+                  { value: 'inboundSettings', label: t('pages.xray.Inbounds') },
+                  { value: 'outboundSettings', label: t('pages.xray.Outbounds') },
+                  { value: 'routingRuleSettings', label: t('pages.xray.Routings') },
+                ]}
+                onChange={(val) => setAdvSettings(val as typeof advSettings)}
+              />
+            </div>
             <JsonEditor
               value={advancedText}
               onChange={onAdvancedTextChange}
@@ -278,21 +267,19 @@ export default function XrayPage() {
   })();
 
   return (
-    <ConfigProvider>
-      {messageContextHolder}
-      <div className={pageClass}>
-        <Layout className="content-shell">
-          <Layout.Content id="content-layout" className="content-area">
-            <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
-              {!fetched ? (
-                <div className="loading-spacer" />
-              ) : fetchError ? (
-                <Result
-                  status="error"
-                  title={t('somethingWentWrong')}
-                  subTitle={fetchError}
-                  extra={<Button type="primary" onClick={fetchAll}>{t('check')}</Button>}
-                />
+    <div className={pageClass}>
+      <div className="content-shell">
+        <div id="content-layout" className="content-area">
+          <Spin spinning={!fetched} description={t('loading')} size="large">
+            {!fetched ? (
+              <div className="loading-spacer" />
+            ) : fetchError ? (
+              <Result
+                status="error"
+                title={t('somethingWentWrong')}
+                subTitle={fetchError}
+                extra={<Button variant="primary" onClick={fetchAll}>{t('check')}</Button>}
+              />
               ) : (
                 <>
                   {/* The "needs restart" alert now lives in the global
@@ -307,7 +294,7 @@ export default function XrayPage() {
                       activeKey={activeSection}
                       onChange={(key) => navigate(`#${key}`)}
                     />
-                    <Card hoverable style={{ minHeight: '480px' }}>
+                    <Card style={{ minHeight: '480px' }}>
                       {sectionBody}
                     </Card>
                   </div>
@@ -332,9 +319,8 @@ export default function XrayPage() {
           onRemoveOutbound={onRemoveOutboundByIndex}
           onRemoveRoutingRules={onRemoveRoutingRules}
         />
-          </Layout.Content>
-        </Layout>
+        </div>
       </div>
-    </ConfigProvider>
+    </div>
   );
 }

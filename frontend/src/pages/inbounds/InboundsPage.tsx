@@ -1,18 +1,11 @@
-import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Button,
   Col,
-  ConfigProvider,
-  Modal,
-  Result,
   Row,
-  Spin,
-  message,
 } from '@/components/ui';
-import { Card, Stat } from '@/components/ds';
+import { Card, Stat, Button, Spin, Dialog, Result, toast } from '@/components/ds';
 
-import { setMessageInstance } from '@/utils/messageBus';
 import {
   SwapOutlined,
   PieChartOutlined,
@@ -94,9 +87,24 @@ export default function InboundsPage() {
     applyClientStatsEvent,
   } = useInbounds();
 
-  const [modal, modalContextHolder] = Modal.useModal();
-  const [messageApi, messageContextHolder] = message.useMessage();
-  useEffect(() => { setMessageInstance(messageApi); }, [messageApi]);
+  interface ConfirmConfig {
+    title: string;
+    content: string;
+    okText?: string;
+    okDanger?: boolean;
+    onOk: () => void | Promise<void>;
+    onCancel?: () => void;
+  }
+  const [confirm, setConfirm] = useState<ConfirmConfig | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const runConfirm = useCallback(() => {
+    if (!confirm) return;
+    setConfirmBusy(true);
+    Promise.resolve(confirm.onOk()).finally(() => {
+      setConfirmBusy(false);
+      setConfirm(null);
+    });
+  }, [confirm]);
 
   const { nodes: nodesList } = useNodesQuery();
   const nodesById = useMemo(() => {
@@ -350,83 +358,78 @@ export default function InboundsPage() {
   }, []);
 
   const confirmDelete = useCallback((dbInbound: DBInbound) => {
-    modal.confirm({
+    setConfirm({
       title: t('pages.inbounds.deleteConfirmTitle', { remark: dbInbound.remark }),
       content: t('pages.inbounds.deleteConfirmContent'),
       okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
+      okDanger: true,
       onOk: async () => {
         const msg = await HttpUtil.post(`/panel/api/inbounds/del/${dbInbound.id}`);
         if (msg?.success) await refresh();
       },
     });
-  }, [modal, refresh, t]);
+  }, [refresh, t]);
 
   const confirmBulkDelete = useCallback((ids: number[]) => new Promise<boolean>((resolve) => {
     if (ids.length === 0) {
       resolve(false);
       return;
     }
-    modal.confirm({
+    setConfirm({
       title: t('pages.inbounds.bulkDeleteConfirmTitle', { count: ids.length }),
       content: t('pages.inbounds.bulkDeleteConfirmContent'),
       okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
+      okDanger: true,
       onOk: async () => {
         const msg = await HttpUtil.post('/panel/api/inbounds/bulkDel', { ids }, { headers: { 'Content-Type': 'application/json' } });
         const obj = (msg?.obj ?? {}) as { deleted?: number; skipped?: { id: number; reason: string }[] };
         const ok = obj.deleted ?? 0;
         const skipped = obj.skipped ?? [];
         if (msg?.success && skipped.length === 0) {
-          messageApi.success(t('pages.inbounds.toasts.bulkDeleted', { count: ok }));
+          toast.success(t('pages.inbounds.toasts.bulkDeleted', { count: ok }));
         } else {
           const firstError = skipped[0]?.reason ?? msg?.msg ?? '';
           const base = t('pages.inbounds.toasts.bulkDeletedMixed', { ok, failed: skipped.length });
-          messageApi.warning(firstError ? `${base} — ${firstError}` : base);
+          toast.warning(firstError ? `${base} — ${firstError}` : base);
         }
         await refresh();
         resolve(true);
       },
       onCancel: () => resolve(false),
     });
-  }), [modal, refresh, t, messageApi]);
+  }), [refresh, t]);
 
   const confirmResetTraffic = useCallback((dbInbound: DBInbound) => {
-    modal.confirm({
+    setConfirm({
       title: t('pages.inbounds.resetConfirmTitle', { remark: dbInbound.remark }),
       content: t('pages.inbounds.resetConfirmContent'),
       okText: t('reset'),
-      cancelText: t('cancel'),
       onOk: async () => {
         const msg = await HttpUtil.post(`/panel/api/inbounds/${dbInbound.id}/resetTraffic`);
         if (msg?.success) await refresh();
       },
     });
-  }, [modal, refresh, t]);
+  }, [refresh, t]);
 
   const confirmDelAllClients = useCallback((dbInbound: DBInbound) => {
     const count = clientCount[dbInbound.id]?.clients || 0;
-    modal.confirm({
+    setConfirm({
       title: t('pages.inbounds.delAllClientsConfirmTitle', { remark: dbInbound.remark, count }),
       content: t('pages.inbounds.delAllClientsConfirmContent'),
       okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
+      okDanger: true,
       onOk: async () => {
         const msg = await HttpUtil.post(`/panel/api/inbounds/${dbInbound.id}/delAllClients`);
         if (msg?.success) await refresh();
       },
     });
-  }, [modal, refresh, t, clientCount]);
+  }, [refresh, t, clientCount]);
 
   const confirmClone = useCallback((dbInbound: DBInbound) => {
-    modal.confirm({
+    setConfirm({
       title: t('pages.inbounds.cloneConfirmTitle', { remark: dbInbound.remark }),
       content: t('pages.inbounds.cloneConfirmContent'),
       okText: t('pages.inbounds.clone'),
-      cancelText: t('cancel'),
       onOk: async () => {
         let clonedSettings: string;
         try {
@@ -461,7 +464,7 @@ export default function InboundsPage() {
         if (msg?.success) await refresh();
       },
     });
-  }, [modal, refresh, t]);
+  }, [refresh, t]);
 
   const onGeneralAction = useCallback((key: GeneralAction) => {
     switch (key) {
@@ -469,10 +472,10 @@ export default function InboundsPage() {
       case 'export': exportAllLinks(); break;
       case 'subs': exportAllSubs(); break;
       case 'resetInbounds':
-        modal.confirm({
+        setConfirm({
           title: t('pages.inbounds.resetAllTrafficTitle'),
+          content: t('pages.inbounds.resetAllTrafficContent'),
           okText: t('reset'),
-          cancelText: t('cancel'),
           onOk: async () => {
             const msg = await HttpUtil.post('/panel/api/inbounds/resetAllTraffics');
             if (msg?.success) await refresh();
@@ -480,9 +483,10 @@ export default function InboundsPage() {
         });
         break;
       default:
-        messageApi.info(`General action "${key}" — coming in a later 5f subphase`);
+        toast.info(`General action "${key}" — coming in a later 5f subphase`);
     }
-  }, [modal, importInbound, exportAllLinks, exportAllSubs, refresh, messageApi, t]);
+  }, [importInbound, exportAllLinks, exportAllSubs, refresh, t]);
+
 
   const onRowAction = useCallback(async ({ key, dbInbound }: { key: RowAction; dbInbound: DBInbound }) => {
     // Actions that touch per-client secrets (uuid, password, flow, ...) need
@@ -545,25 +549,22 @@ export default function InboundsPage() {
         confirmClone(target);
         break;
       default:
-        messageApi.info(`Action "${key}" — coming in a later 5f subphase`);
+        toast.info(`Action "${key}" — coming in a later 5f subphase`);
     }
-  }, [hydrateInbound, openEdit, checkFallback, findClientIndex, exportInboundLinks, exportInboundSubs, exportInboundClipboard, confirmDelete, confirmResetTraffic, confirmDelAllClients, confirmClone, messageApi]);
+  }, [hydrateInbound, openEdit, checkFallback, findClientIndex, exportInboundLinks, exportInboundSubs, exportInboundClipboard, confirmDelete, confirmResetTraffic, confirmDelAllClients, confirmClone]);
 
   return (
-    <ConfigProvider>
-      {messageContextHolder}
-      {modalContextHolder}
-      <div className={`section-content-wrapper inbounds-section-wrapper ${pageClass}`}>
-            <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
-              {!fetched ? (
-                <div className="loading-spacer" />
-              ) : fetchError ? (
-                <Result
-                  status="error"
-                  title={t('somethingWentWrong')}
-                  subTitle={fetchError}
-                  extra={<Button type="primary" onClick={refresh}>{t('refresh')}</Button>}
-                />
+    <div className={`section-content-wrapper inbounds-section-wrapper ${pageClass}`}>
+      <Spin spinning={!fetched} description={t('loading')} size="large">
+        {!fetched ? (
+          <div className="loading-spacer" />
+        ) : fetchError ? (
+          <Result
+            status="error"
+            title={t('somethingWentWrong')}
+            subTitle={fetchError}
+            extra={<Button variant="primary" onClick={refresh}>{t('refresh')}</Button>}
+          />
               ) : (
                 <Row gutter={[isMobile ? 8 : 16, 12]}>
                   <Col span={24}>
@@ -709,7 +710,23 @@ export default function InboundsPage() {
             onConfirm={onPromptConfirm}
           />
         </LazyMount>
+
+        <Dialog
+          open={confirm !== null}
+          onOpenChange={(o) => {
+            if (!o) {
+              if (confirm?.onCancel) confirm.onCancel();
+              setConfirm(null);
+            }
+          }}
+          title={confirm?.title ?? ''}
+          okText={confirm?.okText ?? t('confirm')}
+          okDanger={confirm?.okDanger}
+          confirmLoading={confirmBusy}
+          onOk={runConfirm}
+        >
+          <p style={{ margin: 0 }}>{confirm?.content}</p>
+        </Dialog>
       </div>
-    </ConfigProvider>
   );
 }

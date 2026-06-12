@@ -65,3 +65,11 @@ export type { QrCodeProps } from './QrCode';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
+export { Spin } from './Spin';
+export type { SpinProps } from './Spin';
+
+export { Result } from './Result';
+export type { ResultProps } from './Result';
+
+
+
