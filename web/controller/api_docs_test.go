@@ -134,12 +134,18 @@ func TestAPIRoutesDocumented(t *testing.T) {
 			"/panel/clients": true, "/panel/groups": true,
 			"/panel/nodes": true, "/panel/settings": true,
 			"/panel/xray": true, "/panel/api-docs": true,
+			"/panel/appearance": true,
 		}
 		if spaPages[r.Path] {
 			continue
 		}
 		// Skip /panel/csrf-token (documented under auth as /csrf-token)
 		if r.Path == "/panel/csrf-token" {
+			continue
+		}
+		// Skip theme/appearance internal API endpoints
+		if r.Path == "/theme.json" || strings.HasPrefix(r.Path, "/theme/asset/") ||
+			r.Path == "/panel/setting/theme" || r.Path == "/panel/setting/theme/asset" {
 			continue
 		}
 		// Skip Chrome DevTools route

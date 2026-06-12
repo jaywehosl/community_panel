@@ -42,6 +42,7 @@ func (a *XUIController) initRouter(g *gin.RouterGroup) {
 	g.GET("/groups", a.panelSPA)
 	g.GET("/nodes", a.panelSPA)
 	g.GET("/settings", a.panelSPA)
+	g.GET("/appearance", a.panelSPA)
 	g.GET("/xray", a.panelSPA)
 	g.GET("/api-docs", a.panelSPA)
 
