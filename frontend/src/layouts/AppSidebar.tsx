@@ -149,7 +149,8 @@ export default function AppSidebar() {
     { key: '/settings', icon: 'setting', title: t('menu.settings') },
     { key: '/appearance', icon: 'setting', title: t('menu.appearance', { defaultValue: 'Appearance' }) },
     { key: '/xray', icon: 'tool', title: t('menu.xray') },
-    { key: '/api-docs', icon: 'apidocs', title: t('menu.apiDocs') },
+    // API Docs temporarily hidden from the header (the Appearance entry made it
+    // 9 items and the row started to crowd); the /api-docs route still works.
     { key: LOGOUT_KEY, icon: 'logout', title: t('logout') },
   ], [t]);
 
