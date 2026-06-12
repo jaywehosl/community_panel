@@ -57,9 +57,21 @@ function normalizeKey(k: string): string {
   return k.startsWith('--') ? k : `--${k}`;
 }
 
-/** Build the `:root { … }` CSS for a theme. Pure — no DOM access. */
+/** A font value is either a CSS font-family list ("'Inter', sans-serif") or
+ *  "asset:<id>" pointing at an uploaded font. The latter emits an @font-face. */
+function resolveFont(raw: string | undefined, fallback: string, faces: string[]): string | undefined {
+  if (!raw) return undefined;
+  if (!raw.startsWith('asset:')) return raw;
+  const id = raw.slice('asset:'.length);
+  const family = `uup-font-${id.replace(/[^a-zA-Z0-9]/g, '')}`;
+  faces.push(`@font-face{font-family:"${family}";font-display:swap;src:url("/theme/asset/${id}")}`);
+  return `"${family}", ${fallback}`;
+}
+
+/** Build the CSS (optional @font-face rules + `:root { … }`) for a theme. Pure. */
 export function themeToCss(theme: PanelTheme): string {
   const decls: string[] = [];
+  const fontFaces: string[] = [];
   const push = (k: string, v: string | number) => decls.push(`${k}: ${v};`);
 
   if (theme.tokens) {
@@ -78,9 +90,12 @@ export function themeToCss(theme: PanelTheme): string {
     }
   }
 
-  if (theme.fonts?.sans) push('--font-sans', theme.fonts.sans);
-  if (theme.fonts?.display) push('--font-display', theme.fonts.display);
-  if (theme.fonts?.mono) push('--font-mono', theme.fonts.mono);
+  const sans = resolveFont(theme.fonts?.sans, 'sans-serif', fontFaces);
+  if (sans) push('--font-sans', sans);
+  const display = resolveFont(theme.fonts?.display, 'var(--font-sans)', fontFaces);
+  if (display) push('--font-display', display);
+  const mono = resolveFont(theme.fonts?.mono, 'monospace', fontFaces);
+  if (mono) push('--font-mono', mono);
 
   const bg = theme.background;
   if (bg) {
@@ -95,7 +110,8 @@ export function themeToCss(theme: PanelTheme): string {
     if (bg.blur) push('--bg-image-blur', bg.blur);
   }
 
-  return decls.length ? `:root{${decls.join('')}}` : '';
+  const root = decls.length ? `:root{${decls.join('')}}` : '';
+  return fontFaces.join('') + root;
 }
 
 /** Select the light/dark/ultra-dark base by toggling the <html> mode classes

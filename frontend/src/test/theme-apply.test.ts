@@ -48,4 +48,11 @@ describe('themeToCss', () => {
     expect(img).toContain('--bg-image-dim: 0.4;');
     expect(img).toContain('--bg-image-blur: 6px;');
   });
+
+  it('emits @font-face for an uploaded (asset:) font and points the token at it', () => {
+    const css = themeToCss({ fonts: { sans: 'asset:abc123.woff2' } });
+    expect(css).toContain('@font-face{');
+    expect(css).toContain('src:url("/theme/asset/abc123.woff2")');
+    expect(css).toContain('--font-sans: "uup-font-abc123woff2", sans-serif;');
+  });
 });

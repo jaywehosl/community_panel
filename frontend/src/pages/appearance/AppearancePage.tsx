@@ -78,6 +78,8 @@ export default function AppearancePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const bgFileRef = useRef<HTMLInputElement>(null);
   const [uploadingBg, setUploadingBg] = useState(false);
+  const fontFileRef = useRef<HTMLInputElement>(null);
+  const [uploadingFont, setUploadingFont] = useState(false);
 
   // Prefer the server copy once it loads (falls back to the local cache).
   useEffect(() => {
@@ -144,7 +146,20 @@ export default function AppearancePage() {
     }
   };
 
+  const onFontUpload = async (file: File) => {
+    setUploadingFont(true);
+    const id = await uploadThemeAsset('font', file);
+    setUploadingFont(false);
+    if (id) {
+      patch((t) => ({ ...t, fonts: { ...t.fonts, sans: `asset:${id}` } }));
+      toast.success('Font uploaded (applied to Sans)');
+    } else {
+      toast.error('Upload failed (backend not reachable?)');
+    }
+  };
+
   const bg = theme.background ?? {};
+  const customFont = theme.fonts?.sans?.startsWith('asset:') ?? false;
 
   return (
     <div className="appearance-page">
@@ -257,6 +272,22 @@ export default function AppearancePage() {
             <Select value={theme.fonts?.mono ?? MONO_OPTIONS[0].value}
               onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, mono: String(v) } }))}
               options={MONO_OPTIONS} />
+          </Row>
+          <Divider />
+          <Row label="Custom font" hint={customFont ? 'Uploaded ✓ — applied to Sans' : 'woff2 / woff / ttf / otf, up to 3 MB'}>
+            <span className="ap-bg-upload">
+              {customFont && (
+                <Button size="sm" variant="text" danger
+                  onClick={() => patch((t) => ({ ...t, fonts: { ...t.fonts, sans: undefined } }))}>
+                  Remove
+                </Button>
+              )}
+              <Button size="sm" loading={uploadingFont} onClick={() => fontFileRef.current?.click()}>
+                Upload font…
+              </Button>
+              <input ref={fontFileRef} type="file" accept=".woff2,.woff,.ttf,.otf" hidden
+                onChange={(e) => e.target.files?.[0] && onFontUpload(e.target.files[0])} />
+            </span>
           </Row>
         </Card>
 
