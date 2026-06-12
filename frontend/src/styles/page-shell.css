@@ -63,6 +63,32 @@ html.is-ultra .panel-app-wrapper::before { opacity: 0.55; }
 }
 html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-light; }
 
+/* ---- Custom background image (Appearance → Background → Image) ----
+   A fixed layer behind everything. When a theme sets one, the override layer
+   adds `has-theme-bg` to <body>, which makes the wrapper's own gradient
+   transparent so the image shows through (the aurora + grain stay on top). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image: var(--bg-image, none);
+  background-size: cover;
+  background-position: center;
+  filter: blur(var(--bg-image-blur, 0px));
+  transform: scale(1.06); /* hide blur edge-bleed */
+  pointer-events: none;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(0, 0, 0, var(--bg-image-dim, 0));
+  pointer-events: none;
+}
+body.has-theme-bg .panel-app-wrapper { background: transparent; }
+
 @keyframes auroraDrift {
   0%   { transform: translate3d(0, 0, 0) scale(1); }
   50%  { transform: translate3d(-3%, 2%, 0) scale(1.08); }

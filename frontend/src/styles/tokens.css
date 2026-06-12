@@ -73,6 +73,11 @@
   --font-display: 'Outfit', var(--font-sans);
   --font-mono: 'Fira Code', 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
 
+  /* ---- Custom background image (Appearance) — none by default ---- */
+  --bg-image:       none;
+  --bg-image-dim:   0;
+  --bg-image-blur:  0px;
+
   /* ---- Surfaces (light) ---- */
   --bg-page:        #eaeefb;
   --bg-page-2:      #f3f5fc;

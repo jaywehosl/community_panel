@@ -137,6 +137,12 @@
   cursor: pointer;
 }
 
+.ap-bg-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .ap-note {
   margin: 0;
   font-size: 12px;

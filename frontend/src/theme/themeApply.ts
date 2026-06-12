@@ -119,6 +119,10 @@ export function applyTheme(theme: PanelTheme): void {
     document.head.appendChild(el);
   }
   el.textContent = themeToCss(theme);
+
+  // Make the wrapper gradient transparent so a custom background image shows.
+  const hasBgImage = theme.background?.type === 'image' && Boolean(theme.background.assetId);
+  document.body?.classList.toggle('has-theme-bg', hasBgImage);
 }
 
 export const EMPTY_THEME: PanelTheme = {};

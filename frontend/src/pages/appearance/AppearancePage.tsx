@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Card, Divider, Segmented, Select, Switch } from '@/components/ds';
 import { toast } from '@/components/ds';
 import { applyTheme, applyThemeMode, type PanelTheme, type ThemeMode } from '@/theme/themeApply';
-import { clearTheme, fetchServerTheme, loadTheme, saveTheme } from '@/theme/themeStorage';
+import { clearTheme, fetchServerTheme, loadTheme, saveTheme, uploadThemeAsset } from '@/theme/themeStorage';
 import './AppearancePage.css';
 
 /* NOTE: this is the P1 Appearance page. Controls drive the override core
@@ -76,6 +76,8 @@ const DEFAULTS = {
 export default function AppearancePage() {
   const [theme, setTheme] = useState<PanelTheme>(() => loadTheme());
   const fileRef = useRef<HTMLInputElement>(null);
+  const bgFileRef = useRef<HTMLInputElement>(null);
+  const [uploadingBg, setUploadingBg] = useState(false);
 
   // Prefer the server copy once it loads (falls back to the local cache).
   useEffect(() => {
@@ -128,6 +130,18 @@ export default function AppearancePage() {
       try { const t = JSON.parse(txt) as PanelTheme; setTheme(t); applyTheme(t); if (t.mode) applyThemeMode(t.mode); toast.success('Theme imported'); }
       catch { toast.error('Invalid theme file'); }
     });
+  };
+
+  const onBgUpload = async (file: File) => {
+    setUploadingBg(true);
+    const id = await uploadThemeAsset('image', file);
+    setUploadingBg(false);
+    if (id) {
+      patch((t) => ({ ...t, background: { ...t.background, type: 'image', assetId: id } }));
+      toast.success('Background uploaded');
+    } else {
+      toast.error('Upload failed (backend not reachable?)');
+    }
   };
 
   const bg = theme.background ?? {};
@@ -188,13 +202,25 @@ export default function AppearancePage() {
               onChange={(v) => patch((t) => ({ ...t, background: { ...t.background, color: v } }))} />
           )}
           {bg.type === 'image' && (
-            <Row label="Image" soon hint="Upload arrives in the next phase">
-              <Button disabled>Upload image…</Button>
+            <Row label="Image" hint={bg.assetId ? 'Uploaded ✓' : 'PNG / JPG / WebP, up to 5 MB'}>
+              <span className="ap-bg-upload">
+                {bg.assetId && (
+                  <Button size="sm" variant="text" danger
+                    onClick={() => patch((t) => ({ ...t, background: { ...t.background, assetId: undefined } }))}>
+                    Remove
+                  </Button>
+                )}
+                <Button size="sm" loading={uploadingBg} onClick={() => bgFileRef.current?.click()}>
+                  {bg.assetId ? 'Replace…' : 'Upload image…'}
+                </Button>
+                <input ref={bgFileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden
+                  onChange={(e) => e.target.files?.[0] && onBgUpload(e.target.files[0])} />
+              </span>
             </Row>
           )}
-          <RangeRow label="Image dim" min={0} max={1} step={0.05} value={bg.dim ?? DEFAULTS.bgDim} soon
+          <RangeRow label="Image dim" min={0} max={1} step={0.05} value={bg.dim ?? DEFAULTS.bgDim}
             onChange={(v) => patch((t) => ({ ...t, background: { ...t.background, dim: v } }))} />
-          <RangeRow label="Image blur" min={0} max={40} step={1} value={bg.blur ? parseInt(bg.blur, 10) : DEFAULTS.bgBlur} suffix="px" soon
+          <RangeRow label="Image blur" min={0} max={40} step={1} value={bg.blur ? parseInt(bg.blur, 10) : DEFAULTS.bgBlur} suffix="px"
             onChange={(v) => patch((t) => ({ ...t, background: { ...t.background, blur: `${v}px` } }))} />
         </Card>
 

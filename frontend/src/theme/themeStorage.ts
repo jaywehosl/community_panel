@@ -62,6 +62,24 @@ export async function saveTheme(theme: PanelTheme): Promise<boolean> {
   }
 }
 
+/** Upload a custom background image / font; returns its asset id (referenced
+ *  from the theme and served via /theme/asset/<id>), or null on failure. */
+export async function uploadThemeAsset(kind: 'image' | 'font', file: File): Promise<string | null> {
+  const fd = new FormData();
+  fd.append('kind', kind);
+  fd.append('file', file);
+  try {
+    const msg = await HttpUtil.post('/panel/setting/theme/asset', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      silent: true,
+    });
+    const obj = (msg as { obj?: { assetId?: string } } | undefined)?.obj;
+    return obj?.assetId ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Apply the theme at boot with no flash. Prefers window.X_UI_THEME — the
  *  server copy the Go handler inlines into the HTML before any JS runs — then
  *  the local cache, then (only if neither) a server fetch. */
