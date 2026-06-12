@@ -30,9 +30,10 @@ export interface ThemeFonts {
 
 export interface PanelTheme {
   mode?: ThemeMode;
-  /** Raw token overrides, e.g. { "--color-primary": "#3279f9" }. Two synthetic
-   *  keys are expanded rather than written verbatim: --radius-scale (multiplies
-   *  the radius ramp) and --shadow-intensity (reserved for the elevation pass). */
+  /** Raw token overrides, e.g. { "--color-primary": "#3279f9" }. Written
+   *  verbatim, EXCEPT --radius-scale which is expanded across the radius ramp.
+   *  (--shadow-intensity is written raw — tokens.css multiplies the elevation
+   *  alphas by it directly via calc(), in both light and dark.) */
   tokens?: Record<string, string | number>;
   background?: ThemeBackground;
   fonts?: ThemeFonts;
@@ -50,7 +51,7 @@ const RADIUS_RAMP: Record<string, number> = {
   '--radius-2xl': 28,
 };
 
-const SYNTHETIC_KEYS = new Set(['--radius-scale', '--shadow-intensity']);
+const SYNTHETIC_KEYS = new Set(['--radius-scale']);
 
 function normalizeKey(k: string): string {
   return k.startsWith('--') ? k : `--${k}`;

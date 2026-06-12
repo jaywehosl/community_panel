@@ -190,7 +190,7 @@ export default function AppearancePage() {
           <RangeRow label="Corner radius" min={0.5} max={2} step={0.1} suffix="×"
             value={num('--radius-scale', DEFAULTS.radiusScale)}
             onChange={(v) => setToken('--radius-scale', v)} />
-          <RangeRow label="Shadow intensity" min={0} max={2} step={0.1} suffix="×" soon
+          <RangeRow label="Shadow intensity" min={0} max={2} step={0.1} suffix="×"
             value={num('--shadow-intensity', DEFAULTS.shadowIntensity)}
             onChange={(v) => setToken('--shadow-intensity', v)} />
         </Card>

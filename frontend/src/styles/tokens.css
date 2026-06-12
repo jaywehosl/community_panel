@@ -91,19 +91,23 @@
   --text-3: rgba(20, 21, 27, 0.45);
   --text-on-primary: #ffffff;
 
-  /* ---- Elevation: layered, perceptible depth ---- */
+  /* ---- Elevation: layered, perceptible depth ----
+     Alphas are multiplied by --shadow-intensity (1 = default) so the Appearance
+     "shadow intensity" knob scales every elevation in BOTH light and dark
+     (each mode redefines elev with its own base alphas × the same var). */
+  --shadow-intensity: 1;
   --elev-1:
-    0 1px 2px rgba(13, 18, 38, 0.06),
-    0 4px 12px rgba(13, 18, 38, 0.06);
+    0 1px 2px rgba(13, 18, 38, calc(0.06 * var(--shadow-intensity))),
+    0 4px 12px rgba(13, 18, 38, calc(0.06 * var(--shadow-intensity)));
   --elev-2:
-    0 2px 6px rgba(13, 18, 38, 0.07),
-    0 12px 28px rgba(13, 18, 38, 0.10);
+    0 2px 6px rgba(13, 18, 38, calc(0.07 * var(--shadow-intensity))),
+    0 12px 28px rgba(13, 18, 38, calc(0.10 * var(--shadow-intensity)));
   --elev-3:
-    0 8px 20px rgba(13, 18, 38, 0.10),
-    0 28px 56px rgba(13, 18, 38, 0.16);
+    0 8px 20px rgba(13, 18, 38, calc(0.10 * var(--shadow-intensity))),
+    0 28px 56px rgba(13, 18, 38, calc(0.16 * var(--shadow-intensity)));
   --elev-4:
-    0 16px 40px rgba(13, 18, 38, 0.14),
-    0 40px 90px rgba(13, 18, 38, 0.22);
+    0 16px 40px rgba(13, 18, 38, calc(0.14 * var(--shadow-intensity))),
+    0 40px 90px rgba(13, 18, 38, calc(0.22 * var(--shadow-intensity)));
 
   /* Specular rim that sells the "glass" read */
   --specular: inset 0 1px 0 rgba(255, 255, 255, 0.70), inset 0 0 0 1px rgba(255, 255, 255, 0.16);
@@ -147,10 +151,10 @@ html.is-dark {
 
   --color-primary-soft: rgba(var(--color-primary-rgb), 0.16);
 
-  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.38);
-  --elev-2: 0 4px 12px rgba(0, 0, 0, 0.42), 0 16px 36px rgba(0, 0, 0, 0.46);
-  --elev-3: 0 10px 26px rgba(0, 0, 0, 0.5), 0 32px 64px rgba(0, 0, 0, 0.56);
-  --elev-4: 0 18px 44px rgba(0, 0, 0, 0.55), 0 48px 100px rgba(0, 0, 0, 0.66);
+  --elev-1: 0 1px 2px rgba(0, 0, 0, calc(0.4 * var(--shadow-intensity))), 0 6px 16px rgba(0, 0, 0, calc(0.38 * var(--shadow-intensity)));
+  --elev-2: 0 4px 12px rgba(0, 0, 0, calc(0.42 * var(--shadow-intensity))), 0 16px 36px rgba(0, 0, 0, calc(0.46 * var(--shadow-intensity)));
+  --elev-3: 0 10px 26px rgba(0, 0, 0, calc(0.5 * var(--shadow-intensity))), 0 32px 64px rgba(0, 0, 0, calc(0.56 * var(--shadow-intensity)));
+  --elev-4: 0 18px 44px rgba(0, 0, 0, calc(0.55 * var(--shadow-intensity))), 0 48px 100px rgba(0, 0, 0, calc(0.66 * var(--shadow-intensity)));
 
   --specular: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
