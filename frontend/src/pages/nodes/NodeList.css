@@ -52,13 +52,26 @@
 }
 
 .node-card {
-  border: 1px solid var(--hairline-soft);
-  border-radius: 10px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
   padding: 12px;
-  background: var(--surface-inset);
+  /* Frosted, theme-reactive surface to match .inbound-card (was --surface-inset,
+     a near-opaque 0.03 fill with NO backdrop-filter — read as flat, not glass). */
+  background: var(--surface-2);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--elev-1);
+  transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Transparent frosted hover (inner blue glow, NO opaque fill) — the canonical
+   --hover-glow shared with DS buttons / inbound cards, so the frost stays. */
+.node-card:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.2);
+  box-shadow: var(--elev-2), var(--hover-glow);
 }
 
 .card-head {

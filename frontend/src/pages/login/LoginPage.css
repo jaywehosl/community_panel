@@ -15,7 +15,16 @@
   transition: background-color 0.3s ease;
 }
 
-/* Aurora so the particle field reads as a nebula, not dust on white */
+/* Aurora so the particle field reads as a nebula, not dust on white.
+   NOTE: this is a fixed, inset:-25%, blur(60px) layer — i.e. effectively the
+   WHOLE viewport. Theme-swapping its `background` (light vs dark) forced the
+   compositor to re-rasterize this enormous blur in one frame on every theme
+   cycle, which read as a full-page WHITE flash on the login screen (the panel
+   and sub pages have no such layer, hence no flash there). The light/dark
+   variants only differed in alpha (~0.16→0.22), so we use ONE middle-ground
+   background that is NEVER touched on theme change — the heavy layer no longer
+   re-rasterizes, and the flash is gone. Only the cheap solid --bg-page and the
+   small card/header surfaces repaint on switch. */
 .login-app::before {
   content: "";
   position: fixed;
@@ -23,18 +32,11 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(38% 38% at 16% 22%, rgba(50, 121, 249, 0.20) 0%, transparent 70%),
-    radial-gradient(34% 34% at 84% 16%, rgba(168, 85, 247, 0.16) 0%, transparent 70%),
-    radial-gradient(42% 42% at 50% 92%, rgba(20, 184, 166, 0.14) 0%, transparent 72%);
+    radial-gradient(38% 38% at 16% 22%, rgba(50, 121, 249, 0.24) 0%, transparent 70%),
+    radial-gradient(34% 34% at 84% 16%, rgba(168, 85, 247, 0.19) 0%, transparent 70%),
+    radial-gradient(42% 42% at 50% 92%, rgba(20, 184, 166, 0.16) 0%, transparent 72%);
   filter: blur(60px) saturate(140%);
   animation: loginAuroraDrift 30s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
-}
-
-html.is-dark .login-app::before {
-  background:
-    radial-gradient(38% 38% at 16% 22%, rgba(50, 121, 249, 0.28) 0%, transparent 70%),
-    radial-gradient(34% 34% at 84% 16%, rgba(168, 85, 247, 0.22) 0%, transparent 70%),
-    radial-gradient(42% 42% at 50% 92%, rgba(20, 184, 166, 0.18) 0%, transparent 72%);
 }
 
 @keyframes loginAuroraDrift {

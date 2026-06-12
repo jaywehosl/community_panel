@@ -55,7 +55,15 @@ export async function fetchServerTheme(): Promise<PanelTheme | null> {
 export async function saveTheme(theme: PanelTheme): Promise<boolean> {
   cacheLocal(theme);
   try {
-    const msg = await HttpUtil.post('/panel/setting/theme', theme, { silent: true });
+    // MUST send as JSON: the axios interceptor qs.stringify()s any non-JSON
+    // body into form-urlencoded, but the server reads this endpoint as raw JSON
+    // (ShouldBindBodyWith(binding.JSON)). Without this header the nested theme
+    // object arrived as `mode=…&radius=…`, failed JSON validation, and the save
+    // silently fell back to localStorage-only (panelTheme stayed "{}").
+    const msg = await HttpUtil.post('/panel/setting/theme', theme, {
+      silent: true,
+      headers: { 'Content-Type': 'application/json' },
+    });
     return Boolean(msg && (msg as { success?: boolean }).success);
   } catch {
     return false;
