@@ -1,8 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Card, Divider, Segmented, Select, Switch } from '@/components/ds';
 import { toast } from '@/components/ds';
 import { applyTheme, applyThemeMode, type PanelTheme, type ThemeMode } from '@/theme/themeApply';
-import { clearTheme, loadTheme, saveTheme } from '@/theme/themeStorage';
+import { clearTheme, fetchServerTheme, loadTheme, saveTheme } from '@/theme/themeStorage';
 import './AppearancePage.css';
 
 /* NOTE: this is the P1 Appearance page. Controls drive the override core
@@ -77,6 +77,19 @@ export default function AppearancePage() {
   const [theme, setTheme] = useState<PanelTheme>(() => loadTheme());
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Prefer the server copy once it loads (falls back to the local cache).
+  useEffect(() => {
+    let alive = true;
+    void fetchServerTheme().then((srv) => {
+      if (alive && srv && Object.keys(srv).length) {
+        setTheme(srv);
+        applyTheme(srv);
+        if (srv.mode) applyThemeMode(srv.mode);
+      }
+    });
+    return () => { alive = false; };
+  }, []);
+
   // mutate + apply live
   const patch = useCallback((updater: (t: PanelTheme) => PanelTheme) => {
     setTheme((prev) => {
@@ -94,8 +107,16 @@ export default function AppearancePage() {
   const tok = (k: string, d: number | string) => (theme.tokens?.[k] ?? d);
   const num = (k: string, d: number) => Number(theme.tokens?.[k] ?? d);
 
-  const onSave = () => { saveTheme(theme); toast.success('Theme saved (local — backend wiring next)'); };
-  const onReset = () => { clearTheme(); setTheme({}); applyTheme({}); applyThemeMode('light'); toast.success('Reset to defaults'); };
+  const onSave = async () => {
+    const ok = await saveTheme(theme);
+    if (ok) toast.success('Theme saved');
+    else toast.success('Saved locally (backend not reachable)');
+  };
+  const onReset = () => {
+    clearTheme(); setTheme({}); applyTheme({}); applyThemeMode('light');
+    void saveTheme({});
+    toast.success('Reset to defaults');
+  };
   const onExport = () => {
     const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
