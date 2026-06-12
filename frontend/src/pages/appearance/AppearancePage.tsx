@@ -569,6 +569,26 @@ export default function AppearancePage() {
                   ]}
                 />
               </Row>
+              <Row label="Particle style" hint="Visual movement and preset type">
+                <Select
+                  value={theme.effects?.particles?.preset ?? 'pucks'}
+                  onChange={(v) => patch((t) => ({
+                    ...t,
+                    effects: {
+                      ...t.effects,
+                      particles: {
+                        ...t.effects?.particles,
+                        preset: v as 'pucks' | 'neural' | 'nebula',
+                      },
+                    },
+                  }))}
+                  options={[
+                    { label: 'Air Hockey Pucks', value: 'pucks' },
+                    { label: 'Neural Constellation', value: 'neural' },
+                    { label: 'Nebula Gravity Vortex', value: 'nebula' },
+                  ]}
+                />
+              </Row>
             </>
           )}
           <Row label="Hover glow" hint="Glow highlight on buttons and cards hover">

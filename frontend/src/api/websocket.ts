@@ -21,6 +21,7 @@ export class WebSocketClient {
   private shouldReconnect: boolean;
   private reconnectTimer: ReturnType<typeof setTimeout> | null;
   private listeners: Map<string, Set<WebSocketListener>>;
+  private throttledEmits: Map<string, { timer: any; lastArgs: any[] }>;
 
   constructor(basePath = '') {
     this.basePath = basePath;
@@ -32,6 +33,7 @@ export class WebSocketClient {
     this.shouldReconnect = true;
     this.reconnectTimer = null;
     this.listeners = new Map();
+    this.throttledEmits = new Map();
   }
 
   connect(): void {
@@ -52,6 +54,12 @@ export class WebSocketClient {
       this.ws = null;
     }
     this.isConnected = false;
+
+    // Clear throttled timers
+    for (const state of this.throttledEmits.values()) {
+      if (state.timer) clearTimeout(state.timer);
+    }
+    this.throttledEmits.clear();
   }
 
   on(event: string, callback: WebSocketListener): void {
@@ -151,6 +159,31 @@ export class WebSocketClient {
   }
 
   #emit(event: string, ...args: unknown[]): void {
+    const throttledEvents = ['client_stats', 'outbounds', 'nodes', 'inbounds', 'traffic'];
+    if (throttledEvents.includes(event)) {
+      let state = this.throttledEmits.get(event);
+      if (!state) {
+        state = { timer: null, lastArgs: [] };
+        this.throttledEmits.set(event, state);
+      }
+      state.lastArgs = args;
+      if (!state.timer) {
+        // Dispatch immediately on the first message
+        this.#dispatch(event, ...args);
+        state.timer = setTimeout(() => {
+          if (state && state.lastArgs.length > 0) {
+            this.#dispatch(event, ...state.lastArgs);
+            state.lastArgs = [];
+          }
+          if (state) state.timer = null;
+        }, 100); // 100ms throttle limit (~10 FPS max update rate)
+      }
+      return;
+    }
+    this.#dispatch(event, ...args);
+  }
+
+  #dispatch(event: string, ...args: unknown[]): void {
     const set = this.listeners.get(event);
     if (!set) return;
     for (const callback of set) {

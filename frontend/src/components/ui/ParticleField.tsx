@@ -19,6 +19,7 @@ export interface ParticleFieldProps {
   additive?: boolean;
   intensity?: number;
   interactive?: boolean;
+  preset?: 'pucks' | 'neural' | 'nebula';
 }
 
 const DEFAULT_PALETTE: [string, string, string] = ['#3279F9', '#A855F7', '#14B8A6'];
@@ -66,11 +67,31 @@ void main() {
   vec2 uv = gl_PointCoord * 2.0 - 1.0;
   float d2 = dot(uv, uv);
   if (d2 > 1.0) discard;
-  // crisp orb (defined edge) + a faint halo, so large pucks aren't muddy
   float r = sqrt(d2);
   float a = smoothstep(0.96, 0.62, r) * 0.92 + exp(-d2 * 2.2) * 0.3;
   vec3 col = mix(pal(v_hue), u_a, u_mono);
   frag = vec4(col * v_glow, a * v_glow * u_intensity);
+}`;
+
+const LINE_VERT = `#version 300 es
+precision highp float;
+in vec3 a_line_data; // x, y, alpha
+uniform vec2 u_res;
+out float v_alpha;
+void main() {
+  v_alpha = a_line_data.z;
+  vec2 clip = vec2(a_line_data.x / u_res.x * 2.0 - 1.0, 1.0 - a_line_data.y / u_res.y * 2.0);
+  gl_Position = vec4(clip, 0.0, 1.0);
+}`;
+
+const LINE_FRAG = `#version 300 es
+precision highp float;
+in float v_alpha;
+uniform vec3 u_color;
+uniform float u_intensity;
+out vec4 frag;
+void main() {
+  frag = vec4(u_color * v_alpha, v_alpha * 0.45 * u_intensity);
 }`;
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
@@ -94,19 +115,15 @@ export default function ParticleField({
   additive = false,
   intensity = 0.95,
   interactive = true,
+  preset = 'pucks',
 }: ParticleFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const live = useRef({ palette, monochrome, additive, intensity, interactive, speed: 1.0 });
+  const live = useRef({ palette, monochrome, additive, intensity, interactive, speed: 1.0, preset });
   const [themeTick, setThemeTick] = useState(0);
   const lastParticleSig = useRef('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // The particle system only needs to re-initialize when a PARTICLE-relevant
-    // token changes (on/density/speed/interactive/color + the primary it tints
-    // from). A generic theme change (radius, blur, shadow, a palette swatch the
-    // particles don't use…) must NOT reload it — that's the visible "particles
-    // flash on every slider" bug. Diff a signature and only bump on real change.
     const handleThemeChange = () => {
       const rs = window.getComputedStyle(document.documentElement);
       const sig = [
@@ -115,6 +132,7 @@ export default function ParticleField({
         '--fx-particles-speed',
         '--fx-particles-interactive',
         '--fx-particles-color',
+        '--fx-particles-preset',
         '--color-primary',
       ].map((k) => rs.getPropertyValue(k).trim()).join('|');
       if (sig !== lastParticleSig.current) {
@@ -150,11 +168,13 @@ export default function ParticleField({
     const fxSpeed = rootStyle?.getPropertyValue('--fx-particles-speed')?.trim();
     const fxInteractive = rootStyle?.getPropertyValue('--fx-particles-interactive')?.trim();
     const fxColor = rootStyle?.getPropertyValue('--fx-particles-color')?.trim();
+    const fxPreset = rootStyle?.getPropertyValue('--fx-particles-preset')?.trim() as 'pucks' | 'neural' | 'nebula' | undefined;
 
     let activeDensity = fxDensity ? parseFloat(fxDensity) : density;
     let activeSpeed = fxSpeed ? parseFloat(fxSpeed) : 1.0;
     const activeInteractive = fxInteractive ? (fxInteractive !== 'off') : interactive;
     const activeMonochrome = fxColor === 'monochrome' ? true : monochrome;
+    const activePreset = fxPreset || preset || 'pucks';
 
     let activePalette = palette;
     if (fxColor === 'primary') {
@@ -172,6 +192,7 @@ export default function ParticleField({
       intensity,
       interactive: activeInteractive,
       speed: activeSpeed,
+      preset: activePreset,
     };
 
     const gl = canvas.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: false });
@@ -188,7 +209,29 @@ export default function ParticleField({
       console.warn('[ParticleField] link error:', gl.getProgramInfoLog(prog));
       return;
     }
-    gl.useProgram(prog);
+
+    // Compile line shaders (for neural web)
+    const lineVs = compile(gl, gl.VERTEX_SHADER, LINE_VERT);
+    const lineFs = compile(gl, gl.FRAGMENT_SHADER, LINE_FRAG);
+    let lineProg: WebGLProgram | null = null;
+    let lineVao: WebGLVertexArrayObject | null = null;
+    let lineBuf: WebGLBuffer | null = null;
+
+    if (lineVs && lineFs) {
+      lineProg = gl.createProgram()!;
+      gl.attachShader(lineProg, lineVs);
+      gl.attachShader(lineProg, lineFs);
+      gl.linkProgram(lineProg);
+
+      lineVao = gl.createVertexArray();
+      gl.bindVertexArray(lineVao);
+
+      lineBuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+      const aLineData = gl.getAttribLocation(lineProg, 'a_line_data');
+      gl.enableVertexAttribArray(aLineData);
+      gl.vertexAttribPointer(aLineData, 3, gl.FLOAT, false, 0, 0);
+    }
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
@@ -208,7 +251,11 @@ export default function ParticleField({
     const REST = 0.9;       // restitution between pucks
     const WALL = 0.86;      // wall restitution
     const MAXV = 11;        // speed cap (px/frame)
-    const CELL = (SIZE_MIN + SIZE_RANGE) * COL_SCALE * 2; // grid cell = max contact dist
+
+    const isNeural = activePreset === 'neural';
+    const isNebula = activePreset === 'nebula';
+    const maxInteractDist = isNeural ? 75 : (SIZE_MIN + SIZE_RANGE) * COL_SCALE * 2;
+    const CELL = maxInteractDist;
 
     let count = 0;
     let px = new Float32Array(0);
@@ -224,6 +271,8 @@ export default function ParticleField({
     let posArr = new Float32Array(0);
     let spdArr = new Float32Array(0);
 
+    const lineDataArr = new Float32Array(24000 * 3);
+
     let gcols = 1;
     let grows = 1;
     let cellHead = new Int32Array(1);
@@ -237,7 +286,8 @@ export default function ParticleField({
     function buildParticles() {
       W = canvas!.clientWidth || window.innerWidth;
       H = canvas!.clientHeight || window.innerHeight;
-      count = Math.max(2200, Math.min(5500, Math.floor(((W * H) / 320) * activeDensity)));
+      const maxCount = isNebula ? 4500 : 3500;
+      count = Math.max(1800, Math.min(maxCount, Math.floor(((W * H) / 360) * activeDensity)));
       px = new Float32Array(count);
       py = new Float32Array(count);
       vx = new Float32Array(count);
@@ -258,8 +308,17 @@ export default function ParticleField({
         invM[i] = 1 / (d * d); // mass ∝ area
         px[i] = Math.random() * W;
         py[i] = Math.random() * H;
-        vx[i] = (Math.random() - 0.5) * 1.2 * activeSpeed;
-        vy[i] = (Math.random() - 0.5) * 1.2 * activeSpeed;
+        
+        if (isNebula) {
+          const dx = px[i] - W / 2;
+          const dy = py[i] - H / 2;
+          const dist = Math.sqrt(dx * dx + dy * dy) + 1;
+          vx[i] = (-dy / dist) * 1.5 * activeSpeed;
+          vy[i] = (dx / dist) * 1.5 * activeSpeed;
+        } else {
+          vx[i] = (Math.random() - 0.5) * 1.2 * activeSpeed;
+          vy[i] = (Math.random() - 0.5) * 1.2 * activeSpeed;
+        }
         resp[i] = 0.6 + Math.random() * 1.0;
         hue[i] = Math.random();
       }
@@ -310,16 +369,29 @@ export default function ParticleField({
       intensity: gl.getUniformLocation(prog, 'u_intensity'),
     };
 
+    const lineU = lineProg ? {
+      res: gl.getUniformLocation(lineProg, 'u_res'),
+      color: gl.getUniformLocation(lineProg, 'u_color'),
+      intensity: gl.getUniformLocation(lineProg, 'u_intensity'),
+    } : null;
+
     function resize() {
       const w = canvas!.clientWidth || window.innerWidth;
       const h = canvas!.clientHeight || window.innerHeight;
       canvas!.width = Math.max(1, Math.floor(w * dpr));
       canvas!.height = Math.max(1, Math.floor(h * dpr));
       gl!.viewport(0, 0, canvas!.width, canvas!.height);
-      // keep pucks inside the new bounds
       W = w; H = h;
+      
+      gl!.useProgram(prog);
       gl!.uniform2f(U.res, W, H);
       gl!.uniform1f(U.dpr, dpr);
+
+      if (lineProg && lineU) {
+        gl!.useProgram(lineProg);
+        gl!.uniform2f(lineU.res, W, H);
+      }
+
       gcols = Math.max(1, Math.ceil(W / CELL));
       grows = Math.max(1, Math.ceil(H / CELL));
       cellHead = new Int32Array(gcols * grows);
@@ -365,99 +437,145 @@ export default function ParticleField({
       const mspeed = Math.sqrt(mvx * mvx + mvy * mvy);
       const gate = p.interactive && m.inside ? Math.min(1, mspeed / 4) : 0;
 
-      // 1) air jitter + paddle (moving cursor only)
+      const targetX = m.inside ? m.x : W / 2;
+      const targetY = m.inside ? m.y : H / 2;
+
+      // 1) Air jitter + paddle OR Gravity Vortex Swarm forces
       for (let i = 0; i < count; i++) {
-        vx[i] += (Math.random() - 0.5) * JITTER * p.speed * dt;
-        vy[i] += (Math.random() - 0.5) * JITTER * p.speed * dt;
-        if (gate > 0.001) {
-          const dx = px[i] - m.x;
-          const dy = py[i] - m.y;
+        if (isNebula) {
+          const dx = targetX - px[i];
+          const dy = targetY - py[i];
           const d2 = dx * dx + dy * dy;
-          if (d2 < CUR_R2) {
-            const infl = Math.exp(-d2 / (CUR_R2 * 0.33));
-            if (infl > 0.003) {
-              const inv = 1 / Math.sqrt(d2 + 1e-3);
-              const r = resp[i] * infl * dt;
-              vx[i] += (dx * inv * PUSH * gate + mvx * DRAG) * r;
-              vy[i] += (dy * inv * PUSH * gate + mvy * DRAG) * r;
+          const d = Math.sqrt(d2);
+          if (d > 5) {
+            const inv = 1 / d;
+            const pull = Math.min(0.22, 35 / (d + 20)) * p.speed * dt;
+            vx[i] += dx * inv * pull;
+            vy[i] += dy * inv * pull;
+            
+            const swirl = Math.min(0.32, 28 / (d + 10)) * p.speed * dt;
+            vx[i] += -dy * inv * swirl;
+            vy[i] += dx * inv * swirl;
+          }
+          vx[i] += (Math.random() - 0.5) * JITTER * p.speed * dt * 0.4;
+          vy[i] += (Math.random() - 0.5) * JITTER * p.speed * dt * 0.4;
+          vx[i] *= 0.985;
+          vy[i] *= 0.985;
+        } else {
+          vx[i] += (Math.random() - 0.5) * JITTER * p.speed * dt;
+          vy[i] += (Math.random() - 0.5) * JITTER * p.speed * dt;
+          if (gate > 0.001) {
+            const dx = px[i] - m.x;
+            const dy = py[i] - m.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < CUR_R2) {
+              const infl = Math.exp(-d2 / (CUR_R2 * 0.33));
+              if (infl > 0.003) {
+                const inv = 1 / Math.sqrt(d2 + 1e-3);
+                const r = resp[i] * infl * dt;
+                vx[i] += (dx * inv * PUSH * gate + mvx * DRAG) * r;
+                vy[i] += (dy * inv * PUSH * gate + mvy * DRAG) * r;
+              }
             }
           }
         }
       }
 
-      // 2) elastic puck-vs-puck collisions (radius = visual size) via grid
-      cellHead.fill(-1);
-      for (let i = 0; i < count; i++) {
-        let cx = (px[i] / CELL) | 0;
-        let cy = (py[i] / CELL) | 0;
-        if (cx < 0) cx = 0; else if (cx >= gcols) cx = gcols - 1;
-        if (cy < 0) cy = 0; else if (cy >= grows) cy = grows - 1;
-        const ci = cy * gcols + cx;
-        next[i] = cellHead[ci];
-        cellHead[ci] = i;
-      }
-      for (let i = 0; i < count; i++) {
-        const xi = px[i];
-        const yi = py[i];
-        const ri = rad[i];
-        const imi = invM[i];
-        let cx = (xi / CELL) | 0;
-        let cy = (yi / CELL) | 0;
-        if (cx < 0) cx = 0; else if (cx >= gcols) cx = gcols - 1;
-        if (cy < 0) cy = 0; else if (cy >= grows) cy = grows - 1;
-        for (let oy = -1; oy <= 1; oy++) {
-          const yy = cy + oy;
-          if (yy < 0 || yy >= grows) continue;
-          for (let ox = -1; ox <= 1; ox++) {
-            const xx = cx + ox;
-            if (xx < 0 || xx >= gcols) continue;
-            let j = cellHead[yy * gcols + xx];
-            while (j !== -1) {
-              if (j > i) {
-                const dx = xi - px[j];
-                const dy = yi - py[j];
-                const minD = ri + rad[j];
-                const d2 = dx * dx + dy * dy;
-                if (d2 < minD * minD && d2 > 1e-6) {
-                  const d = Math.sqrt(d2);
-                  const nx = dx / d;
-                  const ny = dy / d;
-                  const imj = invM[j];
-                  const imSum = imi + imj;
-                  // separate overlap, weighted by inverse mass
-                  const overlap = minD - d;
-                  const sepI = overlap * (imi / imSum);
-                  const sepJ = overlap * (imj / imSum);
-                  px[i] += nx * sepI; py[i] += ny * sepI;
-                  px[j] -= nx * sepJ; py[j] -= ny * sepJ;
-                  // elastic impulse along the normal (mass-weighted + restitution)
-                  const rel = (vx[i] - vx[j]) * nx + (vy[i] - vy[j]) * ny;
-                  if (rel < 0) {
-                    const jimp = (-(1 + REST) * rel) / imSum;
-                    vx[i] += jimp * imi * nx; vy[i] += jimp * imi * ny;
-                    vx[j] -= jimp * imj * nx; vy[j] -= jimp * imj * ny;
+      let lineNumPoints = 0;
+
+      // 2) Elastic puck-vs-puck collisions via spatial grid (skipped in nebula mode)
+      if (!isNebula) {
+        cellHead.fill(-1);
+        for (let i = 0; i < count; i++) {
+          let cx = (px[i] / CELL) | 0;
+          let cy = (py[i] / CELL) | 0;
+          if (cx < 0) cx = 0; else if (cx >= gcols) cx = gcols - 1;
+          if (cy < 0) cy = 0; else if (cy >= grows) cy = grows - 1;
+          const ci = cy * gcols + cx;
+          next[i] = cellHead[ci];
+          cellHead[ci] = i;
+        }
+        for (let i = 0; i < count; i++) {
+          const xi = px[i];
+          const yi = py[i];
+          const ri = rad[i];
+          const imi = invM[i];
+          let cx = (xi / CELL) | 0;
+          let cy = (yi / CELL) | 0;
+          if (cx < 0) cx = 0; else if (cx >= gcols) cx = gcols - 1;
+          if (cy < 0) cy = 0; else if (cy >= grows) cy = grows - 1;
+          for (let oy = -1; oy <= 1; oy++) {
+            const yy = cy + oy;
+            if (yy < 0 || yy >= grows) continue;
+            for (let ox = -1; ox <= 1; ox++) {
+              const xx = cx + ox;
+              if (xx < 0 || xx >= gcols) continue;
+              let j = cellHead[yy * gcols + xx];
+              while (j !== -1) {
+                if (j > i) {
+                  const dx = xi - px[j];
+                  const dy = yi - py[j];
+                  const minD = ri + rad[j];
+                  const d2 = dx * dx + dy * dy;
+                  if (d2 < minD * minD && d2 > 1e-6) {
+                    const d = Math.sqrt(d2);
+                    const nx = dx / d;
+                    const ny = dy / d;
+                    const imj = invM[j];
+                    const imSum = imi + imj;
+                    const overlap = minD - d;
+                    const sepI = overlap * (imi / imSum);
+                    const sepJ = overlap * (imj / imSum);
+                    px[i] += nx * sepI; py[i] += ny * sepI;
+                    px[j] -= nx * sepJ; py[j] -= ny * sepJ;
+                    const rel = (vx[i] - vx[j]) * nx + (vy[i] - vy[j]) * ny;
+                    if (rel < 0) {
+                      const jimp = (-(1 + REST) * rel) / imSum;
+                      vx[i] += jimp * imi * nx; vy[i] += jimp * imi * ny;
+                      vx[j] -= jimp * imj * nx; vy[j] -= jimp * imj * ny;
+                    }
+                  }
+
+                  // Gather neural constellation lines (closer than 75px)
+                  if (isNeural && d2 < 75 * 75 && lineNumPoints < 24000 - 6) {
+                    const d = Math.sqrt(d2);
+                    const alpha = 1.0 - d / 75.0;
+                    lineDataArr[lineNumPoints * 3] = xi;
+                    lineDataArr[lineNumPoints * 3 + 1] = yi;
+                    lineDataArr[lineNumPoints * 3 + 2] = alpha;
+                    lineNumPoints++;
+
+                    lineDataArr[lineNumPoints * 3] = px[j];
+                    lineDataArr[lineNumPoints * 3 + 1] = py[j];
+                    lineDataArr[lineNumPoints * 3 + 2] = alpha;
+                    lineNumPoints++;
                   }
                 }
+                j = next[j];
               }
-              j = next[j];
             }
           }
         }
       }
 
-      // 3) integrate, friction, wall bounces
+      // 3) Integrate positions, friction, bounds check
       for (let i = 0; i < count; i++) {
-        vx[i] *= FRICTION;
-        vy[i] *= FRICTION;
+        if (!isNebula) {
+          vx[i] *= FRICTION;
+          vy[i] *= FRICTION;
+          let s = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i]);
+          if (s > MAXV * p.speed) { const k = (MAXV * p.speed) / s; vx[i] *= k; vy[i] *= k; s = MAXV * p.speed; }
+        }
         let s = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i]);
-        if (s > MAXV * p.speed) { const k = (MAXV * p.speed) / s; vx[i] *= k; vy[i] *= k; s = MAXV * p.speed; }
         let nxp = px[i] + vx[i] * p.speed * dt;
         let nyp = py[i] + vy[i] * p.speed * dt;
         const ri = rad[i];
-        if (nxp < ri) { nxp = ri; vx[i] = -vx[i] * WALL; }
-        else if (nxp > W - ri) { nxp = W - ri; vx[i] = -vx[i] * WALL; }
-        if (nyp < ri) { nyp = ri; vy[i] = -vy[i] * WALL; }
-        else if (nyp > H - ri) { nyp = H - ri; vy[i] = -vy[i] * WALL; }
+
+        if (nxp < ri) { nxp = ri; vx[i] = -vx[i] * (isNebula ? 0.3 : WALL); }
+        else if (nxp > W - ri) { nxp = W - ri; vx[i] = -vx[i] * (isNebula ? 0.3 : WALL); }
+        if (nyp < ri) { nyp = ri; vy[i] = -vy[i] * (isNebula ? 0.3 : WALL); }
+        else if (nyp > H - ri) { nyp = H - ri; vy[i] = -vy[i] * (isNebula ? 0.3 : WALL); }
+
         px[i] = nxp; py[i] = nyp;
         posArr[i * 2] = nxp;
         posArr[i * 2 + 1] = nyp;
@@ -476,6 +594,24 @@ export default function ParticleField({
       const a = hexToRgb(p.palette[0]);
       const b = hexToRgb(p.palette[1]);
       const c = hexToRgb(p.palette[2]);
+
+      // Draw constellation web lines
+      if (isNeural && lineProg && lineU && lineNumPoints > 0) {
+        gl!.useProgram(lineProg);
+        gl!.bindVertexArray(lineVao);
+        gl!.bindBuffer(gl!.ARRAY_BUFFER, lineBuf);
+        gl!.bufferData(gl!.ARRAY_BUFFER, lineDataArr.subarray(0, lineNumPoints * 3), gl!.DYNAMIC_DRAW);
+
+        gl!.blendFunc(gl!.SRC_ALPHA, gl!.ONE); // Additive blending for glow threads
+        gl!.uniform3f(lineU.color, a[0], a[1], a[2]);
+        gl!.uniform1f(lineU.intensity, p.intensity);
+        gl!.drawArrays(gl!.LINES, 0, lineNumPoints);
+      }
+
+      // Draw standard particles
+      gl!.useProgram(prog);
+      gl!.bindVertexArray(vao);
+      gl!.blendFunc(gl!.SRC_ALPHA, p.additive ? gl!.ONE : gl!.ONE_MINUS_SRC_ALPHA);
       gl!.uniform3f(U.a, a[0], a[1], a[2]);
       gl!.uniform3f(U.b, b[0], b[1], b[2]);
       gl!.uniform3f(U.c, c[0], c[1], c[2]);
@@ -512,6 +648,12 @@ export default function ParticleField({
         if (sizeBuf) gl.deleteBuffer(sizeBuf);
         if (hueBuf) gl.deleteBuffer(hueBuf);
         if (vao) gl.deleteVertexArray(vao);
+
+        if (lineProg) gl.deleteProgram(lineProg);
+        if (lineVs) gl.deleteShader(lineVs);
+        if (lineFs) gl.deleteShader(lineFs);
+        if (lineBuf) gl.deleteBuffer(lineBuf);
+        if (lineVao) gl.deleteVertexArray(lineVao);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

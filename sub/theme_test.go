@@ -35,6 +35,7 @@ func TestThemeToCSS_Basic(t *testing.T) {
 				Density: ptrFloat(1.5),
 				Speed:   ptrFloat(1.2),
 				Color:   "primary",
+				Preset:  "neural",
 			},
 			HoverGlow: ptrBool(false),
 		},
@@ -98,6 +99,9 @@ func TestThemeToCSS_Basic(t *testing.T) {
 	}
 	if !strings.Contains(css, "--fx-particles-color: primary;") {
 		t.Errorf("Expected --fx-particles-color: primary. Got: %s", css)
+	}
+	if !strings.Contains(css, "--fx-particles-preset: neural;") {
+		t.Errorf("Expected --fx-particles-preset: neural. Got: %s", css)
 	}
 
 	// Verify hover glow disabled

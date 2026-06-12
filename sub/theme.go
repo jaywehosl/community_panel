@@ -28,6 +28,7 @@ type ThemeParticles struct {
 	Density *float64 `json:"density,omitempty"`
 	Speed   *float64 `json:"speed,omitempty"` // maps to intensity in WebGL
 	Color   string   `json:"color,omitempty"`
+	Preset  string   `json:"preset,omitempty"`
 }
 
 type ThemeEffects struct {
@@ -223,6 +224,9 @@ func ThemeToCSS(theme *PanelTheme, basePath string) string {
 			}
 			if p.Color != "" {
 				decls = append(decls, fmt.Sprintf("--fx-particles-color: %s;", p.Color))
+			}
+			if p.Preset != "" {
+				decls = append(decls, fmt.Sprintf("--fx-particles-preset: %s;", p.Preset))
 			}
 		}
 		if fx.HoverGlow != nil {

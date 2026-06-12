@@ -33,6 +33,7 @@ export interface ThemeParticles {
   density?: number;
   speed?: number; // maps to intensity in WebGL
   color?: 'primary' | 'monochrome' | 'palette';
+  preset?: 'pucks' | 'neural' | 'nebula';
 }
 
 export interface ThemeEffects {
@@ -171,6 +172,7 @@ export function themeToCss(theme: PanelTheme): string {
       if (typeof fx.particles.density === 'number') push('--fx-particles-density', fx.particles.density);
       if (typeof fx.particles.speed === 'number') push('--fx-particles-speed', fx.particles.speed);
       if (fx.particles.color) push('--fx-particles-color', fx.particles.color);
+      if (fx.particles.preset) push('--fx-particles-preset', fx.particles.preset);
     }
     if (fx.hoverGlow === false) {
       push('--hover-glow', 'none');
