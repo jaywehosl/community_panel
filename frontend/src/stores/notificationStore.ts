@@ -39,18 +39,37 @@ export interface AlertPrefs {
   restart: boolean;
 }
 
+/** Threshold sensors evaluated against the polled server `status` (Phase 2).
+ *  Edge-triggered: each fires once on the false→true crossing and re-arms when
+ *  the value drops back below the threshold. */
+export type SensorKey = 'cpu' | 'mem' | 'disk' | 'sockets' | 'uptimeDays';
+export interface SensorConfig { enabled: boolean; threshold: number }
+export type SensorPrefs = Record<SensorKey, SensorConfig>;
+
 interface NotifState {
   history: NotifRecord[];
   dismissed: string[];
   prefs: AlertPrefs;
+  sensors: SensorPrefs;
 }
 
 const HISTORY_KEY = 'uup.notifications.history';
 const DISMISSED_KEY = 'uup.notifications.dismissed';
 const PREFS_KEY = 'uup.notifications.prefs';
+const SENSORS_KEY = 'uup.notifications.sensors';
 const HISTORY_CAP = 200;
 
 const DEFAULT_PREFS: AlertPrefs = { security: true, xray: true, restart: true };
+
+// CPU + disk default ON (genuinely useful, low false-positive, edge-triggered so
+// at most one toast per crossing); the rest opt-in via the Notifications tab.
+const DEFAULT_SENSORS: SensorPrefs = {
+  cpu: { enabled: true, threshold: 80 },        // % busy
+  mem: { enabled: false, threshold: 90 },       // % used
+  disk: { enabled: true, threshold: 90 },       // % used
+  sockets: { enabled: false, threshold: 5000 }, // open TCP sockets
+  uptimeDays: { enabled: false, threshold: 30 },// system uptime in days
+};
 
 function loadHistory(): NotifRecord[] {
   try {
@@ -79,11 +98,27 @@ function loadPrefs(): AlertPrefs {
     return { ...DEFAULT_PREFS };
   }
 }
+function loadSensors(): SensorPrefs {
+  try {
+    const raw = localStorage.getItem(SENSORS_KEY);
+    const obj = raw ? (JSON.parse(raw) as Partial<SensorPrefs>) : null;
+    if (!obj) return structuredClone(DEFAULT_SENSORS);
+    // Merge per-key so a new sensor added in a later build still gets a default.
+    const merged = structuredClone(DEFAULT_SENSORS);
+    (Object.keys(merged) as SensorKey[]).forEach((k) => {
+      if (obj[k]) merged[k] = { ...merged[k], ...obj[k] };
+    });
+    return merged;
+  } catch {
+    return structuredClone(DEFAULT_SENSORS);
+  }
+}
 
 let state: NotifState = {
   history: typeof localStorage !== 'undefined' ? loadHistory() : [],
   dismissed: typeof localStorage !== 'undefined' ? loadDismissed() : [],
   prefs: typeof localStorage !== 'undefined' ? loadPrefs() : { ...DEFAULT_PREFS },
+  sensors: typeof localStorage !== 'undefined' ? loadSensors() : structuredClone(DEFAULT_SENSORS),
 };
 
 const listeners = new Set<() => void>();
@@ -97,6 +132,7 @@ function persist() {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history));
     localStorage.setItem(DISMISSED_KEY, JSON.stringify(state.dismissed));
     localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
+    localStorage.setItem(SENSORS_KEY, JSON.stringify(state.sensors));
   } catch {
     /* ignore quota / disabled storage */
   }
@@ -156,4 +192,12 @@ export function clearHistory(): void {
 
 export function setAlertPref(category: AlertCategory, enabled: boolean): void {
   commit({ ...state, prefs: { ...state.prefs, [category]: enabled } });
+}
+
+export function setSensorEnabled(key: SensorKey, enabled: boolean): void {
+  commit({ ...state, sensors: { ...state.sensors, [key]: { ...state.sensors[key], enabled } } });
+}
+export function setSensorThreshold(key: SensorKey, threshold: number): void {
+  if (!Number.isFinite(threshold)) return;
+  commit({ ...state, sensors: { ...state.sensors, [key]: { ...state.sensors[key], threshold } } });
 }

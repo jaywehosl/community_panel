@@ -8,6 +8,7 @@ import { HeaderActionsProvider } from '@/layouts/header-actions-context';
 import { BusyOverlayProvider } from '@/layouts/BusyOverlayProvider';
 import MetricsPanel from '@/pages/index/MetricsPanel';
 import NotificationsBar from '@/pages/index/NotificationsBar';
+import SensorWatcher from '@/pages/index/SensorWatcher';
 import { useWebSocketBridge } from '@/api/websocketBridge';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useTheme } from '@/hooks/useTheme';
@@ -56,6 +57,7 @@ export default function PanelLayout() {
                   <MetricsPanel />
                   <NotificationsBar />
                 </div>
+                <SensorWatcher />
                 <div className="panel-main-content">
                   <Outlet />
                 </div>

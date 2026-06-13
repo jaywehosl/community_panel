@@ -6,17 +6,28 @@ import {
 } from '@ant-design/icons';
 import type { ReactNode } from 'react';
 
-import { Button, Card, Switch } from '@/components/ds';
+import { Button, Card, Input, Switch } from '@/components/ds';
 import {
   subscribe,
   getSnapshot,
   clearHistory,
   restoreAlert,
   setAlertPref,
+  setSensorEnabled,
+  setSensorThreshold,
   type AlertCategory,
+  type SensorKey,
   type Severity,
 } from '@/stores/notificationStore';
 import './NotificationsTab.css';
+
+const SENSOR_LABELS: { key: SensorKey; label: string; hint: string; unit: string }[] = [
+  { key: 'cpu', label: 'CPU usage', hint: 'Alert when CPU load exceeds the threshold', unit: '%' },
+  { key: 'mem', label: 'Memory usage', hint: 'Alert when RAM usage exceeds the threshold', unit: '%' },
+  { key: 'disk', label: 'Disk usage', hint: 'Alert when disk usage exceeds the threshold', unit: '%' },
+  { key: 'sockets', label: 'Open TCP sockets', hint: 'Alert on an abnormal number of open sockets', unit: '' },
+  { key: 'uptimeDays', label: 'Uptime reminder', hint: 'Remind to check OS / panel updates after N days up', unit: 'd' },
+];
 
 const SEVERITY_ICON: Record<Severity, ReactNode> = {
   danger: <ExclamationCircleOutlined />,
@@ -39,7 +50,7 @@ function formatTime(ts: number): string {
 }
 
 export default function NotificationsTab() {
-  const { history, dismissed, prefs } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const { history, dismissed, prefs, sensors } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   return (
     <div className="notif-tab">
@@ -57,6 +68,36 @@ export default function NotificationsTab() {
             <Switch checked={prefs[c.key]} onChange={(v) => setAlertPref(c.key, v)} />
           </div>
         ))}
+      </Card>
+
+      <Card title="Threshold sensors">
+        <p className="notif-tab__lead">
+          Watch the live server status and notify when a value crosses its
+          threshold. Each fires once per crossing and re-arms after it drops back.
+        </p>
+        {SENSOR_LABELS.map((s) => {
+          const cfg = sensors[s.key];
+          return (
+            <div className="notif-tab__source" key={s.key}>
+              <div className="notif-tab__source-label">
+                <span>{s.label}</span>
+                <span className="notif-tab__source-hint">{s.hint}</span>
+              </div>
+              <div className="notif-tab__sensor-ctl">
+                <span className="notif-tab__sensor-thresh">
+                  <Input
+                    type="number"
+                    value={String(cfg.threshold)}
+                    disabled={!cfg.enabled}
+                    onChange={(e) => setSensorThreshold(s.key, Number((e.target as HTMLInputElement).value))}
+                  />
+                  {s.unit && <code>{s.unit}</code>}
+                </span>
+                <Switch checked={cfg.enabled} onChange={(v) => setSensorEnabled(s.key, v)} />
+              </div>
+            </div>
+          );
+        })}
       </Card>
 
       <Card
