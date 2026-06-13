@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { ComponentType } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import type { MenuEntry } from '@/components/ds';
 
 import { useMetricsPanel } from '@/layouts/MetricsPanelContext';
 import { useNotifications } from '@/pages/index/useNotifications';
+import { subscribe as notifSubscribe, getSnapshot as notifSnapshot } from '@/stores/notificationStore';
 import { useHeaderActions } from '@/layouts/header-actions-context';
 import { HttpUtil, LanguageManager } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
@@ -113,8 +114,10 @@ export default function AppSidebar() {
   const { open: metricsOpen, toggle: toggleMetrics, notifyOpen, toggleNotify } = useMetricsPanel();
   const headerActions = useHeaderActions();
 
-  // Real unread count, shared with the NotificationsBar strip.
-  const notifyCount = useNotifications().length;
+  // Real unread count, shared with the NotificationsBar strip: live-condition
+  // alerts + active event notifications (sensors / log).
+  const notifyActive = useSyncExternalStore(notifSubscribe, notifSnapshot, notifSnapshot).active;
+  const notifyCount = useNotifications().length + notifyActive.length;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 

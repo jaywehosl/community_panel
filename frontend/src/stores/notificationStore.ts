@@ -17,7 +17,7 @@
  */
 
 export type Severity = 'danger' | 'warning' | 'info';
-export type NotifSource = 'toast' | 'alert';
+export type NotifSource = 'toast' | 'alert' | 'event';
 
 /** Live-alert categories that can be toggled on/off in the Notifications tab. */
 export type AlertCategory = 'security' | 'xray' | 'restart';
@@ -53,6 +53,9 @@ export interface LogWatchPrefs { enabled: boolean; level: string }
 
 interface NotifState {
   history: NotifRecord[];
+  /** Event notifications currently shown in the status-bar strip + bell badge
+   *  (sensors / log). Persisted so they survive a reload until dismissed. */
+  active: NotifRecord[];
   dismissed: string[];
   prefs: AlertPrefs;
   sensors: SensorPrefs;
@@ -64,7 +67,9 @@ const DISMISSED_KEY = 'uup.notifications.dismissed';
 const PREFS_KEY = 'uup.notifications.prefs';
 const SENSORS_KEY = 'uup.notifications.sensors';
 const LOGWATCH_KEY = 'uup.notifications.logwatch';
+const ACTIVE_KEY = 'uup.notifications.active';
 const HISTORY_CAP = 200;
+const ACTIVE_CAP = 50;
 
 const DEFAULT_LOGWATCH: LogWatchPrefs = { enabled: false, level: 'warning' };
 
@@ -95,6 +100,15 @@ function loadDismissed(): string[] {
     const raw = localStorage.getItem(DISMISSED_KEY);
     const arr = raw ? (JSON.parse(raw) as unknown) : null;
     return Array.isArray(arr) ? (arr as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+function loadActive(): NotifRecord[] {
+  try {
+    const raw = localStorage.getItem(ACTIVE_KEY);
+    const arr = raw ? (JSON.parse(raw) as unknown) : null;
+    return Array.isArray(arr) ? (arr as NotifRecord[]) : [];
   } catch {
     return [];
   }
@@ -135,6 +149,7 @@ function loadLogWatch(): LogWatchPrefs {
 
 let state: NotifState = {
   history: typeof localStorage !== 'undefined' ? loadHistory() : [],
+  active: typeof localStorage !== 'undefined' ? loadActive() : [],
   dismissed: typeof localStorage !== 'undefined' ? loadDismissed() : [],
   prefs: typeof localStorage !== 'undefined' ? loadPrefs() : { ...DEFAULT_PREFS },
   sensors: typeof localStorage !== 'undefined' ? loadSensors() : structuredClone(DEFAULT_SENSORS),
@@ -150,6 +165,7 @@ function emit() {
 function persist() {
   try {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history));
+    localStorage.setItem(ACTIVE_KEY, JSON.stringify(state.active));
     localStorage.setItem(DISMISSED_KEY, JSON.stringify(state.dismissed));
     localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
     localStorage.setItem(SENSORS_KEY, JSON.stringify(state.sensors));
@@ -187,6 +203,27 @@ function pushHistory(rec: Omit<NotifRecord, 'id' | 'ts'> & { ts?: number }): voi
 export function recordToast(severity: Severity, text: string): void {
   if (!text) return;
   pushHistory({ severity, text, source: 'toast' });
+}
+
+/** Emit an event notification (sensor / log): show it in the status-bar strip +
+ *  bell badge (state.active) AND log it to history. `dedupKey` prevents a still-
+ *  showing event from being added again on a re-fire (e.g. a sensor that stays
+ *  over threshold across reloads) — a new one only appears after it's dismissed.
+ *  Returns the record id (or '' if deduped). */
+export function pushEvent(severity: Severity, text: string, dedupKey?: string): string {
+  if (!text) return '';
+  if (dedupKey && state.active.some((r) => r.key === dedupKey)) return '';
+  const full: NotifRecord = { id: newId(), ts: Date.now(), key: dedupKey, severity, text, source: 'event' };
+  const active = [full, ...state.active].slice(0, ACTIVE_CAP);
+  const history = [full, ...state.history].slice(0, HISTORY_CAP);
+  commit({ ...state, active, history });
+  return full.id;
+}
+
+/** X an active event: remove it from the strip/bell (it stays in history). */
+export function dismissEvent(id: string): void {
+  if (!state.active.some((r) => r.id === id)) return;
+  commit({ ...state, active: state.active.filter((r) => r.id !== id) });
 }
 
 /** X a live alert: silence it forever (per key) and drop it into history. */

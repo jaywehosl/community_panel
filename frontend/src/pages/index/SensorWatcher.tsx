@@ -1,10 +1,10 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 
-import { toast } from '@/components/ds';
 import { useStatusQuery } from '@/api/queries/useStatusQuery';
 import {
   subscribe,
   getSnapshot,
+  pushEvent,
   type SensorKey,
 } from '@/stores/notificationStore';
 
@@ -49,7 +49,7 @@ export default function SensorWatcher() {
       const over = chk.value >= cfg.threshold;
       if (over && !firing.current[key]) {
         firing.current[key] = true;
-        toast.warning(chk.msg(cfg.threshold), 8000);
+        pushEvent('warning', chk.msg(cfg.threshold), `sensor:${key}`);
       } else if (!over && firing.current[key]) {
         firing.current[key] = false; // dropped back → re-arm for the next crossing
       }

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { toast } from '@/components/ds';
 import { clientsApi } from '@/generated/client';
 import { parseMsg } from '@/utils/zodValidate';
 import { LastOnlineMapSchema, type LastOnlineMap } from '@/schemas/inbound';
-import { subscribe, getSnapshot } from '@/stores/notificationStore';
+import { subscribe, getSnapshot, pushEvent } from '@/stores/notificationStore';
 
 const POLL_MS = 60000;
 
@@ -49,7 +48,7 @@ export default function ClientOfflineWatcher() {
       if (over && !firing.current[email]) {
         firing.current[email] = true;
         const hours = Math.floor((now - ts) / 3600000);
-        toast.warning(`Client "${email}" offline for ${hours}h (threshold ${cfg.threshold}h)`, 8000);
+        pushEvent('warning', `Client "${email}" offline for ${hours}h (threshold ${cfg.threshold}h)`, `client:${email}`);
       } else if (!over && firing.current[email]) {
         firing.current[email] = false;
       }

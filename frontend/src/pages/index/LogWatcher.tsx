@@ -1,18 +1,17 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { toast } from '@/components/ds';
 import { HttpUtil } from '@/utils';
-import { subscribe, getSnapshot } from '@/stores/notificationStore';
+import { subscribe, getSnapshot, pushEvent, type Severity } from '@/stores/notificationStore';
 
 const POLL_MS = 30000;
 const FETCH_COUNT = 50;       // lines per poll
 const MAX_EMIT_PER_POLL = 5;  // don't flood on a burst
 
-/** Map a log line's level token to a toast severity. */
-function severityOf(line: string): 'error' | 'warning' | 'info' {
+/** Map a log line's level token to a notification severity. */
+function severityOf(line: string): Severity {
   const head = (line || '').split(' - ')[0]?.toUpperCase() ?? '';
-  if (head.includes('ERROR') || head.includes(' ERR')) return 'error';
+  if (head.includes('ERROR') || head.includes(' ERR')) return 'danger';
   if (head.includes('WARNING')) return 'warning';
   return 'info';
 }
@@ -73,11 +72,7 @@ export default function LogWatcher() {
     prevSeen.current = new Set(current);
 
     fresh.slice(-MAX_EMIT_PER_POLL).forEach((line) => {
-      const sev = severityOf(line);
-      const text = bodyOf(line);
-      if (sev === 'error') toast.error(text, 8000);
-      else if (sev === 'warning') toast.warning(text, 8000);
-      else toast.info(text, 8000);
+      pushEvent(severityOf(line), bodyOf(line), `log:${line}`);
     });
   }, [enabled, data]);
 
