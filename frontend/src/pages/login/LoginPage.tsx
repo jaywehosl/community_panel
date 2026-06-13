@@ -33,7 +33,7 @@ export default function LoginPage() {
   const [fetched, setFetched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [twoFactorEnable, setTwoFactorEnable] = useState(false);
-  const [, setLang] = useState<string>(() => LanguageManager.getLanguage());
+  const [lang, setLang] = useState<string>(() => LanguageManager.getLanguage());
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -95,6 +95,7 @@ export default function LoginPage() {
   const langMenuItems = useMemo<MenuEntry[]>(
     () => (LanguageManager.supportedLanguages as { value: string; name: string; icon: string }[]).map((l) => ({
       key: l.value,
+      selected: l.value === lang,
       label: (
         <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
           <span aria-hidden="true">{l.icon}</span>
@@ -103,7 +104,7 @@ export default function LoginPage() {
       ),
       onSelect: () => onLangChange(l.value),
     })),
-    [onLangChange],
+    [onLangChange, lang],
   );
 
   const themeIcon = isDark ? <MoonOutlined /> : <SunOutlined />;

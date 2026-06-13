@@ -105,6 +105,7 @@ export default function SubPage() {
   const langMenuItems = useMemo<MenuEntry[]>(
     () => (LanguageManager.supportedLanguages as { value: string; name: string; icon: string }[]).map((l) => ({
       key: l.value,
+      selected: l.value === lang,
       label: (
         <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
           <span aria-hidden="true">{l.icon}</span>
@@ -113,7 +114,7 @@ export default function SubPage() {
       ),
       onSelect: () => onLangChange(l.value),
     })),
-    [onLangChange],
+    [onLangChange, lang],
   );
 
   const themeIcon = !isDark ? <SunOutlined /> : !isUltra ? <MoonOutlined /> : <MoonFilled />;
