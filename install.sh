@@ -103,7 +103,7 @@ else
     echo "Failed to check the system OS, please contact the author!" >&2
     exit 1
 fi
-echo "The OS release is: $release"
+echo -e "  ${gray}OS: $release${plain}"
 
 arch() {
     case "$(uname -m)" in
@@ -118,7 +118,7 @@ arch() {
     esac
 }
 
-echo "Arch: $(arch)"
+echo -e "  ${gray}Arch: $(arch)${plain}"
 if [[ $(arch) != "amd64" ]]; then
     echo -e "${red}Error: Only x86_64/amd64 architecture is supported for this edition!${plain}"
     exit 1
@@ -1295,7 +1295,7 @@ install_x-ui() {
                 exit 1
             fi
         fi
-        echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
+        echo -e "  ${gray}Community Panel ${tag_version} — installing…${plain}"
         curl -4fsSLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/community_panel/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Downloading x-ui failed, please be sure that your server can access GitHub ${plain}"
@@ -1451,14 +1451,14 @@ install_x-ui() {
         fi
 
         if [ "$service_installed" = true ]; then
-            echo -e "${green}Setting up systemd unit...${plain}"
             chown root:root ${xui_service}/x-ui.service > /dev/null 2>&1
             chmod 644 ${xui_service}/x-ui.service > /dev/null 2>&1
-            systemctl daemon-reload
-            systemctl enable x-ui
-            systemctl start x-ui
+            systemctl daemon-reload > /dev/null 2>&1
+            systemctl enable x-ui > /dev/null 2>&1
+            systemctl start x-ui > /dev/null 2>&1
+            echo -e "  ${green}✔${plain} Setting up service"
         else
-            echo -e "${red}Failed to install x-ui.service file${plain}"
+            echo -e "  ${red}✗${plain} Failed to install x-ui.service file"
             exit 1
         fi
     fi
@@ -1518,7 +1518,7 @@ choose_language() {
     echo "$XUI_LANG" > /etc/x-ui/lang
 }
 
-echo -e "${green}Running...${plain}"
+echo -e "  ${gray}Running…${plain}"
 choose_language
 install_base
 enable_bbr_default
