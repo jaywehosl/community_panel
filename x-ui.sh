@@ -51,23 +51,22 @@ T_EN[g5]="Reverse-proxy Nginx management";       T_RU[g5]="Реверс-прок
 T_EN[m1]="Install panel";                        T_RU[m1]="Установка панели"
 T_EN[m2]="Update panel";                         T_RU[m2]="Обновление панели"
 T_EN[m3]="Update CLI";                           T_RU[m3]="Обновление CLI"
-T_EN[m4]="Legacy build install";                 T_RU[m4]="Установить предыдущие версии"
-T_EN[m5]="Uninstall panel";                      T_RU[m5]="Удалить панель"
-T_EN[m6]="Reset login/password";                 T_RU[m6]="Сброс логина/пароля"
-T_EN[m7]="Reset panel path";                     T_RU[m7]="Сбросить путь панели"
-T_EN[m8]="Reset panel settings";                 T_RU[m8]="Сбросить настройки панели"
-T_EN[m9]="Change panel port";                    T_RU[m9]="Изменить порт панели"
-T_EN[m10]="View current access settings";        T_RU[m10]="Показать текущие данные доступа"
-T_EN[m11]="Service start";                       T_RU[m11]="Запуск сервисов"
-T_EN[m12]="Service stop";                        T_RU[m12]="Остановка сервисов"
-T_EN[m13]="Service restart";                     T_RU[m13]="Перезапуск сервисов"
-T_EN[m14]="Restart backend";                     T_RU[m14]="Перезапуск бэкенда"
-T_EN[m15]="Service status";                      T_RU[m15]="Статус сервисов"
-T_EN[m16]="Service logs";                        T_RU[m16]="Логи сервисов"
-T_EN[m17]="Enable service autostart";            T_RU[m17]="Включить автозапуск сервисов"
-T_EN[m18]="Disable service autostart";           T_RU[m18]="Отключить автозапуск сервисов"
-T_EN[m19]="PostgreSQL Database";                 T_RU[m19]="PostgreSQL БД"
-T_EN[m20]="Reverse-proxy Nginx settings";        T_RU[m20]="Настройки реверс-прокси/Nginx"
+T_EN[m4]="Uninstall panel";                      T_RU[m4]="Удалить панель"
+T_EN[m5]="Reset login/password";                 T_RU[m5]="Сброс логина/пароля"
+T_EN[m6]="Reset panel path";                     T_RU[m6]="Сбросить путь панели"
+T_EN[m7]="Reset panel settings";                 T_RU[m7]="Сбросить настройки панели"
+T_EN[m8]="Change panel port";                    T_RU[m8]="Изменить порт панели"
+T_EN[m9]="View current access settings";         T_RU[m9]="Показать текущие данные доступа"
+T_EN[m10]="Service start";                       T_RU[m10]="Запуск сервисов"
+T_EN[m11]="Service stop";                        T_RU[m11]="Остановка сервисов"
+T_EN[m12]="Service restart";                     T_RU[m12]="Перезапуск сервисов"
+T_EN[m13]="Restart backend";                     T_RU[m13]="Перезапуск бэкенда"
+T_EN[m14]="Service status";                      T_RU[m14]="Статус сервисов"
+T_EN[m15]="Service logs";                        T_RU[m15]="Логи сервисов"
+T_EN[m16]="Enable service autostart";            T_RU[m16]="Включить автозапуск сервисов"
+T_EN[m17]="Disable service autostart";           T_RU[m17]="Отключить автозапуск сервисов"
+T_EN[m18]="PostgreSQL Database";                 T_RU[m18]="PostgreSQL БД"
+T_EN[m19]="Reverse-proxy Nginx settings";        T_RU[m19]="Настройки реверс-прокси/Nginx"
 T_EN[m0]="Exit";                                 T_RU[m0]="Выход"
 
 # ── Batch 2: PostgreSQL + Reverse-proxy submenus ─────────────────────────────
@@ -368,22 +367,6 @@ update_menu() {
         echo -e "${red}$(t upcli_fail)${plain}"
         return 1
     fi
-}
-
-legacy_version() {
-    echo -n "Enter the panel version (like 2.4.0):"
-    read -r tag_version
-
-    if [ -z "$tag_version" ]; then
-        echo "Panel version cannot be empty. Exiting."
-        exit 1
-    fi
-    # Use the entered panel version in the download link
-    install_command="bash <(curl -Ls "https://raw.githubusercontent.com/jaywehosl/community_panel/v$tag_version/install.sh") v$tag_version"
-
-    echo "Downloading and installing panel version $tag_version..."
-    eval $install_command
-    before_show_menu
 }
 
 # Function to handle the deletion of the script file
@@ -1582,7 +1565,6 @@ show_usage() {
     echo -e "    ${blue}x-ui log${plain}                   panel logs"
     echo -e "    ${blue}x-ui update${plain}                update to the latest release"
     echo -e "    ${blue}x-ui migrateDB [file]${plain}      convert SQLite .db <-> .dump"
-    echo -e "    ${blue}x-ui legacy${plain}                install a legacy version"
     echo -e "    ${blue}x-ui install|uninstall${plain}     install / remove the panel"
     echo
 }
@@ -1601,18 +1583,18 @@ show_menu() {
     echo -e "     ${orange} 2${plain}  $(t m2)"
     echo -e "     ${orange} 3${plain}  $(t m3)"
     echo -e "     ${orange} 4${plain}  $(t m4)"
-    echo -e "     ${orange} 5${plain}  $(t m5)"
     echo
 
     echo -e "  ${bold}$(t g2)${plain}"
+    echo -e "     ${orange} 5${plain}  $(t m5)"
     echo -e "     ${orange} 6${plain}  $(t m6)"
     echo -e "     ${orange} 7${plain}  $(t m7)"
     echo -e "     ${orange} 8${plain}  $(t m8)"
     echo -e "     ${orange} 9${plain}  $(t m9)"
-    echo -e "     ${orange}10${plain}  $(t m10)"
     echo
 
     echo -e "  ${bold}$(t g3)${plain}"
+    echo -e "     ${orange}10${plain}  $(t m10)"
     echo -e "     ${orange}11${plain}  $(t m11)"
     echo -e "     ${orange}12${plain}  $(t m12)"
     echo -e "     ${orange}13${plain}  $(t m13)"
@@ -1620,15 +1602,14 @@ show_menu() {
     echo -e "     ${orange}15${plain}  $(t m15)"
     echo -e "     ${orange}16${plain}  $(t m16)"
     echo -e "     ${orange}17${plain}  $(t m17)"
-    echo -e "     ${orange}18${plain}  $(t m18)"
     echo
 
     echo -e "  ${bold}$(t g4)${plain}"
-    echo -e "     ${orange}19${plain}  $(t m19)"
+    echo -e "     ${orange}18${plain}  $(t m18)"
     echo
 
     echo -e "  ${bold}$(t g5)${plain}"
-    echo -e "     ${orange}20${plain}  $(t m20)"
+    echo -e "     ${orange}19${plain}  $(t m19)"
     echo
 
     echo -e "     ${orange} 0${plain}  $(t m0)"
@@ -1651,58 +1632,55 @@ show_menu() {
             check_install && update_menu
             ;;
         4)
-            check_install && legacy_version
-            ;;
-        5)
             check_install && uninstall
             ;;
-        6)
+        5)
             check_install && reset_user
             ;;
-        7)
+        6)
             check_install && reset_webbasepath
             ;;
-        8)
+        7)
             check_install && reset_config
             ;;
-        9)
+        8)
             check_install && set_port
             ;;
-        10)
+        9)
             check_install && check_config
             ;;
-        11)
+        10)
             check_install && start
             ;;
-        12)
+        11)
             check_install && stop
             ;;
-        13)
+        12)
             check_install && restart
             ;;
-        14)
+        13)
             check_install && restart_xray
             ;;
-        15)
+        14)
             check_install && status
             ;;
-        16)
+        15)
             check_install && show_log
             ;;
-        17)
+        16)
             check_install && enable
             ;;
-        18)
+        17)
             check_install && disable
             ;;
-        19)
+        18)
             postgresql_menu
             ;;
-        20)
+        19)
             check_install && reverse_proxy_menu
             ;;
         *)
-            LOGE "Please enter the correct number [0-20]"
+            LOGE "Please enter the correct number [0-19]"
             sleep 1
             ;;
     esac
@@ -1791,9 +1769,6 @@ if [[ $# > 0 ]]; then
             ;;
         "update")
             check_install 0 && update 0
-            ;;
-        "legacy")
-            check_install 0 && legacy_version 0
             ;;
         "install")
             check_uninstall 0 && install 0
