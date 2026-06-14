@@ -90,6 +90,14 @@ A targeted log watcher (off by default). It does **not** dump the whole log —
 it surfaces **failed panel logins** (`username` / IP / reason), collapsing a
 brute-force burst into one notification. (More signals — IP-limit, SSH — to come.)
 
+### Maintenance
+**Appearance → Notifications → Maintenance.**
+- **Panel update check** (on by default) — checks GitHub for a newer Community
+  Panel release (at most a few times a day) and notifies once per new version.
+- **Backup reminder** (on by default, every **7 days**) — reminds you to export
+  the database if none has been done in N days. The clock starts on first run;
+  exporting the DB (Backup dialog) resets it and clears the reminder.
+
 ---
 
 ## 3. Lock-out safety guard
