@@ -1057,18 +1057,25 @@ SELFSTEAL_DOMAIN=$SELFSTEAL_DOMAIN
 SSLDIR=$SSLDIR
 MARK
 
-    # --- summary ---
+    # --- summary (accented so the key outputs don't get lost) ---
+    local rule="────────────────────────────────────────────────────────"
     echo
-    echo -e "  ${bold}${green}$(t s_ready)${plain}"
+    echo -e "  ${green}${rule}${plain}"
+    echo -e "  ${bold}${green}✔  $(t s_ready)${plain}"
+    echo -e "  ${green}${rule}${plain}"
     echo
     if [[ "$style" == "2" ]]; then
-        echo -e "  ${gray}$(t s_panel)${plain} ${green}https://${PANEL_DOMAIN}/?${COOKIE_KEY}=${COOKIE_VAL}${plain}  ${yellow}($(t s_entry))${plain}"
+        echo -e "  ${bold}${yellow}▶${plain} ${gray}$(t s_panel)${plain} ${bold}${green}https://${PANEL_DOMAIN}/?${COOKIE_KEY}=${COOKIE_VAL}${plain}"
+        echo -e "    ${bold}${yellow}↳ $(t s_entry)${plain}"
     else
-        echo -e "  ${gray}$(t s_panel)${plain} ${green}https://${PANEL_DOMAIN}/${RP_BP}/${plain}"
+        echo -e "  ${bold}${yellow}▶${plain} ${gray}$(t s_panel)${plain} ${bold}${green}https://${PANEL_DOMAIN}/${RP_BP}/${plain}"
     fi
     echo -e "  ${gray}$(t s_sub)${plain} ${green}https://${SUB_DOMAIN}/<subId>${plain}"
     echo -e "  ${gray}$(t s_decoy)${plain} ${green}https://${SELFSTEAL_DOMAIN}/${plain}"
-    echo -e "  ${gray}$(t s_login)${plain} ${green}${RP_USER} / ${RP_PASS}${plain}"
+    echo
+    echo -e "  ${bold}${yellow}▶ $(t s_login)${plain}  ${bold}${green}${RP_USER}${plain} ${gray}/${plain} ${bold}${green}${RP_PASS}${plain}"
+    echo
+    echo -e "  ${green}${rule}${plain}"
     echo
 }
 
