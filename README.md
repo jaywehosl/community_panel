@@ -98,9 +98,9 @@ This is exactly the setup the panel is tuned for — e.g. the in-app **"this cha
 
 > ⚠️ **Save the secret cookie-gate link** the installer prints. Without it you cannot reach the panel.
 
-### Plain binary (advanced — behind your own proxy / SSH tunnel)
-
-If you run your own reverse proxy or an SSH tunnel, choose the plain install and bind the panel to `127.0.0.1`. The installer warns when the panel would otherwise be exposed over plain HTTP.
+> The legacy / plain IP-access install was removed from this installer — it's
+> served by a separate, untouched script. This installer only does the turnkey
+> reverse-proxy + cookie-gate deployment.
 
 ### Run locally (developer mode)
 
