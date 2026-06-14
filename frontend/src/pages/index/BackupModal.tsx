@@ -3,6 +3,7 @@ import { Button, Dialog, toast } from '@/components/ds';
 import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
+import { markBackupDone } from '@/stores/notificationStore';
 import { useBusyOverlay, BOOT_BUSY_KEY } from '@/layouts/busy-overlay-context';
 import './BackupModal.css';
 
@@ -34,10 +35,12 @@ export default function BackupModal({ open, basePath: _basePath, onClose }: Back
   const isPostgres = window.X_UI_DB_TYPE === 'postgres';
 
   function exportDb() {
+    markBackupDone(); // resets the "backup overdue" reminder clock
     window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getDb';
   }
 
   function exportMigration() {
+    markBackupDone();
     window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getMigration';
   }
 

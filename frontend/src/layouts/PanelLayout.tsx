@@ -11,6 +11,7 @@ import NotificationsBar from '@/pages/index/NotificationsBar';
 import SensorWatcher from '@/pages/index/SensorWatcher';
 import ClientOfflineWatcher from '@/pages/index/ClientOfflineWatcher';
 import LogWatcher from '@/pages/index/LogWatcher';
+import MaintenanceWatcher from '@/pages/index/MaintenanceWatcher';
 import { useWebSocketBridge } from '@/api/websocketBridge';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useTheme } from '@/hooks/useTheme';
@@ -62,6 +63,7 @@ export default function PanelLayout() {
                 <SensorWatcher />
                 <ClientOfflineWatcher />
                 <LogWatcher />
+                <MaintenanceWatcher />
                 <div className="panel-main-content">
                   <Outlet />
                 </div>

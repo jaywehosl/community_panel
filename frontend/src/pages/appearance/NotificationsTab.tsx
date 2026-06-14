@@ -17,6 +17,9 @@ import {
   setSensorThreshold,
   setLogWatchEnabled,
   setLogWatchLevel,
+  setUpdateCheckEnabled,
+  setBackupReminderEnabled,
+  setBackupReminderInterval,
   type AlertCategory,
   type SensorKey,
   type Severity,
@@ -62,7 +65,7 @@ function formatTime(ts: number): string {
 }
 
 export default function NotificationsTab() {
-  const { history, dismissed, prefs, sensors, logWatch } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const { history, dismissed, prefs, sensors, logWatch, maintenance } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   return (
     <div className="notif-tab">
@@ -121,6 +124,34 @@ export default function NotificationsTab() {
               <Select value={logWatch.level} onChange={(v) => setLogWatchLevel(String(v))} options={LOG_LEVELS} disabled={!logWatch.enabled} />
             </span>
             <Switch checked={logWatch.enabled} onChange={setLogWatchEnabled} />
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Maintenance">
+        <div className="notif-tab__source">
+          <div className="notif-tab__source-label">
+            <span>Panel update check</span>
+            <span className="notif-tab__source-hint">Notify when a newer Community Panel release is published on GitHub</span>
+          </div>
+          <Switch checked={maintenance.updateCheck} onChange={setUpdateCheckEnabled} />
+        </div>
+        <div className="notif-tab__source">
+          <div className="notif-tab__source-label">
+            <span>Backup reminder</span>
+            <span className="notif-tab__source-hint">Remind to export the database if none has been done in N days</span>
+          </div>
+          <div className="notif-tab__sensor-ctl">
+            <span className="notif-tab__sensor-thresh">
+              <Input
+                type="number"
+                value={String(maintenance.backupIntervalDays)}
+                disabled={!maintenance.backupReminder}
+                onChange={(e) => setBackupReminderInterval(Number((e.target as HTMLInputElement).value))}
+              />
+              <code className="notif-tab__unit">d</code>
+            </span>
+            <Switch checked={maintenance.backupReminder} onChange={setBackupReminderEnabled} />
           </div>
         </div>
       </Card>

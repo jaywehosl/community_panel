@@ -51,6 +51,14 @@ export type SensorPrefs = Record<SensorKey, SensorConfig>;
  *  level string. Levels match the log viewer: debug|info|notice|warning|err. */
 export interface LogWatchPrefs { enabled: boolean; level: string }
 
+/** Periodic maintenance reminders (checked by MaintenanceWatcher). */
+export interface MaintenancePrefs {
+  updateCheck: boolean;        // poll GitHub Releases for a newer panel build
+  backupReminder: boolean;     // remind when no DB backup in `backupIntervalDays`
+  backupIntervalDays: number;
+  lastBackupAt: number;        // epoch ms of the last DB export (0 = clock unset)
+}
+
 interface NotifState {
   history: NotifRecord[];
   /** Event notifications currently shown in the status-bar strip + bell badge
@@ -63,6 +71,7 @@ interface NotifState {
   prefs: AlertPrefs;
   sensors: SensorPrefs;
   logWatch: LogWatchPrefs;
+  maintenance: MaintenancePrefs;
 }
 
 const HISTORY_KEY = 'uup.notifications.history';
@@ -72,10 +81,17 @@ const SENSORS_KEY = 'uup.notifications.sensors';
 const LOGWATCH_KEY = 'uup.notifications.logwatch';
 const ACTIVE_KEY = 'uup.notifications.active';
 const SENSOR_ACKED_KEY = 'uup.notifications.sensorAcked';
+const MAINTENANCE_KEY = 'uup.notifications.maintenance';
 const HISTORY_CAP = 200;
 const ACTIVE_CAP = 50;
 
 const DEFAULT_LOGWATCH: LogWatchPrefs = { enabled: false, level: 'warning' };
+const DEFAULT_MAINTENANCE: MaintenancePrefs = {
+  updateCheck: true,
+  backupReminder: true,
+  backupIntervalDays: 7,
+  lastBackupAt: 0,
+};
 
 const DEFAULT_PREFS: AlertPrefs = { security: true, xray: true, restart: true };
 
@@ -159,6 +175,15 @@ function loadLogWatch(): LogWatchPrefs {
     return { ...DEFAULT_LOGWATCH };
   }
 }
+function loadMaintenance(): MaintenancePrefs {
+  try {
+    const raw = localStorage.getItem(MAINTENANCE_KEY);
+    const obj = raw ? (JSON.parse(raw) as Partial<MaintenancePrefs>) : null;
+    return obj ? { ...DEFAULT_MAINTENANCE, ...obj } : { ...DEFAULT_MAINTENANCE };
+  } catch {
+    return { ...DEFAULT_MAINTENANCE };
+  }
+}
 
 let state: NotifState = {
   history: typeof localStorage !== 'undefined' ? loadHistory() : [],
@@ -168,6 +193,7 @@ let state: NotifState = {
   prefs: typeof localStorage !== 'undefined' ? loadPrefs() : { ...DEFAULT_PREFS },
   sensors: typeof localStorage !== 'undefined' ? loadSensors() : structuredClone(DEFAULT_SENSORS),
   logWatch: typeof localStorage !== 'undefined' ? loadLogWatch() : { ...DEFAULT_LOGWATCH },
+  maintenance: typeof localStorage !== 'undefined' ? loadMaintenance() : { ...DEFAULT_MAINTENANCE },
 };
 
 const listeners = new Set<() => void>();
@@ -185,6 +211,7 @@ function persist() {
     localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
     localStorage.setItem(SENSORS_KEY, JSON.stringify(state.sensors));
     localStorage.setItem(LOGWATCH_KEY, JSON.stringify(state.logWatch));
+    localStorage.setItem(MAINTENANCE_KEY, JSON.stringify(state.maintenance));
   } catch {
     /* ignore quota / disabled storage */
   }
@@ -300,4 +327,27 @@ export function setLogWatchEnabled(enabled: boolean): void {
 }
 export function setLogWatchLevel(level: string): void {
   commit({ ...state, logWatch: { ...state.logWatch, level } });
+}
+
+export function setUpdateCheckEnabled(enabled: boolean): void {
+  commit({ ...state, maintenance: { ...state.maintenance, updateCheck: enabled } });
+}
+export function setBackupReminderEnabled(enabled: boolean): void {
+  commit({ ...state, maintenance: { ...state.maintenance, backupReminder: enabled } });
+}
+export function setBackupReminderInterval(days: number): void {
+  if (!Number.isFinite(days) || days < 1) return;
+  commit({ ...state, maintenance: { ...state.maintenance, backupIntervalDays: Math.round(days) } });
+}
+/** Record that a DB export just happened: resets the backup clock and clears any
+ *  standing "backup overdue" reminder. Also used to start the clock on first run. */
+export function markBackupDone(): void {
+  const active = state.active.filter((r) => r.key !== 'backup-overdue');
+  commit({ ...state, active, maintenance: { ...state.maintenance, lastBackupAt: Date.now() } });
+}
+
+/** Remove an active event by its dedupKey (used to clear a resolved condition). */
+export function dismissEventByKey(key: string): void {
+  if (!state.active.some((r) => r.key === key)) return;
+  commit({ ...state, active: state.active.filter((r) => r.key !== key) });
 }
