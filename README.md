@@ -1,5 +1,7 @@
 # Community Panel
 
+> 🇷🇺 Русская версия: [README.ru-RU.md](README.ru-RU.md)
+
 A community fork of [3X-UI](https://github.com/MHSanaei/3x-ui) — a web management panel for [Xray-core](https://github.com/XTLS/Xray-core) — with a **completely rebuilt React frontend**. The Go backend stays close to upstream; the user interface is the part we reworked from the ground up.
 
 ---
