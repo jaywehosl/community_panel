@@ -1551,7 +1551,7 @@ install_x-ui() {
         # follow it with a HEAD request and read the final URL. No rate limit.
         resolve_latest_tag() {
             curl ${1:-} -fsSLI -o /dev/null -w '%{url_effective}' \
-                "https://github.com/jaywehosl/ultrasuperheckedupthing/releases/latest" 2> /dev/null \
+                "https://github.com/jaywehosl/community_panel/releases/latest" 2> /dev/null \
                 | grep -oE '/tag/[^/]+$' | sed 's|^/tag/||'
         }
         tag_version=$(resolve_latest_tag)
@@ -1564,7 +1564,7 @@ install_x-ui() {
             fi
         fi
         echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
-        curl -4fsSLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
+        curl -4fsSLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/community_panel/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Downloading x-ui failed, please be sure that your server can access GitHub ${plain}"
             exit 1
@@ -1579,7 +1579,7 @@ install_x-ui() {
             exit 1
         fi
 
-        url="https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
+        url="https://github.com/jaywehosl/community_panel/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
         echo -e "Beginning to install x-ui $1"
         curl -4fsSLRo ${xui_folder}-linux-$(arch).tar.gz ${url}
         if [[ $? -ne 0 ]]; then
@@ -1619,7 +1619,7 @@ install_x-ui() {
         cp -f x-ui.sh /usr/bin/x-ui
     else
         echo -e "${yellow}x-ui.sh not found in the tarball, downloading the ${tag_version} copy...${plain}"
-        curl -4fLRo /usr/bin/x-ui "https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.sh"
+        curl -4fLRo /usr/bin/x-ui "https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.sh"
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Failed to download x-ui.sh${plain}"
             exit 1
@@ -1644,7 +1644,7 @@ install_x-ui() {
     fi
 
     if [[ $release == "alpine" ]]; then
-        curl -4fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.rc
+        curl -4fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.rc
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Failed to download x-ui.rc${plain}"
             exit 1
@@ -1701,13 +1701,13 @@ install_x-ui() {
             echo -e "${yellow}Service files not found in tar.gz, downloading from GitHub...${plain}"
             case "${release}" in
                 ubuntu | debian | armbian)
-                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.debian > /dev/null 2>&1
+                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.service.debian > /dev/null 2>&1
                     ;;
                 arch | manjaro | parch)
-                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.arch > /dev/null 2>&1
+                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.service.arch > /dev/null 2>&1
                     ;;
                 *)
-                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.rhel > /dev/null 2>&1
+                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.service.rhel > /dev/null 2>&1
                     ;;
             esac
 

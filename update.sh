@@ -821,7 +821,7 @@ update_x-ui() {
     # redirect to .../releases/tag/<tag> — read the final URL instead.
     resolve_latest_tag() {
         ${curl_bin} ${1:-} -fsSLI -o /dev/null -w '%{url_effective}' \
-            "https://github.com/jaywehosl/ultrasuperheckedupthing/releases/latest" 2> /dev/null \
+            "https://github.com/jaywehosl/community_panel/releases/latest" 2> /dev/null \
             | grep -oE '/tag/[^/]+$' | sed 's|^/tag/||'
     }
     tag_version=$(resolve_latest_tag)
@@ -833,10 +833,10 @@ update_x-ui() {
         fi
     fi
     echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
-    ${curl_bin} -fLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz 2> /dev/null
+    ${curl_bin} -fLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/community_panel/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz 2> /dev/null
     if [[ $? -ne 0 ]]; then
         echo -e "${yellow}Trying to fetch version with IPv4...${plain}"
-        ${curl_bin} -4fLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz 2> /dev/null
+        ${curl_bin} -4fLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/community_panel/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz 2> /dev/null
         if [[ $? -ne 0 ]]; then
             _fail "ERROR: Failed to download x-ui, please be sure that your server can access GitHub"
         fi
@@ -904,10 +904,10 @@ update_x-ui() {
     if [ -f "${xui_folder}/x-ui.sh" ]; then
         cp -f ${xui_folder}/x-ui.sh /usr/bin/x-ui > /dev/null 2>&1
     else
-        ${curl_bin} -fLRo /usr/bin/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.sh > /dev/null 2>&1
+        ${curl_bin} -fLRo /usr/bin/x-ui https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.sh > /dev/null 2>&1
         if [[ $? -ne 0 ]]; then
             echo -e "${yellow}Trying to fetch x-ui with IPv4...${plain}"
-            ${curl_bin} -4fLRo /usr/bin/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.sh > /dev/null 2>&1
+            ${curl_bin} -4fLRo /usr/bin/x-ui https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.sh > /dev/null 2>&1
             if [[ $? -ne 0 ]]; then
                 _fail "ERROR: Failed to download x-ui.sh script, please be sure that your server can access GitHub"
             fi
@@ -928,9 +928,9 @@ update_x-ui() {
 
     if [[ $release == "alpine" ]]; then
         echo -e "${green}Downloading and installing startup unit x-ui.rc...${plain}"
-        ${curl_bin} -fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.rc > /dev/null 2>&1
+        ${curl_bin} -fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.rc > /dev/null 2>&1
         if [[ $? -ne 0 ]]; then
-            ${curl_bin} -4fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.rc > /dev/null 2>&1
+            ${curl_bin} -4fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.rc > /dev/null 2>&1
             if [[ $? -ne 0 ]]; then
                 _fail "ERROR: Failed to download startup unit x-ui.rc, please be sure that your server can access GitHub"
             fi
@@ -984,13 +984,13 @@ update_x-ui() {
                 echo -e "${yellow}Service files not found in tar.gz, downloading from GitHub...${plain}"
                 case "${release}" in
                     ubuntu | debian | armbian)
-                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.debian > /dev/null 2>&1
+                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.service.debian > /dev/null 2>&1
                         ;;
                     arch | manjaro | parch)
-                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.arch > /dev/null 2>&1
+                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.service.arch > /dev/null 2>&1
                         ;;
                     *)
-                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.rhel > /dev/null 2>&1
+                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/community_panel/refs/tags/${tag_version}/x-ui.service.rhel > /dev/null 2>&1
                         ;;
                 esac
 

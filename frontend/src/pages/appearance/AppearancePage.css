@@ -1,10 +1,15 @@
 .appearance-page {
-  max-width: 1100px;
+  /* Match the Settings / Xray content-area so the page width and the tab shim
+     line up across all of them (was 1100px / 24-16 padding). */
+  max-width: 1380px;
   margin: 0 auto;
-  padding: var(--space-5) var(--space-4) var(--space-8);
+  padding: 48px 24px;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+@media (max-width: 768px) {
+  .appearance-page { padding: 24px 16px; }
 }
 
 .ap-head {

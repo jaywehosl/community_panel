@@ -6,7 +6,7 @@
  * fallback when the backend doesn't expose the endpoints yet (e.g. dev proxying
  * to an older panel) — so the Appearance page stays usable everywhere.
  */
-import { applyTheme, applyThemeMode, type PanelTheme } from './themeApply';
+import { applyTheme, applyThemeMode, DEFAULT_THEME, type PanelTheme } from './themeApply';
 import { HttpUtil } from '@/utils';
 
 const STORAGE_KEY = 'uup.panelTheme';
@@ -100,8 +100,11 @@ export function bootstrapTheme(): void {
   const injected = typeof window !== 'undefined' ? window.X_UI_THEME : undefined;
   const hasInjected = injected && Object.keys(injected).length > 0;
   const local = loadTheme();
+  const hasLocal = Object.keys(local).length > 0;
 
-  const theme = hasInjected ? { ...injected } : { ...local };
+  // Fresh install (no server-injected and no cached theme) → Community Panel
+  // factory defaults instead of the bare token baseline.
+  const theme = hasInjected ? { ...injected } : (hasLocal ? { ...local } : { ...DEFAULT_THEME });
   if (local.mode) {
     theme.mode = local.mode;
   }

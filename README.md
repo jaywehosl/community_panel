@@ -1,4 +1,4 @@
-# 3X-UI Community Edition
+# Community Panel
 
 A community fork of [3X-UI](https://github.com/MHSanaei/3x-ui) — a web management panel for [Xray-core](https://github.com/XTLS/Xray-core) — with a **completely rebuilt React frontend**. The Go backend stays close to upstream; the user interface is the part we reworked from the ground up.
 
@@ -36,7 +36,7 @@ The backend (Go + Xray-core integration, REST API, subscription engine, database
 ### What it's built with
 
 - **Backend:** Go, Xray-core, the upstream 3X-UI server / API.
-- **Frontend:** React 19, TypeScript, Vite, Radix UI, TanStack Query & Table, CodeMirror (JSON editor), i18next (EN / RU), Zod.
+- **Frontend:** React 19, TypeScript, Vite, Radix UI, TanStack Query & Table, CodeMirror (JSON editor), i18next (English only for now — other locales temporarily disabled while modals are being translated), Zod.
 - **Tooling:** Vitest + Testing Library, a generated OpenAPI client, a GitHub Actions release pipeline.
 
 ---
@@ -48,7 +48,7 @@ The backend (Go + Xray-core integration, REST API, subscription engine, database
 Deploy the latest release binary on a Linux (amd64 / arm64) VPS:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/community_panel/main/install.sh)
 ```
 
 The installer fetches the latest binary from **GitHub Releases**, installs the `x-ui` systemd service, and sets up dependencies. Read the disclaimer above before running this over an existing 3X-UI install.
@@ -56,7 +56,7 @@ The installer fetches the latest binary from **GitHub Releases**, installs the `
 **Prerelease channel** — installs the newest build *including prereleases* (expect rough edges):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/install-prerelease.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/community_panel/main/install-prerelease.sh)
 ```
 
 ### 2. Run locally (developer mode)
@@ -64,8 +64,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupth
 Prerequisites: **Go 1.26+** and **Node.js 18+**.
 
 ```bash
-git clone https://github.com/jaywehosl/ultrasuperheckedupthing.git
-cd ultrasuperheckedupthing
+git clone https://github.com/jaywehosl/community_panel.git
+cd community_panel
 
 # Build the frontend, compile the Go binary, and run it
 chmod +x run.sh
@@ -117,6 +117,12 @@ sudo ./deploy.sh
 Licensed under the **GNU General Public License v3.0** (GPL-3.0) — inherited from the upstream 3X-UI project. See [LICENSE](/LICENSE).
 
 You are **free to use, study, modify, and redistribute** this project, including borrowing parts of it for your own work, **provided you comply with GPL-3.0** (notably: keep the source open and preserve the license and attribution). Credit to the original [3X-UI](https://github.com/MHSanaei/3x-ui) authors and contributors, and to [Xray-core](https://github.com/XTLS/Xray-core), is gratefully acknowledged.
+
+## Credits
+
+- **[3X-UI](https://github.com/MHSanaei/3x-ui)** — the upstream panel this fork is built on (Go backend, API, subscription engine).
+- **[Xray-core](https://github.com/XTLS/Xray-core)** — the proxy core the panel manages.
+- **eGames** — the original idea this project draws on, and the reverse-proxy + cookie-gate installation script whose implementation we adapted. Credit where it's due.
 
 ---
 

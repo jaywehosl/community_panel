@@ -79,16 +79,15 @@ const DEFAULT_LOGWATCH: LogWatchPrefs = { enabled: false, level: 'warning' };
 
 const DEFAULT_PREFS: AlertPrefs = { security: true, xray: true, restart: true };
 
-// CPU + disk default ON (genuinely useful, low false-positive, edge-triggered so
-// at most one toast per crossing); the rest opt-in via the Notifications tab.
+// Community Panel default sensor profile (all live-condition sensors on).
 const DEFAULT_SENSORS: SensorPrefs = {
-  cpu: { enabled: true, threshold: 80 },        // % busy
-  mem: { enabled: false, threshold: 90 },       // % used
-  disk: { enabled: true, threshold: 90 },       // % used
-  sockets: { enabled: false, threshold: 5000 }, // open TCP sockets
-  udpSockets: { enabled: false, threshold: 5000 }, // open UDP sockets
-  uptimeDays: { enabled: false, threshold: 30 },// system uptime in days
-  clientOffline: { enabled: false, threshold: 24 }, // client silent for N hours
+  cpu: { enabled: true, threshold: 55 },         // % busy
+  mem: { enabled: true, threshold: 60 },         // % used
+  disk: { enabled: true, threshold: 30 },        // % used
+  sockets: { enabled: true, threshold: 1000 },   // open TCP sockets
+  udpSockets: { enabled: true, threshold: 1000 },// open UDP sockets
+  uptimeDays: { enabled: true, threshold: 7 },   // system uptime in days
+  clientOffline: { enabled: true, threshold: 12 }, // client silent for N hours
 };
 
 function loadHistory(): NotifRecord[] {

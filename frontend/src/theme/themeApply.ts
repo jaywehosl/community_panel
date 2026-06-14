@@ -235,3 +235,17 @@ export function applyTheme(theme: PanelTheme): void {
 }
 
 export const EMPTY_THEME: PanelTheme = {};
+
+/** Community Panel factory theme — what the panel starts with on a fresh install
+ *  (no stored/server theme) and what "Reset" restores. Only the knobs that differ
+ *  from the tokens.css baseline are set; everything else falls through to the
+ *  token defaults. Mirrored by the "Community Panel" preset in AppearancePage. */
+export const DEFAULT_THEME: PanelTheme = {
+  mode: 'light',
+  tokens: {
+    '--glass-blur': '60px',
+    '--glass-saturate': '200%',
+    '--radius-scale': 1.3,
+    '--shadow-intensity': 1.0,
+  },
+};

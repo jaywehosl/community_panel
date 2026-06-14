@@ -68,7 +68,10 @@ export default function VerticalTabs({ items, activeKey, onChange }: VerticalTab
           left: 4,
           top: 0,
           background: isDark ? 'rgba(var(--color-primary-rgb), 0.15)' : 'rgba(var(--color-primary-rgb), 0.08)',
-          borderLeft: '3px solid var(--color-primary)',
+          // Left accent via inset shadow (NOT a border): a real border shrinks the
+          // left corner radius, making the active pill look less rounded than the
+          // hover highlight and visibly overlapping it. Shadow keeps the geometry.
+          boxShadow: 'inset 3px 0 0 var(--color-primary)',
           borderRadius: 'var(--radius-sm)',
           pointerEvents: 'none',
           transition: 'transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), height 0.3s ease, width 0.3s ease, opacity 0.2s ease',

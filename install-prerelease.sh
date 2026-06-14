@@ -1,7 +1,7 @@
 #!/bin/bash
 # Prerelease/nightly channel installer.
 #
-#   bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/install-prerelease.sh)
+#   bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/community_panel/main/install-prerelease.sh)
 #
 # Resolves the NEWEST published release INCLUDING prereleases (the stable
 # installer deliberately sees only full releases) and hands that exact tag to
@@ -12,7 +12,7 @@ red='\033[0;31m'
 yellow='\033[0;33m'
 plain='\033[0m'
 
-REPO="jaywehosl/ultrasuperheckedupthing"
+REPO="jaywehosl/community_panel"
 
 resolve_newest_tag() {
     # Atom feed lists all releases (prereleases included), newest first.

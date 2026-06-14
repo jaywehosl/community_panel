@@ -32,7 +32,7 @@ type PanelUpdateInfo struct {
 const (
 	// Updater + version checks MUST target THIS fork — pulling upstream's
 	// update.sh would replace our build with the original 3x-ui.
-	panelRepo            = "jaywehosl/ultrasuperheckedupthing"
+	panelRepo            = "jaywehosl/community_panel"
 	panelUpdaterURL      = "https://raw.githubusercontent.com/" + panelRepo + "/main/update.sh"
 	maxPanelUpdaterBytes = 2 << 20
 )

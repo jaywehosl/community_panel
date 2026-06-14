@@ -4,7 +4,7 @@ import { BgColorsOutlined, BellOutlined } from '@ant-design/icons';
 import { Button, Card, Divider, Segmented, Select, Switch } from '@/components/ds';
 import { toast } from '@/components/ds';
 import { VerticalTabs } from '@/components/ui';
-import { applyTheme, applyThemeMode, type PanelTheme, type ThemeMode } from '@/theme/themeApply';
+import { applyTheme, applyThemeMode, DEFAULT_THEME, type PanelTheme, type ThemeMode } from '@/theme/themeApply';
 import { clearTheme, fetchServerTheme, loadTheme, saveTheme, uploadThemeAsset } from '@/theme/themeStorage';
 import NotificationsTab from './NotificationsTab';
 import './AppearancePage.css';
@@ -54,7 +54,7 @@ function getContrastRatio(hex1: string, hex2: string): number {
 
 const PRESETS = [
   {
-    name: 'Antigravity Default',
+    name: 'Community Panel',
     theme: {
       mode: 'light' as ThemeMode,
       tokens: {
@@ -63,9 +63,9 @@ const PRESETS = [
         '--color-success': '#34a853',
         '--color-warning': '#f5a524',
         '--color-error': '#ea4335',
-        '--glass-blur': '30px',
-        '--glass-saturate': '170%',
-        '--radius-scale': 1.0,
+        '--glass-blur': '60px',
+        '--glass-saturate': '200%',
+        '--radius-scale': 1.3,
         '--shadow-intensity': 1.0,
       },
       background: { type: 'aura' },
@@ -76,33 +76,6 @@ const PRESETS = [
       },
       effects: {
         particles: { on: true, density: 1.0, speed: 1.0, color: 'palette' },
-        hoverGlow: true,
-      },
-    },
-  },
-  {
-    name: 'Deep Space',
-    theme: {
-      mode: 'ultra-dark' as ThemeMode,
-      tokens: {
-        '--color-primary': '#a855f7',
-        '--color-primary-rgb': '168, 85, 247',
-        '--color-success': '#10b981',
-        '--color-warning': '#fbbf24',
-        '--color-error': '#ef4444',
-        '--glass-blur': '40px',
-        '--glass-saturate': '200%',
-        '--radius-scale': 1.2,
-        '--shadow-intensity': 1.5,
-      },
-      background: { type: 'aura' },
-      fonts: {
-        sans: "'Plus Jakarta Sans', sans-serif",
-        display: "'Outfit', sans-serif",
-        mono: "'Fira Code', monospace",
-      },
-      effects: {
-        particles: { on: true, density: 1.5, speed: 1.2, color: 'primary' },
         hoverGlow: true,
       },
     },
@@ -131,60 +104,6 @@ const PRESETS = [
       effects: {
         particles: { on: false },
         hoverGlow: false,
-      },
-    },
-  },
-  {
-    name: 'Cyberpunk Neon',
-    theme: {
-      mode: 'dark' as ThemeMode,
-      tokens: {
-        '--color-primary': '#ff007f',
-        '--color-primary-rgb': '255, 0, 127',
-        '--color-success': '#00ffcc',
-        '--color-warning': '#ffff00',
-        '--color-error': '#ff3333',
-        '--glass-blur': '15px',
-        '--glass-saturate': '180%',
-        '--radius-scale': 1.1,
-        '--shadow-intensity': 1.2,
-      },
-      background: { type: 'aura' },
-      fonts: {
-        sans: "'Outfit', sans-serif",
-        display: "'Outfit', sans-serif",
-        mono: "'Fira Code', monospace",
-      },
-      effects: {
-        particles: { on: true, density: 1.8, speed: 1.5, color: 'palette' },
-        hoverGlow: true,
-      },
-    },
-  },
-  {
-    name: 'Emerald Glass',
-    theme: {
-      mode: 'dark' as ThemeMode,
-      tokens: {
-        '--color-primary': '#10b981',
-        '--color-primary-rgb': '16, 185, 129',
-        '--color-success': '#34d399',
-        '--color-warning': '#fbbf24',
-        '--color-error': '#f87171',
-        '--glass-blur': '45px',
-        '--glass-saturate': '190%',
-        '--radius-scale': 1.3,
-        '--shadow-intensity': 1.1,
-      },
-      background: { type: 'aura' },
-      fonts: {
-        sans: "'Plus Jakarta Sans', sans-serif",
-        display: "'Outfit', sans-serif",
-        mono: "'JetBrains Mono', monospace",
-      },
-      effects: {
-        particles: { on: true, density: 0.9, speed: 0.8, color: 'monochrome' },
-        hoverGlow: true,
       },
     },
   },
@@ -234,7 +153,10 @@ const DEFAULTS = {
 };
 
 export default function AppearancePage() {
-  const [theme, setTheme] = useState<PanelTheme>(() => loadTheme());
+  const [theme, setTheme] = useState<PanelTheme>(() => {
+    const t = loadTheme();
+    return Object.keys(t).length ? t : structuredClone(DEFAULT_THEME);
+  });
   const fileRef = useRef<HTMLInputElement>(null);
   const bgFileRef = useRef<HTMLInputElement>(null);
   const [uploadingBg, setUploadingBg] = useState(false);
@@ -285,9 +207,10 @@ export default function AppearancePage() {
     else toast.error('Could not save to the server — applied to this browser only');
   };
   const onReset = () => {
-    clearTheme(); setTheme({}); applyTheme({}); applyThemeMode('light');
-    void saveTheme({});
-    toast.success('Reset to defaults');
+    const def = structuredClone(DEFAULT_THEME);
+    clearTheme(); setTheme(def); applyTheme(def); applyThemeMode(def.mode ?? 'light');
+    void saveTheme(def);
+    toast.success('Reset to Community Panel defaults');
   };
   const onExport = () => {
     const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
