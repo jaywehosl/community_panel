@@ -1201,8 +1201,8 @@ _rp_preconfig() {
 
     local IB
     IB=$(jq -n --arg u "$UUID" --arg pv "$PRIV" --arg pb "$PUB" --arg sid "$SID" --arg sni "$SS" --arg sock "$SOCK" '{
-      enable:true,remark:"VLESS Reality 443 (turnkey)",listen:"",port:443,protocol:"vless",expiryTime:0,total:0,
-      settings:{clients:[{id:$u,email:"admin",flow:"xtls-rprx-vision",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"turnkey",comment:"",reset:0}],decryption:"none",encryption:"none",fallbacks:[]},
+      enable:true,remark:"Community Panel VLESS",listen:"",port:443,protocol:"vless",expiryTime:0,total:0,
+      settings:{clients:[{id:$u,email:"Community_User",flow:"xtls-rprx-vision",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"community_panel_user",comment:"",reset:0}],decryption:"none",encryption:"none",fallbacks:[]},
       streamSettings:{network:"tcp",tcpSettings:{header:{type:"none"}},security:"reality",
         externalProxy:[{forceTls:"same",dest:$sni,port:443,remark:""}],
         realitySettings:{show:false,xver:1,target:$sock,serverNames:[$sni],privateKey:$pv,minClientVer:"",maxClientVer:"",maxTimediff:0,shortIds:[$sid],mldsa65Seed:"",settings:{publicKey:$pb,fingerprint:"firefox",serverName:"",spiderX:"/",mldsa65Verify:""}}},
@@ -1210,10 +1210,11 @@ _rp_preconfig() {
     [[ "$(api "$BASE/panel/api/inbounds/add" -d "$IB"|jq -r '.success')" == "true" ]] || { echo -e "  ${red}inbound add failed.${plain}"; rm -f "$JAR"; return 1; }
 
     # Hysteria2 (UDP/27015) — terminates its own TLS with the selfsteal cert (no
-    # nginx). SAME email ("admin") + subId ("turnkey") as the Reality client, so
-    # the panel treats it as ONE client spanning both inbounds (two clients with
-    # the same subId is rejected by the panel UI; matching the email makes it a
-    # single identity). It becomes the 2nd key in the 'turnkey' subscription.
+    # nginx). SAME email ("Community_User") + subId ("community_panel_user") as the
+    # Reality client, so the panel treats it as ONE client spanning both inbounds
+    # (two clients with the same subId is rejected by the panel UI; matching the
+    # email makes it a single identity). It becomes the 2nd key in that
+    # subscription. (Identifiers have no spaces — the panel forbids them.)
     # Port 27015, not 443: UDP/443 gets throttled by DPI (ja4) — 27015 is clean.
     # externalProxy pins the link host:port to the selfsteal domain:27015.
     # Modelled on a known-working Theta inbound (force-brutal QUIC, h3, no obfs).
@@ -1221,8 +1222,8 @@ _rp_preconfig() {
     local HY
     HY=$(jq -n --arg auth "$HYAUTH" --arg pass "$HYPASS" --arg sni "$SS" \
         --arg cert "/etc/x-ui/ssl/$SS/fullchain.pem" --arg key "/etc/x-ui/ssl/$SS/privkey.pem" '{
-      enable:true,remark:"Hysteria2 27015 (turnkey)",listen:"",port:27015,protocol:"hysteria",expiryTime:0,total:0,
-      settings:{clients:[{auth:$auth,password:$pass,email:"admin",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"turnkey",comment:"",reset:0}],version:2},
+      enable:true,remark:"Community Panel Hysteria2",listen:"",port:27015,protocol:"hysteria",expiryTime:0,total:0,
+      settings:{clients:[{auth:$auth,password:$pass,email:"Community_User",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"community_panel_user",comment:"",reset:0}],version:2},
       streamSettings:{network:"hysteria",hysteriaSettings:{version:2,udpIdleTimeout:60},security:"tls",
         externalProxy:[{forceTls:"same",dest:$sni,port:27015,remark:""}],
         tlsSettings:{serverName:$sni,minVersion:"1.3",maxVersion:"1.3",cipherSuites:"",rejectUnknownSni:false,disableSystemRoot:false,enableSessionResumption:false,
