@@ -44,7 +44,7 @@ T_EN[st_notinstalled]="not installed";           T_RU[st_notinstalled]="не у�
 T_EN[st_enabled]="enabled";                      T_RU[st_enabled]="включен"
 T_EN[st_disabled]="disabled";                    T_RU[st_disabled]="выключен"
 T_EN[g1]="Install/update/delete";                T_RU[g1]="Установка/обновление/удаление"
-T_EN[g2]="Frontend management";                  T_RU[g2]="Фронтенд менеджмент"
+T_EN[g2]="Panel management";                      T_RU[g2]="Управление панелью"
 T_EN[g3]="Backend management";                   T_RU[g3]="Бэкенд менеджмент"
 T_EN[g4]="Database management";                  T_RU[g4]="БД менеджмент"
 T_EN[g5]="Reverse-proxy Nginx management";       T_RU[g5]="Реверс-прокси/Nginx менеджмент"
@@ -53,20 +53,16 @@ T_EN[m2]="Update panel";                         T_RU[m2]="Обновление 
 T_EN[m3]="Update CLI";                           T_RU[m3]="Обновление CLI"
 T_EN[m4]="Uninstall panel";                      T_RU[m4]="Удалить панель"
 T_EN[m5]="Reset login/password";                 T_RU[m5]="Сброс логина/пароля"
-T_EN[m6]="Reset panel path";                     T_RU[m6]="Сбросить путь панели"
-T_EN[m7]="Reset panel settings";                 T_RU[m7]="Сбросить настройки панели"
-T_EN[m8]="Change panel port";                    T_RU[m8]="Изменить порт панели"
-T_EN[m9]="View current access settings";         T_RU[m9]="Показать текущие данные доступа"
-T_EN[m10]="Service start";                       T_RU[m10]="Запуск сервисов"
-T_EN[m11]="Service stop";                        T_RU[m11]="Остановка сервисов"
-T_EN[m12]="Service restart";                     T_RU[m12]="Перезапуск сервисов"
-T_EN[m13]="Restart backend";                     T_RU[m13]="Перезапуск бэкенда"
-T_EN[m14]="Service status";                      T_RU[m14]="Статус сервисов"
-T_EN[m15]="Service logs";                        T_RU[m15]="Логи сервисов"
-T_EN[m16]="Enable service autostart";            T_RU[m16]="Включить автозапуск сервисов"
-T_EN[m17]="Disable service autostart";           T_RU[m17]="Отключить автозапуск сервисов"
-T_EN[m18]="PostgreSQL Database";                 T_RU[m18]="PostgreSQL БД"
-T_EN[m19]="Reverse-proxy Nginx settings";        T_RU[m19]="Настройки реверс-прокси/Nginx"
+T_EN[m6]="Service start";                        T_RU[m6]="Запуск сервисов"
+T_EN[m7]="Service stop";                         T_RU[m7]="Остановка сервисов"
+T_EN[m8]="Service restart";                      T_RU[m8]="Перезапуск сервисов"
+T_EN[m9]="Restart backend";                      T_RU[m9]="Перезапуск бэкенда"
+T_EN[m10]="Service status";                      T_RU[m10]="Статус сервисов"
+T_EN[m11]="Service logs";                        T_RU[m11]="Логи сервисов"
+T_EN[m12]="Enable service autostart";            T_RU[m12]="Включить автозапуск сервисов"
+T_EN[m13]="Disable service autostart";           T_RU[m13]="Отключить автозапуск сервисов"
+T_EN[m14]="PostgreSQL Database";                 T_RU[m14]="PostgreSQL БД"
+T_EN[m15]="Reverse-proxy Nginx settings";        T_RU[m15]="Настройки реверс-прокси/Nginx"
 T_EN[m0]="Exit";                                 T_RU[m0]="Выход"
 
 # ── Batch 2: PostgreSQL + Reverse-proxy submenus ─────────────────────────────
@@ -102,7 +98,7 @@ T_EN[rpn_reload]="Restarting Nginx services";    T_RU[rpn_reload]="Переза�
 T_EN[rpn_done]="Certificates renewed";           T_RU[rpn_done]="Сертификаты обновлены"
 T_EN[rpr_confirm]="Remove reverse-proxy? The panel will be accessible by direct ip address:port link"; T_RU[rpr_confirm]="Удалить реверс-прокси? Панель станет доступна по айпи адресу:порту"
 T_EN[rpr_pins]="Domain pins removed";            T_RU[rpr_pins]="Привязка к доменам удалена"
-T_EN[rpr_done]="Reverse-proxy removed, to get the correct ip:port link run 'x-ui settings' in your terminal session"; T_RU[rpr_done]="Реверс-прокси удален, чтобы получить актуальную ссылку доступа, выполните 'x-ui settings' в терминале"
+T_EN[rpr_done]="Reverse-proxy removed."; T_RU[rpr_done]="Реверс-прокси удалён."
 
 # ── Batch 4: cert-cron self-check, confirms, reset/port, service happy-path ───
 T_EN[cc_notfound]="Certificate renewal cron policy not found";  T_RU[cc_notfound]="Политика автоматического обновления сертификатов в cron не найдена"
@@ -457,137 +453,6 @@ gen_random_string() {
     openssl rand -base64 $((length * 2)) \
         | tr -dc 'a-zA-Z0-9' \
         | head -c "$length"
-}
-
-reset_webbasepath() {
-    echo -e "${yellow}Resetting Web Base Path${plain}"
-
-    read -rp " $(ask "$(t rs_path_confirm)") " confirm
-    if [[ $confirm != "y" && $confirm != "Y" ]]; then
-        echo -e "${yellow}Operation canceled.${plain}"
-        return
-    fi
-
-    config_webBasePath=$(gen_random_string 18)
-
-    # Apply the new web base path setting
-    ${xui_folder}/x-ui setting -webBasePath "${config_webBasePath}" > /dev/null 2>&1
-
-    echo -e "$(printf "$(t rs_path_reset)" "${green}${config_webBasePath}${plain}")"
-    echo -e "${green}Please use the new web base path to access the panel.${plain}"
-    restart
-}
-
-reset_config() {
-    confirm "Are you sure you want to reset all panel settings, Account data will not be lost, Username and password will not change" "n"
-    if [[ $? != 0 ]]; then
-        if [[ $# == 0 ]]; then
-            return
-        fi
-        return 0
-    fi
-    ${xui_folder}/x-ui setting -reset
-    echo -e "$(t rs_config_done)"
-    restart
-}
-
-check_config() {
-    local info=$(${xui_folder}/x-ui setting -show true)
-    if [[ $? != 0 ]]; then
-        LOGE "get current settings error, please check logs"
-        return
-        return
-    fi
-    LOGI "${info}"
-
-    local db_env_file
-    db_env_file="$(xui_env_file_path)"
-    if [[ -r "$db_env_file" ]] && grep -q '^XUI_DB_TYPE=postgres' "$db_env_file"; then
-        local dsn
-        dsn="$(grep -E '^XUI_DB_DSN=' "$db_env_file" | head -1 | cut -d= -f2-)"
-        local dsn_safe
-        dsn_safe="$(echo "$dsn" | sed -E 's|(://[^:/@]+:)[^@]+@|\1****@|')"
-        echo -e "${green}PostgreSQL — ${dsn_safe}${plain}"
-    else
-        echo -e "${green}SQLite — (/etc/x-ui/x-ui.db)${plain}"
-    fi
-
-    local existing_webBasePath=$(echo "$info" | grep -Eo 'webBasePath: .+' | awk '{print $2}')
-    local existing_port=$(echo "$info" | grep -Eo 'port: .+' | awk '{print $2}')
-    local existing_cert=$(${xui_folder}/x-ui setting -getCert true | grep 'cert:' | awk -F': ' '{print $2}' | tr -d '[:space:]')
-    local URL_lists=(
-        "https://api4.ipify.org"
-        "https://ipv4.icanhazip.com"
-        "https://v4.api.ipinfo.io/ip"
-        "https://ipv4.myexternalip.com/raw"
-        "https://4.ident.me"
-        "https://check-host.net/ip"
-    )
-    local server_ip=""
-    for ip_address in "${URL_lists[@]}"; do
-        local response=$(curl -s -w "\n%{http_code}" --max-time 3 "${ip_address}" 2> /dev/null)
-        local http_code=$(echo "$response" | tail -n1)
-        local ip_result=$(echo "$response" | head -n-1 | tr -d '[:space:]"')
-        if [[ "${http_code}" == "200" && "${ip_result}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            server_ip="${ip_result}"
-            break
-        fi
-    done
-
-    if [[ -z "$server_ip" ]]; then
-        echo -e "${yellow}Could not auto-detect server IP from any provider.${plain}"
-        while [[ -z "$server_ip" ]]; do
-            read -rp "Please enter your server's public IPv4 address: " server_ip
-            server_ip="${server_ip// /}"
-            if [[ ! "$server_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                echo -e "${red}Invalid IPv4 address. Please try again.${plain}"
-                server_ip=""
-            fi
-        done
-    fi
-
-    if [[ -n "$existing_cert" ]]; then
-        local domain=$(basename "$(dirname "$existing_cert")")
-
-        if [[ "$domain" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-            echo -e "${green}$(t vs_url) https://${domain}:${existing_port}${existing_webBasePath}${plain}"
-        else
-            echo -e "${green}$(t vs_url) https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
-        fi
-    else
-        echo -e "${red}$(t vs_nossl)${plain}"
-        echo -e "${yellow}$(t vs_selfsign)${plain}"
-        read -rp "Generate SSL certificate for IP now? [y/N]: " gen_ssl
-        if [[ "$gen_ssl" == "y" || "$gen_ssl" == "Y" ]]; then
-            stop 0 > /dev/null 2>&1
-            ssl_cert_issue_for_ip
-            if [[ $? -eq 0 ]]; then
-                echo -e "${green}$(t vs_url) https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
-                # ssl_cert_issue_for_ip already restarts the panel, but ensure it's running
-                start 0 > /dev/null 2>&1
-            else
-                LOGE "IP certificate setup failed."
-                echo -e "${yellow}You can re-run SSL setup during a panel reinstall, or put the panel behind a reverse proxy (option 20).${plain}"
-                start 0 > /dev/null 2>&1
-            fi
-        else
-            echo -e "${yellow}$(t vs_url) http://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
-            echo -e "${yellow}For security, put the panel behind a reverse proxy with TLS (option 20).${plain}"
-        fi
-    fi
-    [[ $# == 0 ]] && before_show_menu
-}
-
-set_port() {
-    read -rp " $(ask "$(t pt_enter)") " port
-    if [[ -z "${port}" ]]; then
-        LOGD "$(t s_cancelled)"
-        before_show_menu
-    else
-        ${xui_folder}/x-ui setting -port ${port}
-        echo -e "$(printf "$(t pt_changed)" "${green}${port}${plain}")"
-        confirm_restart
-    fi
 }
 
 start() {
@@ -1560,7 +1425,7 @@ show_usage() {
     echo -e "    ${blue}x-ui${plain}                       admin management menu"
     echo -e "    ${blue}x-ui start|stop|restart${plain}    service control"
     echo -e "    ${blue}x-ui restart-xray${plain}          restart Xray only"
-    echo -e "    ${blue}x-ui status|settings${plain}       current status / settings"
+    echo -e "    ${blue}x-ui status${plain}                service status"
     echo -e "    ${blue}x-ui enable|disable${plain}        autostart on boot on/off"
     echo -e "    ${blue}x-ui log${plain}                   panel logs"
     echo -e "    ${blue}x-ui update${plain}                update to the latest release"
@@ -1587,29 +1452,25 @@ show_menu() {
 
     echo -e "  ${bold}$(t g2)${plain}"
     echo -e "     ${orange} 5${plain}  $(t m5)"
+    echo
+
+    echo -e "  ${bold}$(t g3)${plain}"
     echo -e "     ${orange} 6${plain}  $(t m6)"
     echo -e "     ${orange} 7${plain}  $(t m7)"
     echo -e "     ${orange} 8${plain}  $(t m8)"
     echo -e "     ${orange} 9${plain}  $(t m9)"
-    echo
-
-    echo -e "  ${bold}$(t g3)${plain}"
     echo -e "     ${orange}10${plain}  $(t m10)"
     echo -e "     ${orange}11${plain}  $(t m11)"
     echo -e "     ${orange}12${plain}  $(t m12)"
     echo -e "     ${orange}13${plain}  $(t m13)"
-    echo -e "     ${orange}14${plain}  $(t m14)"
-    echo -e "     ${orange}15${plain}  $(t m15)"
-    echo -e "     ${orange}16${plain}  $(t m16)"
-    echo -e "     ${orange}17${plain}  $(t m17)"
     echo
 
     echo -e "  ${bold}$(t g4)${plain}"
-    echo -e "     ${orange}18${plain}  $(t m18)"
+    echo -e "     ${orange}14${plain}  $(t m14)"
     echo
 
     echo -e "  ${bold}$(t g5)${plain}"
-    echo -e "     ${orange}19${plain}  $(t m19)"
+    echo -e "     ${orange}15${plain}  $(t m15)"
     echo
 
     echo -e "     ${orange} 0${plain}  $(t m0)"
@@ -1638,49 +1499,37 @@ show_menu() {
             check_install && reset_user
             ;;
         6)
-            check_install && reset_webbasepath
-            ;;
-        7)
-            check_install && reset_config
-            ;;
-        8)
-            check_install && set_port
-            ;;
-        9)
-            check_install && check_config
-            ;;
-        10)
             check_install && start
             ;;
-        11)
+        7)
             check_install && stop
             ;;
-        12)
+        8)
             check_install && restart
             ;;
-        13)
+        9)
             check_install && restart_xray
             ;;
-        14)
+        10)
             check_install && status
             ;;
-        15)
+        11)
             check_install && show_log
             ;;
-        16)
+        12)
             check_install && enable
             ;;
-        17)
+        13)
             check_install && disable
             ;;
-        18)
+        14)
             postgresql_menu
             ;;
-        19)
+        15)
             check_install && reverse_proxy_menu
             ;;
         *)
-            LOGE "Please enter the correct number [0-19]"
+            LOGE "Please enter the correct number [0-15]"
             sleep 1
             ;;
     esac
@@ -1754,9 +1603,6 @@ if [[ $# > 0 ]]; then
             ;;
         "status")
             check_install 0 && status 0
-            ;;
-        "settings")
-            check_install 0 && check_config 0
             ;;
         "enable")
             check_install 0 && enable 0
